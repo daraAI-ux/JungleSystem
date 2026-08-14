@@ -53,16 +53,20 @@ function Read-PackageManifest([string]$Path) {
 
 function Set-PackageVersion([string]$Path, [string]$NextVersion) {
   $content = Get-Content -Raw -LiteralPath $Path
-  $pattern = '(<Identity\b[\s\S]*?\bVersion=")[^"]+(")'
+  $pattern = '(<Identity\b[\s\S]*?\bVersion=")([^"]+)(")'
+  $match = [regex]::Match($content, $pattern)
+  if (-not $match.Success) {
+    throw "Package identity Version not found in $Path."
+  }
+  if ($match.Groups[2].Value -eq $NextVersion) {
+    return
+  }
   $next = [regex]::Replace(
     $content,
     $pattern,
-    "`${1}$NextVersion`${2}",
+    "`${1}$NextVersion`${3}",
     1
   )
-  if ($next -eq $content) {
-    throw "Package identity Version not found in $Path."
-  }
   Set-Content -LiteralPath $Path -Value $next -Encoding UTF8
 }
 
