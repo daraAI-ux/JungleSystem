@@ -2800,23 +2800,50 @@ function KolamUserEditSurface({
                   Atur peran dan izin akses pengguna.
                 </Text>
               </View>
-              <UserFormField label="Peran" required style={styles.accessRoleField}>
-                <KolamDropdownSelect
+              <View style={styles.accessRoleRow}>
+                <UserFormField
                   label="Peran"
-                  onChange={value => setField('role', value)}
-                  options={[
-                    {
-                      label: rolesLoading ? 'Memuat peran...' : 'Pilih Peran',
-                      value: '',
-                    },
-                    ...roles.map(role => ({
-                      label: role.name || role.key,
-                      value: role.key,
-                    })),
-                  ]}
-                  value={form.role}
-                />
-              </UserFormField>
+                  required
+                  style={styles.accessRoleField}>
+                  <KolamDropdownSelect
+                    label="Peran"
+                    onChange={value => setField('role', value)}
+                    options={[
+                      {
+                        label: rolesLoading ? 'Memuat peran...' : 'Pilih Peran',
+                        value: '',
+                      },
+                      ...roles.map(role => ({
+                        label: role.name || role.key,
+                        value: role.key,
+                      })),
+                    ]}
+                    value={form.role}
+                  />
+                </UserFormField>
+                {canShowResignInfo ? (
+                  <View style={styles.accessResignCell}>
+                    <View style={styles.resignGuardCard}>
+                      <View style={styles.resignGuardCopy}>
+                        <Text style={styles.formSubsectionTitle}>
+                          Resign karyawan
+                        </Text>
+                        <Text style={styles.detailSubtitle}>
+                          Aksi ini mencabut akses dan dapat membatalkan komisi
+                          accrued. Akun tidak dihapus.
+                        </Text>
+                      </View>
+                      <KolamButton
+                        disabled={!canResign || saving || resigning}
+                        intent="danger"
+                        label={resigning ? 'Memproses...' : 'Resign karyawan'}
+                        onPress={() => setResignConfirmVisible(true)}
+                        style={styles.resignGuardButton}
+                      />
+                    </View>
+                  </View>
+                ) : null}
+              </View>
               <View style={styles.accessToggleRow}>
                 <View style={styles.accessToggleCell}>
                   <KolamToggleRow
@@ -3278,28 +3305,6 @@ function KolamUserEditSurface({
               value={form.biodata.emergencyContact.phone}
             />
           </UserFormField>
-          {canShowResignInfo ? (
-            <View style={styles.formFieldWide}>
-              <View style={styles.resignGuardCard}>
-                <View style={styles.resignGuardCopy}>
-                  <Text style={styles.formSubsectionTitle}>
-                    Resign karyawan
-                  </Text>
-                  <Text style={styles.detailSubtitle}>
-                    Aksi ini mencabut akses dan dapat membatalkan komisi
-                    accrued. Akun tidak dihapus dan histori tetap tersimpan.
-                  </Text>
-                </View>
-                <KolamButton
-                  disabled={!canResign || saving || resigning}
-                  intent="danger"
-                  label={resigning ? 'Memproses...' : 'Resign karyawan'}
-                  onPress={() => setResignConfirmVisible(true)}
-                  style={styles.resignGuardButton}
-                />
-              </View>
-            </View>
-          ) : null}
           {canResetPassword ? (
             <>
               <View style={styles.formFieldWide}>
@@ -4622,9 +4627,19 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
   },
+  accessRoleRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
   accessRoleField: {
-    flexBasis: '100%',
+    flex: 1,
     flexGrow: 1,
+    minWidth: 300,
+  },
+  accessResignCell: {
+    flex: 1,
+    minWidth: 300,
   },
   accessToggleRow: {
     flexDirection: 'row',
