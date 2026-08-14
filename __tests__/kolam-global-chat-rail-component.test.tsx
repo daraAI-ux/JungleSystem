@@ -2378,8 +2378,140 @@ describe('KolamGlobalChatRail', () => {
       expect.arrayContaining([
         'Buka produk Shopee',
         'Buka produk Tokopedia',
+        'Lampirkan invoice pelanggan',
       ]),
     );
+  });
+
+  it('loads store customer invoices and sends the selected invoice share text', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer | null = null;
+
+    try {
+      const sendMessage = jest.fn().mockResolvedValue(undefined);
+      getChatContactDetailsMock.mockResolvedValue({
+        contact: {
+          _id: 'contact-store',
+          displayName: 'Buyer Store',
+          linkedCustomerId: {_id: 'customer-1', name: 'Buyer Store'},
+          platform: 'store',
+        },
+        customer: {
+          _id: 'customer-1',
+          name: 'Buyer Store',
+        },
+        metrics: {
+          ordersCount: 1,
+          totalOrders: 1,
+          totalSpend: 250000,
+        },
+        recentOrders: [
+          {
+            _id: 'sale-99',
+            finalTotal: 250000,
+            invoiceCode: 'INV-099',
+            itemsCount: 1,
+            status: 'paid',
+            transactionDate: '2026-08-01T00:00:00.000Z',
+          },
+        ],
+      });
+      useReadonlyDataMock.mockReturnValue({
+        conversations: [
+          {
+            _id: 'conv-store-inv',
+            platform: 'store',
+            contactId: {
+              displayName: 'Buyer Store Linked',
+              linkedCustomerId: {_id: 'customer-1', name: 'Buyer Store'},
+            },
+            lastMessagePreview: 'Invoice?',
+            unreadCount: 0,
+          },
+        ],
+        loading: false,
+        refresh: jest.fn(),
+        rooms: [],
+        totalUnread: 0,
+      });
+      useDetailMock.mockReturnValue({
+        ...getDefaultDetailMock(),
+        conversation: {
+          _id: 'conv-store-inv',
+          assignedStaffId: {_id: 'staff-1', first_name: 'Staff'},
+          contactId: {
+            displayName: 'Buyer Store Linked',
+            linkedCustomerId: {_id: 'customer-1', name: 'Buyer Store'},
+          },
+          isAiHandled: false,
+          platform: 'store',
+          status: 'open',
+        },
+        loading: false,
+        messages: [],
+        sendMessage,
+        sending: false,
+      });
+
+      await ReactTestRenderer.act(async () => {
+        renderer = ReactTestRenderer.create(
+          <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+        );
+      });
+
+      const selectButton = renderer!.root
+        .findAllByType(KolamPressable)
+        .find(
+          node =>
+            node.props.accessibilityLabel ===
+            'Pilih conversation Buyer Store Linked',
+        );
+      expect(selectButton).toBeTruthy();
+      await ReactTestRenderer.act(async () => {
+        selectButton!.props.onPress();
+      });
+
+      const invoiceButton = renderer!.root
+        .findAllByType(KolamPressable)
+        .find(
+          node =>
+            node.props.accessibilityLabel === 'Lampirkan invoice pelanggan',
+        );
+      expect(invoiceButton).toBeTruthy();
+
+      await ReactTestRenderer.act(async () => {
+        invoiceButton!.props.onPress();
+      });
+      await ReactTestRenderer.act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(getChatContactDetailsMock).toHaveBeenCalledWith('conv-store-inv', {
+        ordersLimit: 50,
+      });
+
+      const invoiceRow = renderer!.root
+        .findAllByType(KolamPressable)
+        .find(
+          node => node.props.accessibilityLabel === 'Kirim invoice INV-099',
+        );
+      expect(invoiceRow).toBeTruthy();
+      await ReactTestRenderer.act(async () => {
+        invoiceRow!.props.onPress();
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^\[Invoice\] INV-099 — Rp250\.000\n\[Link\] \/sales\/sale-99$/,
+        ),
+      );
+    } finally {
+      if (renderer) {
+        await ReactTestRenderer.act(async () => {
+          renderer!.unmount();
+        });
+      }
+    }
   });
 
   it('loads store catalog products and sends the selected card through the detail hook', async () => {

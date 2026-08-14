@@ -312,6 +312,13 @@ type KolamChatCatalogPickerParent =
   | {kind: 'product'; raw: KolamProduct}
   | {kind: 'species'; raw: KolamSpecies};
 
+interface KolamChatRailInvoicePickerState {
+  errorMessage?: string;
+  hasCustomer?: boolean;
+  loading: boolean;
+  orders: KolamChatContactOrder[];
+}
+
 interface KolamChatRailContactDetailsState {
   data: KolamChatContactDetails | null;
   errorMessage?: string;
@@ -4416,6 +4423,7 @@ function KolamChatRailDetailPanel({
   const [marketplacePickerOpen, setMarketplacePickerOpen] =
     React.useState(false);
   const [catalogPickerOpen, setCatalogPickerOpen] = React.useState(false);
+  const [invoicePickerOpen, setInvoicePickerOpen] = React.useState(false);
   const [emojiPickerOpen, setEmojiPickerOpen] = React.useState(false);
   const [templateSearch, setTemplateSearch] = React.useState('');
   const [marketplaceSearch, setMarketplaceSearch] = React.useState('');
@@ -4448,6 +4456,11 @@ function KolamChatRailDetailPanel({
       items: [],
       loading: false,
     });
+  const [invoicePickerState, setInvoicePickerState] =
+    React.useState<KolamChatRailInvoicePickerState>({
+      loading: false,
+      orders: [],
+    });
   const messageScrollRef = React.useRef<React.ElementRef<
     typeof ScrollView
   > | null>(null);
@@ -4472,6 +4485,9 @@ function KolamChatRailDetailPanel({
     : '';
   const storeCatalogAttachEnabled =
     mode === 'inbox' && detail.conversation?.platform === 'store';
+  const storeInvoiceAttachEnabled =
+    storeCatalogAttachEnabled &&
+    hasInboxLinkedCustomer(detail.conversation);
   const teamCatalogAttachEnabled = mode === 'team-chat';
   const catalogAttachEnabled =
     storeCatalogAttachEnabled || teamCatalogAttachEnabled;
@@ -4517,10 +4533,12 @@ function KolamChatRailDetailPanel({
     setTemplatePickerOpen(false);
     setMarketplacePickerOpen(false);
     setCatalogPickerOpen(false);
+    setInvoicePickerOpen(false);
     setEmojiPickerOpen(false);
     setTemplateSearch('');
     setMarketplaceSearch('');
     setMarketplacePickerState({ items: [], loading: false });
+    setInvoicePickerState({ loading: false, orders: [] });
     setDaraThinkingLine('');
     daraWaitKnownIdsRef.current = new Set();
     daraStream.resetContext();
@@ -4547,6 +4565,56 @@ function KolamChatRailDetailPanel({
       setCatalogPickerOpen(false);
     }
   }, [catalogAttachEnabled]);
+
+  React.useEffect(() => {
+    if (!storeInvoiceAttachEnabled) {
+      setInvoicePickerOpen(false);
+      setInvoicePickerState({ loading: false, orders: [] });
+    }
+  }, [storeInvoiceAttachEnabled]);
+
+  React.useEffect(() => {
+    if (!invoicePickerOpen || !storeInvoiceAttachEnabled) {
+      return;
+    }
+
+    let active = true;
+    setInvoicePickerState(current => ({
+      ...current,
+      errorMessage: undefined,
+      loading: true,
+    }));
+
+    getKolamChatContactDetails(selectedItem.id, { ordersLimit: 50 })
+      .then(result => {
+        if (!active) {
+          return;
+        }
+        setInvoicePickerState({
+          hasCustomer: Boolean(result.customer),
+          loading: false,
+          orders: result.recentOrders ?? [],
+        });
+      })
+      .catch(error => {
+        if (!active) {
+          return;
+        }
+        setInvoicePickerState({
+          errorMessage:
+            error instanceof Error
+              ? error.message
+              : 'Invoice belum bisa dibaca.',
+          hasCustomer: false,
+          loading: false,
+          orders: [],
+        });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [invoicePickerOpen, selectedItem.id, storeInvoiceAttachEnabled]);
 
   React.useEffect(() => {
     if (!marketplacePickerOpen || !marketplaceAttachPlatform) {
@@ -5317,6 +5385,23 @@ function KolamChatRailDetailPanel({
           />
         ) : null}
 
+        {storeInvoiceAttachEnabled && invoicePickerOpen ? (
+          <KolamChatStoreInvoicePicker
+            disabled={detail.sending || inboxComposerBlocked}
+            onClose={() => setInvoicePickerOpen(false)}
+            onPick={order => {
+              if (detail.sending || inboxComposerBlocked) {
+                return;
+              }
+              setInvoicePickerOpen(false);
+              detail
+                .sendMessage(buildInboxInvoiceShareText(order))
+                .catch(() => undefined);
+            }}
+            state={invoicePickerState}
+          />
+        ) : null}
+
         {emojiPickerOpen ? (
           <KolamChatComposerEmojiPicker
             disabled={detail.sending || inboxComposerBlocked}
@@ -5392,6 +5477,7 @@ function KolamChatRailDetailPanel({
                     }
                     onPress={() => {
                       setCatalogPickerOpen(current => !current);
+                      setInvoicePickerOpen(false);
                       setMarketplacePickerOpen(false);
                       setEmojiPickerOpen(false);
                       setTemplatePickerOpen(false);
@@ -5405,6 +5491,27 @@ function KolamChatRailDetailPanel({
                     ]}
                   >
                     <Text style={styles.composerIconButtonText}>📦</Text>
+                  </KolamPressable>
+                ) : null}
+                {storeInvoiceAttachEnabled ? (
+                  <KolamPressable
+                    accessibilityLabel="Lampirkan invoice pelanggan"
+                    disabled={detail.sending || inboxComposerBlocked}
+                    onPress={() => {
+                      setInvoicePickerOpen(current => !current);
+                      setCatalogPickerOpen(false);
+                      setMarketplacePickerOpen(false);
+                      setEmojiPickerOpen(false);
+                      setTemplatePickerOpen(false);
+                    }}
+                    style={[
+                      styles.composerIconButton,
+                      invoicePickerOpen && styles.composerIconButtonActive,
+                      (detail.sending || inboxComposerBlocked) &&
+                        styles.composerIconButtonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.composerIconButtonText}>🧾</Text>
                   </KolamPressable>
                 ) : null}
                 {mode === 'inbox' ? (
@@ -5428,6 +5535,7 @@ function KolamChatRailDetailPanel({
                     onPress={() => {
                       setMarketplacePickerOpen(current => !current);
                       setCatalogPickerOpen(false);
+                      setInvoicePickerOpen(false);
                       setEmojiPickerOpen(false);
                       setTemplatePickerOpen(false);
                     }}
@@ -5451,6 +5559,7 @@ function KolamChatRailDetailPanel({
                     setTemplatePickerOpen(false);
                     setMarketplacePickerOpen(false);
                     setCatalogPickerOpen(false);
+                    setInvoicePickerOpen(false);
                   }}
                   style={[
                     styles.composerIconButton,
@@ -5470,6 +5579,7 @@ function KolamChatRailDetailPanel({
                       setEmojiPickerOpen(false);
                       setMarketplacePickerOpen(false);
                       setCatalogPickerOpen(false);
+                      setInvoicePickerOpen(false);
                     }}
                     style={[
                       styles.composerIconButton,
@@ -5685,6 +5795,100 @@ function KolamChatMarketplaceProductPicker({
                   </Text>
                   <Text numberOfLines={1} style={styles.marketplaceListingMeta}>
                     {formatMarketplaceListingMeta(item)}
+                  </Text>
+                </View>
+                <Text style={styles.marketplaceListingState}>Kirim</Text>
+              </KolamPressable>
+            )}
+          />
+        </ScrollView>
+      ) : null}
+    </View>
+  );
+}
+
+function KolamChatStoreInvoicePicker({
+  disabled,
+  onClose,
+  onPick,
+  state,
+}: {
+  disabled: boolean;
+  onClose: () => void;
+  onPick: (order: KolamChatContactOrder) => void;
+  state: KolamChatRailInvoicePickerState;
+}) {
+  return (
+    <View style={styles.marketplacePicker}>
+      <View style={styles.templatePickerHeader}>
+        <View style={styles.templatePickerCopy}>
+          <Text style={styles.templatePickerTitle}>Invoice pelanggan</Text>
+        </View>
+        <KolamPressable
+          accessibilityLabel="Tutup invoice pelanggan"
+          onPress={onClose}
+          style={styles.templatePickerClose}
+        >
+          <Text style={styles.templatePickerCloseText}>x</Text>
+        </KolamPressable>
+      </View>
+      {state.loading ? (
+        <Text style={styles.templatePickerMessage}>Loading...</Text>
+      ) : null}
+      {!state.loading && state.errorMessage ? (
+        <Text style={styles.templatePickerError}>{state.errorMessage}</Text>
+      ) : null}
+      {!state.loading && !state.errorMessage && !state.hasCustomer ? (
+        <Text style={styles.templatePickerMessage}>
+          Kontak belum terhubung ke customer.
+        </Text>
+      ) : null}
+      {!state.loading &&
+      !state.errorMessage &&
+      state.hasCustomer &&
+      state.orders.length === 0 ? (
+        <Text style={styles.templatePickerMessage}>
+          Belum ada invoice untuk pelanggan ini.
+        </Text>
+      ) : null}
+      {!state.loading &&
+      !state.errorMessage &&
+      state.hasCustomer &&
+      state.orders.length > 0 ? (
+        <ScrollView
+          style={styles.marketplaceListScroll}
+          showsVerticalScrollIndicator
+        >
+          <KolamMappedList
+            items={state.orders}
+            getKey={order => order._id}
+            renderItem={order => (
+              <KolamPressable
+                accessibilityLabel={`Kirim invoice ${order.invoiceCode}`}
+                disabled={disabled}
+                onPress={() => onPick(order)}
+                style={[
+                  styles.marketplaceListingRow,
+                  disabled && styles.marketplaceListingRowDisabled,
+                ]}
+              >
+                <View style={styles.marketplaceListingCopy}>
+                  <Text
+                    numberOfLines={1}
+                    style={styles.marketplaceListingTitle}
+                  >
+                    {order.invoiceCode}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.marketplaceListingMeta}>
+                    {[
+                      formatOrderDate(order.transactionDate),
+                      order.finalTotal
+                        ? formatKolamCatalogRupiah(order.finalTotal)
+                        : '',
+                      formatOrderStatus(order.status),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </Text>
                 </View>
                 <Text style={styles.marketplaceListingState}>Kirim</Text>
@@ -8985,6 +9189,37 @@ function getInboxMarketplaceAttachPlatform(
   }
 
   return null;
+}
+
+function hasInboxLinkedCustomer(
+  conversation?: KolamChatConversation | null,
+): boolean {
+  const contact = conversation?.contactId;
+  if (!contact || typeof contact === 'string') {
+    return false;
+  }
+  const linked = contact.linkedCustomerId;
+  if (!linked) {
+    return false;
+  }
+  if (typeof linked === 'string') {
+    return linked.trim().length > 0;
+  }
+  return Boolean(linked._id?.trim());
+}
+
+function buildInboxInvoiceShareText(order: KolamChatContactOrder): string {
+  const total =
+    typeof order.finalTotal === 'number' && order.finalTotal > 0
+      ? formatKolamCatalogRupiah(order.finalTotal)
+      : '';
+  const lines = [
+    total
+      ? `[Invoice] ${order.invoiceCode} — ${total}`
+      : `[Invoice] ${order.invoiceCode}`,
+    `[Link] /sales/${order._id}`,
+  ];
+  return lines.join('\n');
 }
 
 function formatMarketplaceComposerToolLabel(platform: 'shopee' | 'tokopedia') {
