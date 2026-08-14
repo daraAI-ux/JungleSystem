@@ -2791,6 +2791,193 @@ function KolamUserEditSurface({
                   />
                 </UserFormField>
               </View>
+              <View style={styles.basicInfoRow}>
+                <UserFormField label="Jenis Kelamin" style={styles.basicInfoHalf}>
+                  <KolamDropdownSelect
+                    label="Jenis Kelamin"
+                    onChange={value => setBiodataField('gender', value)}
+                    options={[
+                      {label: 'Pilih jenis kelamin', value: ''},
+                      {label: 'Laki-laki', value: 'male'},
+                      {label: 'Perempuan', value: 'female'},
+                    ]}
+                    value={form.biodata.gender}
+                  />
+                </UserFormField>
+                <UserFormField
+                  label="Status Pernikahan"
+                  style={styles.basicInfoHalf}>
+                  <KolamDropdownSelect
+                    label="Status Pernikahan"
+                    onChange={value => setBiodataField('maritalStatus', value)}
+                    options={[
+                      {label: 'Pilih status', value: ''},
+                      {label: 'Belum menikah', value: 'single'},
+                      {label: 'Menikah', value: 'married'},
+                    ]}
+                    value={form.biodata.maritalStatus}
+                  />
+                </UserFormField>
+              </View>
+              <View style={styles.basicInfoRow}>
+                <UserFormField
+                  label="Tanggal Lahir"
+                  style={styles.basicInfoQuarter}>
+                  <KolamDateField
+                    label="Tanggal Lahir"
+                    onChange={value => setBiodataField('dateOfBirth', value)}
+                    showLabelInTrigger={false}
+                    value={form.biodata.dateOfBirth}
+                  />
+                </UserFormField>
+                <UserFormField
+                  label="Tempat Lahir"
+                  style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value => setBiodataField('placeOfBirth', value)}
+                    style={styles.formInput}
+                    value={form.biodata.placeOfBirth}
+                  />
+                </UserFormField>
+                <UserFormField label="Agama" style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value => setBiodataField('religion', value)}
+                    style={styles.formInput}
+                    value={form.biodata.religion}
+                  />
+                </UserFormField>
+                <UserFormField label="No. KTP" style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value => setBiodataField('nationalId', value)}
+                    style={styles.formInput}
+                    value={form.biodata.nationalId}
+                  />
+                </UserFormField>
+              </View>
+              <View style={styles.basicInfoRow}>
+                <UserFormField label="No. NPWP" style={styles.basicInfoHalf}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value => setBiodataField('taxNumber', value)}
+                    style={styles.formInput}
+                    value={form.biodata.taxNumber}
+                  />
+                </UserFormField>
+              </View>
+              <View style={styles.formFieldWide}>
+                <View style={styles.ktpUploadCard}>
+                  <View style={styles.ktpUploadCopy}>
+                    <Text style={styles.formSubsectionTitle}>
+                      Foto KTP (boleh fotokopi)
+                    </Text>
+                    <Text style={styles.detailSubtitle}>
+                      Unggahan foto KTP disimpan terpisah dari submit form biodata.
+                    </Text>
+                  </View>
+                  {ktpPreviewUri ? (
+                    <KolamRemoteImage
+                      accessibilityLabel="Foto KTP"
+                      previewItems={[
+                        {
+                          title: 'Foto KTP',
+                          uri: ktpPreviewUri,
+                        },
+                      ]}
+                      resizeMode="cover"
+                      scope="user-ktp"
+                      sourceUri={ktpPreviewUri}
+                      style={styles.ktpPreviewImage}
+                    />
+                  ) : null}
+                  <KolamUploadButton
+                    disabled={formDisabled || uploadingKtp}
+                    label="Unggah"
+                    loading={uploadingKtp}
+                    loadingLabel="Mengunggah..."
+                    onPress={handleUploadKtp}
+                    style={styles.ktpUploadButton}
+                  />
+                </View>
+              </View>
+              <View style={styles.formFieldWide}>
+                <Text style={styles.formSubsectionTitle}>Alamat</Text>
+              </View>
+              <View style={styles.basicInfoRow}>
+                <UserFormField label="Jalan" style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value => setBiodataAddressField('street', value)}
+                    style={styles.formInput}
+                    value={form.biodata.address.street}
+                  />
+                </UserFormField>
+                <UserFormField label="Kota" style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value => setBiodataAddressField('city', value)}
+                    style={styles.formInput}
+                    value={form.biodata.address.city}
+                  />
+                </UserFormField>
+                <UserFormField label="Provinsi" style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value =>
+                      setBiodataAddressField('province', value)
+                    }
+                    style={styles.formInput}
+                    value={form.biodata.address.province}
+                  />
+                </UserFormField>
+                <UserFormField label="Kode Pos" style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value =>
+                      setBiodataAddressField('postalCode', value)
+                    }
+                    style={styles.formInput}
+                    value={form.biodata.address.postalCode}
+                  />
+                </UserFormField>
+              </View>
+              <View style={styles.formFieldWide}>
+                <Text style={styles.formSubsectionTitle}>Kontak Darurat</Text>
+              </View>
+              <View style={styles.basicInfoRow}>
+                <UserFormField label="Nama" style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value =>
+                      setBiodataEmergencyContactField('name', value)
+                    }
+                    style={styles.formInput}
+                    value={form.biodata.emergencyContact.name}
+                  />
+                </UserFormField>
+                <UserFormField label="Hubungan" style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value =>
+                      setBiodataEmergencyContactField('relation', value)
+                    }
+                    style={styles.formInput}
+                    value={form.biodata.emergencyContact.relation}
+                  />
+                </UserFormField>
+                <UserFormField label="Telepon" style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value =>
+                      setBiodataEmergencyContactField('phone', value)
+                    }
+                    style={styles.formInput}
+                    value={form.biodata.emergencyContact.phone}
+                  />
+                </UserFormField>
+              </View>
             </View>
           </View>
           <View style={styles.formFieldWide}>
@@ -3123,185 +3310,6 @@ function KolamUserEditSurface({
               </View>
             </View>
           ) : null}
-          <View style={styles.formFieldWide}>
-            <View style={styles.accessSectionHeader}>
-              <Text style={styles.detailPanelTitle}>Data Pribadi</Text>
-              <Text style={styles.detailSubtitle}>
-                Biodata dan informasi identitas pengguna.
-              </Text>
-            </View>
-          </View>
-          <View style={styles.formField}>
-            <UserFormField label="Jenis Kelamin">
-              <KolamDropdownSelect
-                label="Jenis Kelamin"
-                onChange={value => setBiodataField('gender', value)}
-                options={[
-                  {label: 'Pilih jenis kelamin', value: ''},
-                  {label: 'Laki-laki', value: 'male'},
-                  {label: 'Perempuan', value: 'female'},
-                ]}
-                value={form.biodata.gender}
-              />
-            </UserFormField>
-          </View>
-          <View style={styles.formField}>
-            <UserFormField label="Status Pernikahan">
-              <KolamDropdownSelect
-                label="Status Pernikahan"
-                onChange={value => setBiodataField('maritalStatus', value)}
-                options={[
-                  {label: 'Pilih status', value: ''},
-                  {label: 'Belum menikah', value: 'single'},
-                  {label: 'Menikah', value: 'married'},
-                ]}
-                value={form.biodata.maritalStatus}
-              />
-            </UserFormField>
-          </View>
-          <UserFormField label="Tanggal Lahir">
-            <KolamDateField
-              label="Tanggal Lahir"
-              onChange={value => setBiodataField('dateOfBirth', value)}
-              showLabelInTrigger={false}
-              value={form.biodata.dateOfBirth}
-            />
-          </UserFormField>
-          <UserFormField label="Tempat Lahir">
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value => setBiodataField('placeOfBirth', value)}
-              style={styles.formInput}
-              value={form.biodata.placeOfBirth}
-            />
-          </UserFormField>
-          <UserFormField label="Agama">
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value => setBiodataField('religion', value)}
-              style={styles.formInput}
-              value={form.biodata.religion}
-            />
-          </UserFormField>
-          <UserFormField label="No. KTP">
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value => setBiodataField('nationalId', value)}
-              style={styles.formInput}
-              value={form.biodata.nationalId}
-            />
-          </UserFormField>
-          <View style={styles.formFieldWide}>
-            <View style={styles.ktpUploadCard}>
-              <View style={styles.ktpUploadCopy}>
-                <Text style={styles.formSubsectionTitle}>
-                  Foto KTP (boleh fotokopi)
-                </Text>
-                <Text style={styles.detailSubtitle}>
-                  Unggahan foto KTP disimpan terpisah dari submit form biodata.
-                </Text>
-              </View>
-              {ktpPreviewUri ? (
-                <KolamRemoteImage
-                  accessibilityLabel="Foto KTP"
-                  previewItems={[
-                    {
-                      title: 'Foto KTP',
-                      uri: ktpPreviewUri,
-                    },
-                  ]}
-                  resizeMode="cover"
-                  scope="user-ktp"
-                  sourceUri={ktpPreviewUri}
-                  style={styles.ktpPreviewImage}
-                />
-              ) : null}
-              <KolamUploadButton
-                disabled={formDisabled || uploadingKtp}
-                label="Unggah"
-                loading={uploadingKtp}
-                loadingLabel="Mengunggah..."
-                onPress={handleUploadKtp}
-                style={styles.ktpUploadButton}
-              />
-            </View>
-          </View>
-          <UserFormField label="No. NPWP">
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value => setBiodataField('taxNumber', value)}
-              style={styles.formInput}
-              value={form.biodata.taxNumber}
-            />
-          </UserFormField>
-          <View style={styles.formFieldWide}>
-            <Text style={styles.formSubsectionTitle}>Alamat</Text>
-          </View>
-          <UserFormField label="Jalan">
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value => setBiodataAddressField('street', value)}
-              style={styles.formInput}
-              value={form.biodata.address.street}
-            />
-          </UserFormField>
-          <UserFormField label="Kota">
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value => setBiodataAddressField('city', value)}
-              style={styles.formInput}
-              value={form.biodata.address.city}
-            />
-          </UserFormField>
-          <UserFormField label="Provinsi">
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value => setBiodataAddressField('province', value)}
-              style={styles.formInput}
-              value={form.biodata.address.province}
-            />
-          </UserFormField>
-          <UserFormField label="Kode Pos">
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value => setBiodataAddressField('postalCode', value)}
-              style={styles.formInput}
-              value={form.biodata.address.postalCode}
-            />
-          </UserFormField>
-          <View style={styles.formFieldWide}>
-            <Text style={styles.formSubsectionTitle}>Kontak Darurat</Text>
-          </View>
-          <UserFormField label="Nama">
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value =>
-                setBiodataEmergencyContactField('name', value)
-              }
-              style={styles.formInput}
-              value={form.biodata.emergencyContact.name}
-            />
-          </UserFormField>
-          <UserFormField label="Hubungan">
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value =>
-                setBiodataEmergencyContactField('relation', value)
-              }
-              style={styles.formInput}
-              value={form.biodata.emergencyContact.relation}
-            />
-          </UserFormField>
-          <UserFormField label="Telepon">
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value =>
-                setBiodataEmergencyContactField('phone', value)
-              }
-              style={styles.formInput}
-              value={form.biodata.emergencyContact.phone}
-            />
-          </UserFormField>
           {canResetPassword ? (
             <>
               <View style={styles.formFieldWide}>
