@@ -180,6 +180,13 @@ function resolveKolamChatLiveSoundIntent(
     return 'none';
   }
 
+  if (
+    event.contract.stream === 'team-chat' &&
+    event.contract.eventName === 'message.created'
+  ) {
+    return resolveTeamIncomingSoundIntent(event.payload, context);
+  }
+
   if (event.contract.soundIntent !== 'incoming-assigned-or-unassigned') {
     return event.contract.soundIntent;
   }
@@ -187,6 +194,34 @@ function resolveKolamChatLiveSoundIntent(
   return resolveInboxIncomingSoundIntent(event.payload, context, {
     directionSource: 'message',
   });
+}
+
+function resolveTeamIncomingSoundIntent(
+  payload: unknown,
+  context: {
+    currentUserId?: string | null;
+    selectedItemId?: string | null;
+    targetId?: string;
+  },
+): KolamChatLiveResolvedSoundIntent {
+  if (
+    context.selectedItemId &&
+    context.targetId &&
+    context.selectedItemId.trim() === context.targetId.trim()
+  ) {
+    return 'none';
+  }
+
+  const record = getPayloadRecord(payload);
+  const message = getPayloadRecord(record?.message);
+  const senderId = normalizeAssignedStaffId(message?.sender);
+  const currentUserId = normalizeId(context.currentUserId);
+
+  if (currentUserId && senderId && senderId === currentUserId) {
+    return 'none';
+  }
+
+  return 'assigned';
 }
 
 function resolveInboxIncomingSoundIntent(

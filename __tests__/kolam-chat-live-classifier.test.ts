@@ -170,19 +170,75 @@ describe('kolam chat live classifier', () => {
     const classification = classifyKolamChatLiveEvent(
       {
         contract: contract('team-chat', 'message.created'),
-        payload: {roomId: 'room-1'},
+        payload: {
+          roomId: 'room-1',
+          message: {
+            sender: {_id: 'staff-2'},
+            body: 'Halo',
+          },
+        },
       },
-      {selectedItemId: 'room-1'},
+      {currentUserId: 'staff-1', selectedItemId: 'room-1'},
     );
 
     expect(classification).toEqual(
       expect.objectContaining({
         refreshDetail: false,
         refreshList: true,
-        soundIntent: 'assigned',
+        soundIntent: 'none',
         targetId: 'room-1',
       }),
     );
+  });
+
+  it('dings team chat for other rooms and mutes own messages', () => {
+    expect(
+      classifyKolamChatLiveEvent(
+        {
+          contract: contract('team-chat', 'message.created'),
+          payload: {
+            roomId: 'room-b',
+            message: {
+              sender: {_id: 'staff-2', first_name: 'Maya'},
+              body: 'Update stok',
+            },
+          },
+        },
+        {currentUserId: 'staff-1', selectedItemId: 'room-a'},
+      ).soundIntent,
+    ).toBe('assigned');
+
+    expect(
+      classifyKolamChatLiveEvent(
+        {
+          contract: contract('team-chat', 'message.created'),
+          payload: {
+            roomId: 'room-b',
+            message: {
+              sender: {_id: 'staff-1', first_name: 'Me'},
+              body: 'Saya kirim',
+            },
+          },
+        },
+        {currentUserId: 'staff-1', selectedItemId: 'room-a'},
+      ).soundIntent,
+    ).toBe('none');
+
+    expect(
+      classifyKolamChatLiveEvent(
+        {
+          contract: contract('team-chat', 'message.created'),
+          payload: {
+            roomId: 'room-b',
+            message: {
+              sender: {_id: 'staff-2'},
+              body: 'Ping',
+            },
+          },
+        },
+        {currentUserId: 'staff-1'},
+      ).soundIntent,
+    ).toBe('assigned');
   });
 
   it('resolves team chat room id from nested payload or message.room', () => {

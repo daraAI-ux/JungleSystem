@@ -175,7 +175,6 @@ export function useKolamChatNotificationHost({
     };
 
     const previous = previousUnreadRef.current;
-    const visibleRailMode = visibleRailModeRef.current;
     const intents = resolveKolamChatUnreadRiseSoundIntents({
       lastSoundAtMs: lastSoundAtRef.current || null,
       next,
@@ -192,12 +191,12 @@ export function useKolamChatNotificationHost({
       playSoundIntent(intent);
     });
     if (previous) {
-      // Unread toast stays stream-muted while that rail is open (rail/live
-      // already surfaces thread toasts). Sound above still dings for thread B.
-      if (next.inbox > previous.inbox && visibleRailMode !== 'inbox') {
+      // Live path already surfaces thread toasts; unread-rise still toasts so
+      // team/inbox alerts appear when SSE misses (parity with sound Batch B).
+      if (next.inbox > previous.inbox) {
         showKolamChatDesktopToastForUnread('inbox');
       }
-      if (next.team > previous.team && visibleRailMode !== 'team-chat') {
+      if (next.team > previous.team) {
         showKolamChatDesktopToastForUnread('team-chat');
       }
     }
