@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KolamGlobalChatRailMode } from '../components/kolam-global-chat-rail';
 import {
   attachKolamChatMarketplaceProduct,
-  sendKolamChatCatalogCardMessage,
   assignKolamChatConversation,
   declineKolamTeamChatCall,
   endKolamTeamChatCall,
