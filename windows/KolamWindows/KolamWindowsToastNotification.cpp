@@ -589,6 +589,35 @@ bool WaitForHelperResult(std::wstring const &path, DWORD timeoutMs) {
   return GetFileAttributesW(path.c_str()) != INVALID_FILE_ATTRIBUTES;
 }
 
+bool ReadToastHelperResultSucceeded(std::wstring const &path) {
+  HANDLE file = CreateFileW(
+      path.c_str(),
+      GENERIC_READ,
+      FILE_SHARE_READ | FILE_SHARE_WRITE,
+      nullptr,
+      OPEN_EXISTING,
+      FILE_ATTRIBUTE_NORMAL,
+      nullptr);
+  if (file == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+
+  char buffer[512]{};
+  DWORD read = 0;
+  BOOL ok = ReadFile(file, buffer, sizeof(buffer) - 1, &read, nullptr);
+  CloseHandle(file);
+  if (!ok || read == 0) {
+    return false;
+  }
+
+  std::string text(buffer, read);
+  if (text.rfind("error", 0) == 0 || text.find("\nerror") != std::string::npos) {
+    return false;
+  }
+
+  return text.find("shown") != std::string::npos;
+}
+
 bool WriteUtf8File(std::wstring const &path, std::string const &bytes) {
   HANDLE file = CreateFileW(
       path.c_str(),
@@ -869,6 +898,11 @@ bool SpawnUnpackagedJungleToast(
     return false;
   }
 
+  if (!ReadToastHelperResultSucceeded(resultPath)) {
+    WriteToastLog(directory, "schtasks helper reported error");
+    return false;
+  }
+
   WriteToastLog(directory, "spawned scheduled-task powershell");
   return true;
 }
@@ -887,6 +921,50 @@ bool TryShowAppNotification(std::string const &xml, std::string const &tag) {
     notification.Tag(winrt::to_hstring(tag));
     notification.Group(L"kolam-chat");
     manager.Show(notification);
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+
+std::string BuildKolamChatToastXml(
+    std::string const &title,
+    std::string const &body,
+    std::string const &stream,
+    std::string const &targetId) {
+  auto launch = std::string("junglesystem://chat/") + stream + "/" + targetId;
+  return std::string("<toast activationType=\"protocol\" launch=\"") +
+      XmlEscape(launch) +
+      "\"><visual><binding template=\"ToastGeneric\"><text>" +
+      XmlEscape(title) + "</text><text>" + XmlEscape(body) +
+      "</text></binding></visual><audio silent=\"true\"/></toast>";
+}
+
+bool TryShowClassicToastNotification(std::string const &xml, std::string const &tag) {
+  try {
+    winrt::Windows::Data::Xml::Dom::XmlDocument document;
+    document.LoadXml(winrt::to_hstring(xml));
+    auto toast = winrt::Windows::UI::Notifications::ToastNotification(document);
+    toast.Tag(winrt::to_hstring(tag));
+    toast.Group(L"kolam-chat");
+
+    auto session = std::make_shared<ToastSession>();
+    session->toast = toast;
+    session->dismissed = toast.Dismissed(
+        winrt::auto_revoke,
+        [session](auto &&, auto &&) {
+          std::lock_guard<std::mutex> lock(g_toastMutex);
+          g_toastSessions.erase(
+              std::remove(g_toastSessions.begin(), g_toastSessions.end(), session),
+              g_toastSessions.end());
+        });
+
+    {
+      std::lock_guard<std::mutex> lock(g_toastMutex);
+      g_toastSessions.push_back(session);
+    }
+
+    CreateKolamToastNotifier().Show(toast);
     return true;
   } catch (...) {
     return false;
@@ -923,12 +1001,38 @@ void ShowWindowsToast(
       tag = tag.substr(0, 64);
     }
 
-    if (!SpawnUnpackagedJungleToast(title, body, tag, stream, targetId)) {
-      WriteToastLog(directory, "spawn failed");
-      result.Reject("Toast notifikasi tidak bisa ditampilkan.");
+    auto xml = BuildKolamChatToastXml(title, body, stream, targetId);
+    const bool packaged = IsPackagedProcess();
+
+    if (TryShowAppNotification(xml, tag)) {
+      WriteToastLog(directory, "shown via AppNotification");
+      result.Resolve(ShownResult(tag));
       return;
     }
-    result.Resolve(ShownResult(tag));
+
+    if (TryShowClassicToastNotification(xml, tag)) {
+      WriteToastLog(
+          directory,
+          packaged ? "shown via ToastNotifier packaged"
+                   : "shown via ToastNotifier unpackaged");
+      result.Resolve(ShownResult(tag));
+      return;
+    }
+
+    // Packaged apps should not depend on the unpackaged schtasks helper.
+    // Keep it only as last-resort for unpackaged Debug/dev hosts.
+    if (!packaged) {
+      if (SpawnUnpackagedJungleToast(title, body, tag, stream, targetId)) {
+        WriteToastLog(directory, "shown via unpackaged helper");
+        result.Resolve(ShownResult(tag));
+        return;
+      }
+      WriteToastLog(directory, "spawn failed");
+    } else {
+      WriteToastLog(directory, "in-process toast failed; skipped unpackaged helper");
+    }
+
+    result.Reject("Toast notifikasi tidak bisa ditampilkan.");
   } catch (winrt::hresult_error const &error) {
     WriteToastLog(directory, std::string("hresult ") + winrt::to_string(error.message()));
     result.Reject(winrt::to_string(error.message()).c_str());
