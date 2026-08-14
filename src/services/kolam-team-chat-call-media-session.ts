@@ -99,12 +99,16 @@ export function createKolamTeamChatCallMediaSession(
         return;
       }
 
-      await bridge.connectRoom({
+      const connectResult = await bridge.connectRoom({
         identity: mediaToken.identity,
         roomName: mediaToken.roomName,
         token: mediaToken.token,
         url: mediaToken.url,
       });
+      if (connectResult && connectResult.ok === false) {
+        activeCallId = null;
+        return;
+      }
       activeCallId = call._id;
       await syncMicFromCall(call, userId);
     } catch {

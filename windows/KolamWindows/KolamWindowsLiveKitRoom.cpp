@@ -6,6 +6,8 @@
 #include <string>
 #include <thread>
 
+#include <objbase.h>
+
 #if defined(_M_X64) && defined(KOLAM_HAS_LIVEKIT)
 #include "livekit/livekit.h"
 #endif
@@ -46,7 +48,7 @@ void EnsureLiveKitInitialized() {
   g_livekitInitialized = true;
 }
 
-void TearDownSessionLocked() {
+void TearDownSessionUnlocked() {
   if (!g_session) {
     return;
   }
@@ -74,6 +76,94 @@ std::string ReadStringParam(::React::JSValueObject const &params, char const *ke
     return {};
   }
   return it->second.AsString();
+}
+
+// POD result for SEH trampoline (no C++ destructors in __try frame).
+struct ConnectRawResult {
+  int code; // 0 ok, >0 soft fail, -1 native fault
+  char reason[160];
+  LiveKitSession *session; // heap; ownership transferred to caller on success
+};
+
+void SetConnectReason(ConnectRawResult *out, char const *reason) {
+  if (!out) {
+    return;
+  }
+  strncpy_s(out->reason, reason ? reason : "unknown", _TRUNCATE);
+}
+
+// C++ body — catches C++ exceptions. Must NOT contain __try.
+int ConnectLiveKitRoomBody(char const *url, char const *token, ConnectRawResult *out) {
+  out->code = 1;
+  out->session = nullptr;
+  SetConnectReason(out, "connect_failed");
+
+  try {
+    EnsureLiveKitInitialized();
+
+    auto session = std::make_unique<LiveKitSession>();
+
+    livekit::RoomOptions options;
+    options.auto_subscribe = true;
+    session->room = std::make_unique<livekit::Room>();
+    if (!session->room->connect(url, token, options)) {
+      out->code = 1;
+      SetConnectReason(out, "connect_failed");
+      return 1;
+    }
+
+    // Mic path after room connect (WASAPI/ADM needs COM on this thread).
+    session->platformAudio = std::make_unique<livekit::PlatformAudio>();
+
+    livekit::PlatformAudioOptions audioOptions;
+    audioOptions.echo_cancellation = true;
+    audioOptions.noise_suppression = true;
+    audioOptions.auto_gain_control = true;
+
+    session->micSource = session->platformAudio->createAudioSource(audioOptions);
+    session->micTrack = livekit::LocalAudioTrack::createLocalAudioTrack(
+        "microphone", session->micSource);
+
+    auto local = session->room->localParticipant().lock();
+    if (!local) {
+      try {
+        session->room->disconnect();
+      } catch (...) {
+      }
+      out->code = 2;
+      SetConnectReason(out, "no_local_participant");
+      return 2;
+    }
+
+    livekit::TrackPublishOptions publishOptions;
+    publishOptions.source = livekit::TrackSource::SOURCE_MICROPHONE;
+    local->publishTrack(session->micTrack, publishOptions);
+
+    out->session = session.release();
+    out->code = 0;
+    SetConnectReason(out, "ok");
+    return 0;
+  } catch (std::exception const &ex) {
+    out->code = 3;
+    SetConnectReason(out, ex.what());
+    return 3;
+  } catch (...) {
+    out->code = 4;
+    SetConnectReason(out, "connect_exception");
+    return 4;
+  }
+}
+
+// SEH trampoline — only POD locals. Converts access violations into soft fail.
+int ConnectLiveKitRoomSeh(char const *url, char const *token, ConnectRawResult *out) {
+  __try {
+    return ConnectLiveKitRoomBody(url, token, out);
+  } __except (EXCEPTION_EXECUTE_HANDLER) {
+    out->code = -1;
+    out->session = nullptr;
+    SetConnectReason(out, "livekit_native_fault");
+    return -1;
+  }
 }
 
 #endif
@@ -107,61 +197,57 @@ void KolamWindowsLiveKitRoom::connectRoom(
                roomName = std::move(roomName),
                identity = std::move(identity),
                result = std::move(result)]() mutable {
+    HRESULT const comHr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    bool const comOwned = comHr == S_OK || comHr == S_FALSE;
+
     try {
-      std::lock_guard<std::mutex> lock(g_sessionMutex);
-      EnsureLiveKitInitialized();
-      TearDownSessionLocked();
-
-      auto session = std::make_unique<LiveKitSession>();
-      session->platformAudio = std::make_unique<livekit::PlatformAudio>();
-
-      livekit::RoomOptions options;
-      options.auto_subscribe = true;
-
-      session->room = std::make_unique<livekit::Room>();
-      if (!session->room->connect(url, token, options)) {
-        result.Resolve(FailResult("connect_failed"));
-        return;
+      {
+        std::lock_guard<std::mutex> lock(g_sessionMutex);
+        TearDownSessionUnlocked();
       }
 
-      livekit::PlatformAudioOptions audioOptions;
-      audioOptions.echo_cancellation = true;
-      audioOptions.noise_suppression = true;
-      audioOptions.auto_gain_control = true;
+      ConnectRawResult raw{};
+      raw.code = 1;
+      raw.session = nullptr;
+      SetConnectReason(&raw, "connect_failed");
 
-      session->micSource = session->platformAudio->createAudioSource(audioOptions);
-      session->micTrack = livekit::LocalAudioTrack::createLocalAudioTrack(
-          "microphone", session->micSource);
+      // Do not hold session mutex across LiveKit connect / publish.
+      ConnectLiveKitRoomSeh(url.c_str(), token.c_str(), &raw);
 
-      auto local = session->room->localParticipant().lock();
-      if (!local) {
-        session->room->disconnect();
-        result.Resolve(FailResult("no_local_participant"));
-        return;
+      if (raw.code == 0 && raw.session != nullptr) {
+        std::unique_ptr<LiveKitSession> owned(raw.session);
+        raw.session = nullptr;
+        std::lock_guard<std::mutex> lock(g_sessionMutex);
+        TearDownSessionUnlocked();
+        g_session = std::move(owned);
+        auto response = OkResult("connected");
+        if (!roomName.empty()) {
+          response["roomName"] = roomName;
+        }
+        if (!identity.empty()) {
+          response["identity"] = identity;
+        }
+        result.Resolve(std::move(response));
+      } else {
+        if (raw.session != nullptr) {
+          delete raw.session;
+          raw.session = nullptr;
+        }
+        result.Resolve(FailResult(
+            raw.reason[0] != '\0' ? raw.reason : "connect_failed"));
       }
-
-      livekit::TrackPublishOptions publishOptions;
-      publishOptions.source = livekit::TrackSource::SOURCE_MICROPHONE;
-      local->publishTrack(session->micTrack, publishOptions);
-
-      g_session = std::move(session);
-
-      auto response = OkResult("connected");
-      if (!roomName.empty()) {
-        response["roomName"] = roomName;
-      }
-      if (!identity.empty()) {
-        response["identity"] = identity;
-      }
-      result.Resolve(std::move(response));
     } catch (std::exception const &ex) {
       std::lock_guard<std::mutex> lock(g_sessionMutex);
-      TearDownSessionLocked();
+      TearDownSessionUnlocked();
       result.Resolve(FailResult(ex.what()));
     } catch (...) {
       std::lock_guard<std::mutex> lock(g_sessionMutex);
-      TearDownSessionLocked();
+      TearDownSessionUnlocked();
       result.Resolve(FailResult("connect_exception"));
+    }
+
+    if (comOwned) {
+      CoUninitialize();
     }
   }).detach();
 #endif
@@ -174,12 +260,17 @@ void KolamWindowsLiveKitRoom::disconnectRoom(
   return;
 #else
   std::thread([result = std::move(result)]() mutable {
+    HRESULT const comHr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    bool const comOwned = comHr == S_OK || comHr == S_FALSE;
     try {
       std::lock_guard<std::mutex> lock(g_sessionMutex);
-      TearDownSessionLocked();
+      TearDownSessionUnlocked();
       result.Resolve(OkResult("disconnected"));
     } catch (...) {
       result.Resolve(FailResult("disconnect_exception"));
+    }
+    if (comOwned) {
+      CoUninitialize();
     }
   }).detach();
 #endif
@@ -193,10 +284,15 @@ void KolamWindowsLiveKitRoom::setMicEnabled(
   return;
 #else
   std::thread([enabled, result = std::move(result)]() mutable {
+    HRESULT const comHr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    bool const comOwned = comHr == S_OK || comHr == S_FALSE;
     try {
       std::lock_guard<std::mutex> lock(g_sessionMutex);
       if (!g_session || !g_session->micTrack) {
         result.Resolve(FailResult("not_connected"));
+        if (comOwned) {
+          CoUninitialize();
+        }
         return;
       }
 
@@ -211,6 +307,9 @@ void KolamWindowsLiveKitRoom::setMicEnabled(
       result.Resolve(FailResult(ex.what()));
     } catch (...) {
       result.Resolve(FailResult("mic_exception"));
+    }
+    if (comOwned) {
+      CoUninitialize();
     }
   }).detach();
 #endif
