@@ -4099,6 +4099,16 @@ describe('KolamGlobalChatRail', () => {
         .props.value,
     ).toBe('Baris satu\n\n');
     expect(sendMessage).not.toHaveBeenCalled();
+
+    // Plain Enter after Shift+Enter newlines must send, not keep inserting lines.
+    await ReactTestRenderer.act(async () => {
+      await blankLineInput!.props.onKeyPress({
+        nativeEvent: {key: 'Enter'},
+        preventDefault: jest.fn(),
+      });
+    });
+
+    expect(sendMessage).toHaveBeenCalledWith('Baris satu');
   });
 
   it('shows a DARA thinking bubble after sending a team message that mentions DARA', async () => {

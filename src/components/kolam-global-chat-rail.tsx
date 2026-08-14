@@ -48,7 +48,7 @@ import { showKolamChatDesktopToastFromLive } from '../services/kolam-windows-toa
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { copyTextToClipboard } from '../lib/native-clipboard';
-import { isKolamWindowsShiftKeyDown, consumeKolamWindowsShiftEnterChord } from '../services/native-device-identity';
+import { consumeKolamWindowsShiftEnterChord } from '../services/native-device-identity';
 import type {
   KolamChatAnalytics,
   KolamChatContactDetails,
@@ -291,7 +291,7 @@ type KolamComposerSelection = {
   start: number;
 };
 
-type KolamComposerEnterAction = 'newline' | 'other' | 'shift' | 'submit';
+type KolamComposerEnterAction = 'newline' | 'other' | 'submit';
 
 function clampComposerSelection(
   value: string,
@@ -319,19 +319,19 @@ function insertComposerNewline(
 
 function isComposerNewlineEnter(
   nativeEvent: TextInputKeyPressEventData & KolamComposerKeyModifiers,
-  shiftHeld: boolean,
 ) {
   if (nativeEvent.key !== 'Enter') {
     return false;
   }
 
-  return Boolean(
-    nativeEvent.shiftKey ||
-      nativeEvent.ctrlKey ||
-      nativeEvent.metaKey ||
-      shiftHeld ||
-      isKolamWindowsShiftKeyDown(),
-  );
+  // Do not use sticky JS shiftHeld — Shift keyup often never arrives on RNW,
+  // which made plain Enter keep inserting newlines instead of sending.
+  if (nativeEvent.shiftKey || nativeEvent.ctrlKey || nativeEvent.metaKey) {
+    return true;
+  }
+
+  // One-shot latch from WH_KEYBOARD_LL at physical Shift+Enter key-down.
+  return consumeKolamWindowsShiftEnterChord();
 }
 
 function normalizeComposerText(value: string) {
@@ -348,7 +348,6 @@ function useKolamComposerEnterKey(
 ) {
   const selectionRef = React.useRef<KolamComposerSelection | null>(null);
   const hasSelectionRef = React.useRef(false);
-  const shiftHeldRef = React.useRef(false);
   const skipSubmitRef = React.useRef(false);
   const valueRef = React.useRef(value);
   const pendingNewlineRef = React.useRef<string | null>(null);
@@ -392,6 +391,11 @@ function useKolamComposerEnterKey(
         pendingNewlineRef.current = null;
       }
     }, 300);
+    // onSubmitEditing may not fire for Shift+Enter; don't leave skip stuck
+    // or the next plain Enter (submitEditing-only) will no-op instead of send.
+    setTimeout(() => {
+      skipSubmitRef.current = false;
+    }, 0);
   }, [commitText]);
 
   const handleChangeText = React.useCallback(
@@ -455,40 +459,20 @@ function useKolamComposerEnterKey(
       const nativeEvent = event.nativeEvent as TextInputKeyPressEventData &
         KolamComposerKeyModifiers;
 
-      if (
-        nativeEvent.key === 'Shift' ||
-        nativeEvent.key === 'ShiftLeft' ||
-        nativeEvent.key === 'ShiftRight'
-      ) {
-        shiftHeldRef.current = true;
-        return 'shift';
-      }
-
-      if (
-        nativeEvent.key !== 'Enter' &&
-        nativeEvent.key !== 'Control' &&
-        nativeEvent.key !== 'Meta' &&
-        nativeEvent.key !== 'Alt'
-      ) {
-        if (!nativeEvent.shiftKey && !isKolamWindowsShiftKeyDown()) {
-          shiftHeldRef.current = false;
-        }
+      if (nativeEvent.key !== 'Enter') {
         return 'other';
       }
 
-      if (!isComposerNewlineEnter(nativeEvent, shiftHeldRef.current)) {
-        if (nativeEvent.key !== 'Enter') {
-          return 'other';
-        }
+      if (!isComposerNewlineEnter(nativeEvent)) {
         event.preventDefault();
         skipSubmitRef.current = false;
+        // Drop any stale latch so a later Enter cannot be treated as Shift+Enter.
         consumeKolamWindowsShiftEnterChord();
         return 'submit';
       }
 
       event.preventDefault();
       applyNewline();
-      consumeKolamWindowsShiftEnterChord();
       return 'newline';
     },
     [applyNewline],
@@ -499,7 +483,6 @@ function useKolamComposerEnterKey(
       return false;
     }
     skipSubmitRef.current = false;
-    consumeKolamWindowsShiftEnterChord();
     return true;
   }, []);
 
@@ -507,11 +490,11 @@ function useKolamComposerEnterKey(
     if (skipSubmitRef.current) {
       return true;
     }
-    if (!isKolamWindowsShiftKeyDown() && !shiftHeldRef.current) {
+    // Only the one-shot native chord — never a sticky JS shift flag.
+    if (!consumeKolamWindowsShiftEnterChord()) {
       return false;
     }
     applyNewline();
-    consumeKolamWindowsShiftEnterChord();
     return true;
   }, [applyNewline]);
 
