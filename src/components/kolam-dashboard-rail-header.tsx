@@ -5,6 +5,7 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamDashboardRailAction} from './kolam-dashboard-rail-action';
 import {KolamDashboardRailIconShell} from './kolam-dashboard-rail-icon-shell';
+import {DASHBOARD_SALES_GRAPH_VISUAL} from './kolam-dashboard-sales-graph-visual';
 import {DASHBOARD_RAIL_VISUAL} from './kolam-dashboard-rail-visual';
 import {KolamHeaderFrame} from './kolam-header-frame';
 
@@ -66,8 +67,8 @@ const styles = StyleSheet.create({
   dashboardRailTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: DASHBOARD_RAIL_VISUAL.text.headerTitleFontSize,
-    fontWeight: '800',
+    fontSize: DASHBOARD_SALES_GRAPH_VISUAL.header.titleFontSize,
+    fontWeight: '700',
   },
   dashboardRailTitleDanger: {
     color: V.colors.danger,
