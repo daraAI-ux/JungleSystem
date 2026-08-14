@@ -9,6 +9,7 @@ import {
 } from '../services/kolam-api';
 
 export interface KolamChatRailReadonlyDataState {
+  clearItemUnread: (itemId: string) => number;
   conversations: KolamChatConversation[];
   errorMessage?: string;
   loading: boolean;
@@ -21,19 +22,77 @@ export function useKolamChatRailReadonlyData({
   inboxParams,
   intervalMs = 30_000,
   mode,
+  viewingItemId = null,
 }: {
   inboxParams?: KolamChatConversationListParams;
   intervalMs?: number;
   mode: KolamGlobalChatRailMode;
+  viewingItemId?: string | null;
 }): KolamChatRailReadonlyDataState {
   const mountedRef = useRef(false);
+  const viewingItemIdRef = useRef(viewingItemId);
+  const refreshRef = useRef<() => Promise<void>>(async () => undefined);
+  const clearItemUnreadRef = useRef<(itemId: string) => number>(() => 0);
   const [state, setState] = useState<KolamChatRailReadonlyDataState>({
+    clearItemUnread: itemId => clearItemUnreadRef.current(itemId),
     conversations: [],
     loading: true,
     rooms: [],
-    refresh: async () => undefined,
+    refresh: () => refreshRef.current(),
     totalUnread: 0,
   });
+
+  viewingItemIdRef.current = viewingItemId;
+
+  const clearItemUnread = useCallback(
+    (itemId: string) => {
+      const id = itemId?.trim();
+      if (!id) {
+        return 0;
+      }
+
+      let cleared = 0;
+      setState(current => {
+        if (mode === 'team-chat') {
+          const target = current.rooms.find(room => room._id === id);
+          cleared = Math.max(0, target?.unreadCount ?? 0);
+          if (cleared === 0) {
+            return current;
+          }
+          const rooms = current.rooms.map(room =>
+            room._id === id ? {...room, unreadCount: 0} : room,
+          );
+          return {
+            ...current,
+            rooms,
+            totalUnread: getUnreadTotal(rooms),
+          };
+        }
+
+        const target = current.conversations.find(
+          conversation => conversation._id === id,
+        );
+        cleared = Math.max(0, target?.unreadCount ?? 0);
+        if (cleared === 0) {
+          return current;
+        }
+        const conversations = current.conversations.map(conversation =>
+          conversation._id === id
+            ? {...conversation, unreadCount: 0}
+            : conversation,
+        );
+        return {
+          ...current,
+          conversations,
+          totalUnread: getUnreadTotal(conversations),
+        };
+      });
+      return cleared;
+    },
+    [mode],
+  );
+
+  clearItemUnreadRef.current = clearItemUnread;
 
   const refresh = useCallback(async () => {
     setState(current => ({
@@ -44,36 +103,42 @@ export function useKolamChatRailReadonlyData({
 
     try {
       if (mode === 'team-chat') {
-        const rooms = await getKolamTeamChatRooms();
+        const rooms = applyViewingItemUnreadZero(
+          await getKolamTeamChatRooms(),
+          viewingItemIdRef.current,
+        );
         if (!mountedRef.current) {
           return;
         }
 
-        setState({
+        setState(current => ({
+          ...current,
           conversations: [],
           loading: false,
           rooms,
-          refresh,
           totalUnread: getUnreadTotal(rooms),
-        });
+        }));
         return;
       }
 
-      const conversations = await getKolamChatConversations({
-        limit: 100,
-        ...inboxParams,
-      });
+      const conversations = applyViewingItemUnreadZero(
+        await getKolamChatConversations({
+          limit: 100,
+          ...inboxParams,
+        }),
+        viewingItemIdRef.current,
+      );
       if (!mountedRef.current) {
         return;
       }
 
-      setState({
+      setState(current => ({
+        ...current,
         conversations,
         loading: false,
         rooms: [],
-        refresh,
         totalUnread: getUnreadTotal(conversations),
-      });
+      }));
     } catch (error) {
       if (!mountedRef.current) {
         return;
@@ -86,10 +151,11 @@ export function useKolamChatRailReadonlyData({
           error instanceof Error
             ? error.message
             : 'Data chat belum bisa dibaca.',
-        refresh,
       }));
     }
   }, [inboxParams, mode]);
+
+  refreshRef.current = refresh;
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -109,7 +175,26 @@ export function useKolamChatRailReadonlyData({
     };
   }, [intervalMs, mode, refresh]);
 
-  return state;
+  return {
+    ...state,
+    clearItemUnread,
+    refresh,
+  };
+}
+
+export function applyViewingItemUnreadZero<
+  T extends {_id?: string; unreadCount?: number},
+>(items: T[], viewingItemId?: string | null): T[] {
+  const id = viewingItemId?.trim();
+  if (!id) {
+    return items;
+  }
+
+  return items.map(item =>
+    item._id === id && (item.unreadCount ?? 0) > 0
+      ? {...item, unreadCount: 0}
+      : item,
+  );
 }
 
 function getHasLoadedData(state: KolamChatRailReadonlyDataState) {

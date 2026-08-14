@@ -8,8 +8,8 @@ import {
 } from './use-kolam-chat-live-stream';
 import {useKolamNotificationSoundSettings} from './use-kolam-notification-sound-settings';
 import {
-  getKolamChatUnreadTotal,
-  getKolamTeamChatUnreadTotal,
+  getKolamChatConversations,
+  getKolamTeamChatRooms,
   type KolamNotificationSoundType,
 } from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
@@ -122,6 +122,25 @@ export function useKolamChatNotificationHost({
     [notificationSoundService],
   );
 
+  const applyUnreadDelta = useCallback(
+    (stream: 'inbox' | 'team', delta: number) => {
+      if (!delta) {
+        return;
+      }
+
+      setUnreadCounts(current => {
+        const next: KolamChatUnreadCounts = {
+          ...current,
+          [stream]: Math.max(0, current[stream] + delta),
+        };
+        unreadCountsRef.current = next;
+        previousUnreadRef.current = next;
+        return next;
+      });
+    },
+    [],
+  );
+
   const refreshUnreadCounts = useCallback(async () => {
     if (!enabled) {
       previousUnreadRef.current = null;
@@ -130,9 +149,17 @@ export function useKolamChatNotificationHost({
       return;
     }
 
+    const viewingId = visibleSelectedItemIdRef.current?.trim() || null;
+    const viewingStream = visibleRailModeRef.current;
     const [inboxResult, teamResult] = await Promise.allSettled([
-      getKolamChatUnreadTotal(),
-      getKolamTeamChatUnreadTotal(),
+      sumChatUnreadTotal({
+        excludeItemId: viewingStream === 'inbox' ? viewingId : null,
+        kind: 'inbox',
+      }),
+      sumChatUnreadTotal({
+        excludeItemId: viewingStream === 'team-chat' ? viewingId : null,
+        kind: 'team',
+      }),
     ]);
 
     const current = unreadCountsRef.current;
@@ -234,5 +261,30 @@ export function useKolamChatNotificationHost({
     onEvent: handleLiveEvent,
   });
 
-  return {refreshUnreadCounts, unreadCounts};
+  return {applyUnreadDelta, refreshUnreadCounts, unreadCounts};
+}
+
+async function sumChatUnreadTotal({
+  excludeItemId,
+  kind,
+}: {
+  excludeItemId?: string | null;
+  kind: 'inbox' | 'team';
+}) {
+  const items =
+    kind === 'team'
+      ? await getKolamTeamChatRooms()
+      : await getKolamChatConversations({
+          status: 'open',
+          unreadOnly: true,
+          limit: 100,
+        });
+  const excludeId = excludeItemId?.trim() || null;
+
+  return items.reduce((total, item) => {
+    if (excludeId && item._id === excludeId) {
+      return total;
+    }
+    return total + Math.max(0, item.unreadCount ?? 0);
+  }, 0);
 }

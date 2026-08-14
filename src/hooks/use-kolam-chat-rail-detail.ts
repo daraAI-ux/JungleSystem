@@ -264,7 +264,7 @@ export function useKolamChatRailDetail({
           }
           try {
             await markKolamTeamChatRoomRead(selectedId);
-            if (!quiet && generation === refreshGenerationRef.current) {
+            if (generation === refreshGenerationRef.current) {
               onMarkedRead?.(selectedId);
             }
           } catch {
@@ -292,7 +292,7 @@ export function useKolamChatRailDetail({
         }
         try {
           await markKolamChatConversationRead(selectedId);
-          if (!quiet && generation === refreshGenerationRef.current) {
+          if (generation === refreshGenerationRef.current) {
             onMarkedRead?.(selectedId);
           }
         } catch {

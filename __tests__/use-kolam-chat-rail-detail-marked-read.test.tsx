@@ -120,7 +120,7 @@ describe('useKolamChatRailDetail mark-read invalidate', () => {
     expect(onMarkedRead).toHaveBeenCalledWith('room-1');
   });
 
-  it('skips onMarkedRead during quiet team refresh', async () => {
+  it('notifies onMarkedRead during quiet team refresh so badges can clear', async () => {
     const onMarkedRead = jest.fn();
     let refresh: ((options?: {quiet?: boolean}) => Promise<void>) | null =
       null;
@@ -147,7 +147,7 @@ describe('useKolamChatRailDetail mark-read invalidate', () => {
     });
 
     expect(markTeamReadMock).toHaveBeenCalledWith('room-1');
-    expect(onMarkedRead).not.toHaveBeenCalled();
+    expect(onMarkedRead).toHaveBeenCalledWith('room-1');
   });
 
   it('notifies onMarkedRead after inbox conversation open mark-read', async () => {

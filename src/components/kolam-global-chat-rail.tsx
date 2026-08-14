@@ -888,12 +888,14 @@ function resolveKatakTerbangAvatarImageUrl(stored?: string | null) {
 export function KolamGlobalChatRail({
   initialSelectedId,
   mode,
+  onChatUnreadDelta,
   onChatUnreadInvalidate,
   onClose,
   onSelectedItemIdChange,
 }: {
   initialSelectedId?: string | null;
   mode: KolamGlobalChatRailMode;
+  onChatUnreadDelta?: (stream: 'inbox' | 'team', delta: number) => void;
   onChatUnreadInvalidate?: () => void;
   onClose: () => void;
   onSelectedItemIdChange?: (selectedItemId: string | null) => void;
@@ -928,13 +930,17 @@ export function KolamGlobalChatRail({
     () => buildInboxListParams(inboxFilter),
     [inboxFilter],
   );
-  const data = useKolamChatRailReadonlyData({ inboxParams, mode });
-  const platformHealth = useKolamChatPlatformHealth({
-    enabled: mode === 'inbox',
-  });
   const [selectedItemId, setSelectedItemId] = React.useState<string | null>(
     null,
   );
+  const data = useKolamChatRailReadonlyData({
+    inboxParams,
+    mode,
+    viewingItemId: selectedItemId,
+  });
+  const platformHealth = useKolamChatPlatformHealth({
+    enabled: mode === 'inbox',
+  });
   const [composerText, setComposerText] = React.useState('');
   const [pendingAttachment, setPendingAttachment] =
     React.useState<NativeImagePickerResult | null>(null);
@@ -1032,12 +1038,51 @@ export function KolamGlobalChatRail({
   const inboxCanReply = canSignedInUserReplyCustomerChat(authUser);
   const canCreateRoom = canCreateTeamChatRoom(authUser);
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
-  const handleMarkedRead = React.useCallback(
-    (_itemId: string) => {
-      Promise.resolve(data.refresh()).catch(() => undefined);
-      onChatUnreadInvalidate?.();
+  const unreadInvalidateTimerRef = React.useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const clearUnreadForSelected = React.useCallback(
+    (itemId: string) => {
+      const cleared = data.clearItemUnread(itemId);
+      if (cleared > 0) {
+        onChatUnreadDelta?.(mode === 'team-chat' ? 'team' : 'inbox', -cleared);
+      }
+      if (unreadInvalidateTimerRef.current) {
+        clearTimeout(unreadInvalidateTimerRef.current);
+      }
+      unreadInvalidateTimerRef.current = setTimeout(() => {
+        unreadInvalidateTimerRef.current = null;
+        onChatUnreadInvalidate?.();
+      }, 400);
     },
-    [data.refresh, onChatUnreadInvalidate],
+    [
+      data.clearItemUnread,
+      mode,
+      onChatUnreadDelta,
+      onChatUnreadInvalidate,
+    ],
+  );
+  const handleMarkedRead = React.useCallback(
+    (itemId: string) => {
+      clearUnreadForSelected(itemId);
+    },
+    [clearUnreadForSelected],
+  );
+
+  React.useEffect(() => {
+    if (!selectedItemId) {
+      return;
+    }
+    clearUnreadForSelected(selectedItemId);
+  }, [selectedItemId]); // eslint-disable-line react-hooks/exhaustive-deps -- only on select change
+
+  React.useEffect(
+    () => () => {
+      if (unreadInvalidateTimerRef.current) {
+        clearTimeout(unreadInvalidateTimerRef.current);
+      }
+    },
+    [],
   );
   const detail = useKolamChatRailDetail({
     currentUserId,

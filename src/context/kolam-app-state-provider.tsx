@@ -485,7 +485,7 @@ export function KolamAppStateProvider({
     },
     [handleNavigationDashboardRouteContext],
   );
-  const {refreshUnreadCounts, unreadCounts: chatUnreadCounts} =
+  const {applyUnreadDelta, refreshUnreadCounts, unreadCounts: chatUnreadCounts} =
     useKolamChatNotificationHost({
     currentUserId:
       authUser?.id != null && String(authUser.id).trim()
@@ -498,6 +498,12 @@ export function KolamAppStateProvider({
   const handleChatUnreadInvalidate = React.useCallback(() => {
     Promise.resolve(refreshUnreadCounts()).catch(() => undefined);
   }, [refreshUnreadCounts]);
+  const handleChatUnreadDelta = React.useCallback(
+    (stream: 'inbox' | 'team', delta: number) => {
+      applyUnreadDelta(stream, delta);
+    },
+    [applyUnreadDelta],
+  );
   const handleToastActivation = React.useCallback(
     (activation: {stream: 'inbox' | 'team-chat'; targetId: string}) => {
       const targetId = String(activation.targetId || '').trim();
@@ -736,6 +742,7 @@ export function KolamAppStateProvider({
         <KolamGlobalChatRail
           initialSelectedId={chatRailInitialSelectedId}
           mode={activeChatRail}
+          onChatUnreadDelta={handleChatUnreadDelta}
           onChatUnreadInvalidate={handleChatUnreadInvalidate}
           onClose={handleChatRailClose}
           onSelectedItemIdChange={handleChatRailSelectedItemIdChange}
@@ -746,6 +753,7 @@ export function KolamAppStateProvider({
       chatRailInitialSelectedId,
       handleChatRailClose,
       handleChatRailSelectedItemIdChange,
+      handleChatUnreadDelta,
       handleChatUnreadInvalidate,
     ],
   );
