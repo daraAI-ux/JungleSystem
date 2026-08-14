@@ -1,6 +1,8 @@
 import {
   canManageKolamTeamChatCall,
   canMuteKolamTeamChatCallParticipants,
+  formatKolamTeamChatCallHandoverNotice,
+  formatKolamTeamChatCallOnlineLabel,
   getKolamTeamChatCallParticipantUserId,
   isKolamTeamChatCallParticipantMuted,
   isKolamTeamChatCallRingingForMe,
@@ -112,5 +114,29 @@ describe('kolam-team-chat-call domain', () => {
         userId: 'host-1',
       }),
     ).toBe(true);
+  });
+
+  it('formats onlineInCall strip label and handover notice', () => {
+    expect(
+      formatKolamTeamChatCallOnlineLabel({
+        _id: 'c-1',
+        onlineInCall: 4,
+        participantCount: 9,
+        status: 'active',
+      }),
+    ).toBe('Call · 4 online');
+    expect(
+      formatKolamTeamChatCallOnlineLabel(
+        {
+          _id: 'c-1',
+          onlineInCall: 1,
+          status: 'ringing',
+        },
+        {countdownSeconds: 12},
+      ),
+    ).toBe('Call · 1 online · 12s');
+    expect(formatKolamTeamChatCallHandoverNotice('abcdefghijklmnop')).toBe(
+      'Handover token: abcdefghijkl…',
+    );
   });
 });

@@ -5254,6 +5254,7 @@ describe('KolamGlobalChatRail', () => {
       activeCall: {
         _id: 'call-1',
         isHost: true,
+        onlineInCall: 2,
         participantCount: 3,
         participants: [
           {
@@ -5327,11 +5328,11 @@ describe('KolamGlobalChatRail', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Call aktif',
-        '3 peserta',
-        'End',
-        'Raise',
-        'Handover',
+        'Call · 2 online',
+        'Tutup call',
+        'Raise hand',
+        'Panggil ulang (1)',
+        'Handover Android',
         'Maya',
         'Mute',
         'Bima',

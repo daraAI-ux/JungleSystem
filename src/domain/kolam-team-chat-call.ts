@@ -167,3 +167,37 @@ export function pickPrimaryKolamTeamChatCall(
     null
   );
 }
+
+/** SoT room strip: `Call · {onlineInCall} online` (+ optional ring countdown). */
+export function formatKolamTeamChatCallOnlineLabel(
+  call: KolamTeamChatCall | null | undefined,
+  options?: {countdownSeconds?: number},
+): string {
+  if (!call || call.status === 'ended') {
+    return 'Call';
+  }
+
+  const online =
+    typeof call.onlineInCall === 'number'
+      ? call.onlineInCall
+      : typeof call.participantCount === 'number'
+        ? call.participantCount
+        : call.participants?.filter(participant => participant.status === 'joined')
+            .length ?? 0;
+
+  const countdown = options?.countdownSeconds ?? 0;
+  if (countdown > 0) {
+    return `Call · ${online} online · ${countdown}s`;
+  }
+
+  return `Call · ${online} online`;
+}
+
+export function formatKolamTeamChatCallHandoverNotice(token: string): string {
+  const trimmed = token.trim();
+  if (!trimmed) {
+    return 'Handover siap';
+  }
+
+  return `Handover token: ${trimmed.slice(0, 12)}…`;
+}

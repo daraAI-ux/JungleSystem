@@ -88,8 +88,10 @@ export function KolamTeamChatGroupCallGateHost() {
             >
               <View style={styles.pillDot} />
               <Text numberOfLines={1} style={styles.pillText}>
-                Call group aktif · {gate.online} online
-                {gate.countdown > 0 ? ` · ${gate.countdown}s` : ''}
+                Call · {gate.online} online
+                {gate.liveCall.status === 'ringing' && gate.countdown > 0
+                  ? ` · ${gate.countdown}s`
+                  : ''}
               </Text>
             </KolamPressable>
             {gate.canEnd ? (

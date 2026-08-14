@@ -51,9 +51,11 @@ import { resolveKolamTeamChatBotAvatarRawUrl } from '../domain/kolam-team-chat-b
 import {
   canManageKolamTeamChatCall,
   canMuteKolamTeamChatCallParticipants,
+  formatKolamTeamChatCallOnlineLabel,
   getKolamTeamChatCallParticipantUserId,
   isKolamTeamChatCallParticipantMuted,
   isKolamTeamChatCallRingingForMe,
+  secondsUntilKolamTeamChatCallRing,
 } from '../domain/kolam-team-chat-call';
 import { isSettingsAdminRoleKey } from '../domain/settings-surface';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -7829,12 +7831,23 @@ function KolamChatCallStrip({
   detail: ReturnType<typeof useKolamChatRailDetail>;
 }) {
   const { authUser } = useKolamAuthContext();
+  const [, setCallTick] = React.useState(0);
+
+  const activeCall = detail.activeCall;
+  React.useEffect(() => {
+    if (!activeCall || activeCall.status === 'ended') {
+      return;
+    }
+
+    const timer = setInterval(() => setCallTick(tick => tick + 1), 1000);
+    (timer as {unref?: () => void}).unref?.();
+    return () => clearInterval(timer);
+  }, [activeCall?._id, activeCall?.status]);
 
   if (!detail.callConfig.enabled) {
     return null;
   }
 
-  const activeCall = detail.activeCall;
   const isRoomAdmin = isSettingsAdminRoleKey(authUser?.roleKey);
   const canManage = canManageKolamTeamChatCall({
     call: activeCall,
@@ -7851,19 +7864,19 @@ function KolamChatCallStrip({
     activeCall,
     currentUserId,
   );
+  const countdown = activeCall?.ringExpiresAt
+    ? secondsUntilKolamTeamChatCallRing(activeCall.ringExpiresAt)
+    : 0;
   const primaryLabel = detail.callBusy
     ? 'Memproses...'
     : activeCall
-    ? getCallStatusLabel(activeCall.status)
+    ? formatKolamTeamChatCallOnlineLabel(activeCall, {
+        countdownSeconds: countdown,
+      })
     : null;
-  const secondaryLabel = activeCall
-    ? `${
-        activeCall.participantCount ?? activeCall.participants?.length ?? 0
-      } peserta`
-    : null;
-  const showCallCopy = Boolean(
-    primaryLabel || detail.callErrorMessage || secondaryLabel,
-  );
+  const metaLabel =
+    detail.callErrorMessage || detail.callNoticeMessage || null;
+  const showCallCopy = Boolean(primaryLabel || metaLabel);
   const myParticipant = activeCall?.participants?.find(
     participant => getCallParticipantUserId(participant) === currentUserId,
   );
@@ -7891,9 +7904,9 @@ function KolamChatCallStrip({
             {primaryLabel ? (
               <Text style={styles.callTitle}>{primaryLabel}</Text>
             ) : null}
-            {detail.callErrorMessage || secondaryLabel ? (
+            {metaLabel ? (
               <Text numberOfLines={1} style={styles.callMeta}>
-                {detail.callErrorMessage || secondaryLabel}
+                {metaLabel}
               </Text>
             ) : null}
           </View>
@@ -7911,7 +7924,7 @@ function KolamChatCallStrip({
                     detail.callBusy && styles.callButtonDisabled,
                   ]}
                 >
-                  <Text style={styles.callButtonText}>Join</Text>
+                  <Text style={styles.callButtonText}>Gabung</Text>
                 </KolamPressable>
               ) : null}
               {ringingForMe ? (
@@ -7939,7 +7952,7 @@ function KolamChatCallStrip({
                     detail.callBusy && styles.callButtonDisabled,
                   ]}
                 >
-                  <Text style={styles.callButtonText}>End</Text>
+                  <Text style={styles.callButtonText}>Tutup call</Text>
                 </KolamPressable>
               ) : null}
             </>
@@ -7960,7 +7973,7 @@ function KolamChatCallStrip({
               ]}
             >
               <Text style={styles.callButtonGhostText}>
-                {handRaised ? 'Turunkan' : 'Raise'}
+                {handRaised ? 'Turunkan tangan' : 'Raise hand'}
               </Text>
             </KolamPressable>
           ) : null}
@@ -7976,7 +7989,7 @@ function KolamChatCallStrip({
               ]}
             >
               <Text style={styles.callButtonGhostText}>
-                Ulang {noAnswerCount}
+                {`Panggil ulang (${noAnswerCount})`}
               </Text>
             </KolamPressable>
           ) : null}
@@ -7991,7 +8004,7 @@ function KolamChatCallStrip({
                 detail.callBusy && styles.callButtonDisabled,
               ]}
             >
-              <Text style={styles.callButtonGhostText}>Handover</Text>
+              <Text style={styles.callButtonGhostText}>Handover Android</Text>
             </KolamPressable>
           ) : null}
         </View>
@@ -9772,19 +9785,6 @@ function formatTeamChatPresence(presence: KolamTeamChatPresence) {
   ].filter(Boolean);
 
   return parts.join(' · ');
-}
-
-function getCallStatusLabel(status: string) {
-  switch (status) {
-    case 'active':
-      return 'Call aktif';
-    case 'ringing':
-      return 'Call berdering';
-    case 'ended':
-      return 'Call selesai';
-    default:
-      return 'Call';
-  }
 }
 
 function getCallParticipantUserId(participant: KolamTeamChatCallParticipant) {

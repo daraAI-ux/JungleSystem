@@ -63,7 +63,11 @@ import {
 } from '../domain/kolam-inbox-dara-display';
 import type { KolamChatCatalogCardContent } from '../domain/kolam-chat-catalog-card';
 import { resolveKolamTeamChatBotDisplayName } from '../domain/kolam-team-chat-bot-display';
-import { getKolamTeamChatCallParticipantUserId } from '../domain/kolam-team-chat-call';
+import {
+  formatKolamTeamChatCallHandoverNotice,
+  getKolamTeamChatCallParticipantUserId,
+} from '../domain/kolam-team-chat-call';
+import { copyTextToClipboard } from '../lib/native-clipboard';
 
 const EMPTY_TEAM_CHAT_PRESENCE: KolamTeamChatPresence = {
   onlineCount: 0,
@@ -131,6 +135,7 @@ export interface KolamChatRailDetailState {
   callBusy: boolean;
   callConfig: KolamTeamChatCallConfig;
   callErrorMessage?: string;
+  callNoticeMessage?: string;
   conversation: KolamChatConversation | null;
   declineCall: () => Promise<void>;
   endCall: () => Promise<void>;
@@ -215,6 +220,9 @@ export function useKolamChatRailDetail({
     enabled: false,
   });
   const [callErrorMessage, setCallErrorMessage] = useState<
+    string | undefined
+  >();
+  const [callNoticeMessage, setCallNoticeMessage] = useState<
     string | undefined
   >();
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
@@ -352,6 +360,7 @@ export function useKolamChatRailDetail({
       setActiveCall(null);
       setCallConfig({ enabled: false });
       setCallErrorMessage(undefined);
+      setCallNoticeMessage(undefined);
       return;
     }
 
@@ -362,6 +371,7 @@ export function useKolamChatRailDetail({
       setCallConfig(config);
       if (!config.enabled) {
         setActiveCall(null);
+        setCallNoticeMessage(undefined);
         return;
       }
 
@@ -1004,6 +1014,7 @@ export function useKolamChatRailDetail({
 
       setCallBusy(true);
       setCallErrorMessage(undefined);
+      setCallNoticeMessage(undefined);
 
       try {
         const call = await action();
@@ -1075,15 +1086,33 @@ export function useKolamChatRailDetail({
   }, [activeCall, currentUserId, runCallAction]);
 
   const handoverCall = useCallback(async () => {
-    if (!activeCall) {
+    if (!activeCall || mode !== 'team-chat' || !selectedId || callBusy) {
       return;
     }
 
-    await runCallAction(async () => {
+    setCallBusy(true);
+    setCallErrorMessage(undefined);
+    setCallNoticeMessage(undefined);
+
+    try {
       const result = await handoverKolamTeamChatCall(activeCall._id, 'android');
-      return result.call;
-    });
-  }, [activeCall, runCallAction]);
+      setActiveCall(
+        result.call.status === 'ended' ? null : result.call,
+      );
+      if (result.handoverToken) {
+        await copyTextToClipboard(result.handoverToken).catch(() => undefined);
+        setCallNoticeMessage(
+          formatKolamTeamChatCallHandoverNotice(result.handoverToken),
+        );
+      }
+    } catch (error) {
+      setCallErrorMessage(
+        error instanceof Error ? error.message : 'Aksi call gagal diproses.',
+      );
+    } finally {
+      setCallBusy(false);
+    }
+  }, [activeCall, callBusy, mode, selectedId]);
 
   const muteCallParticipant = useCallback(
     async (userId: string) => {
@@ -1117,6 +1146,7 @@ export function useKolamChatRailDetail({
     callBusy,
     callConfig,
     callErrorMessage,
+    callNoticeMessage,
     conversation,
     clearTeamMessageSearch,
     declineCall,
