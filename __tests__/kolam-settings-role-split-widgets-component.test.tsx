@@ -12,7 +12,6 @@ import {
   getSettingsRoleMemberPreview,
   getSettingsRolePermissionMatrixGroups,
   getSettingsRolePermissionPreviewRows,
-  getSettingsRoleResourceGroups,
 } from '../src/domain/settings-surface';
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
@@ -59,7 +58,6 @@ describe('settings role split widgets', () => {
             memberPreview={memberPreview}
             permissionRows={getSettingsRolePermissionPreviewRows()}
             permissionMatrixGroups={permissionMatrixGroups}
-            resourceGroups={getSettingsRoleResourceGroups()}
           />
           <KolamSettingsRolePermissionMatrix groups={permissionMatrixGroups} />
           <KolamSettingsRoleMemberPreview preview={memberPreview} />

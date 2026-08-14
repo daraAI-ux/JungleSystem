@@ -8,7 +8,6 @@ import type {
   SettingsRoleMemberPreview,
   SettingsRolePermissionMatrixGroup,
   SettingsRolePermissionPreviewRow,
-  SettingsRoleResourceGroup,
   SettingsRoleTabItem,
 } from '../domain/settings-surface';
 import { KolamCardFrame } from './kolam-card-frame';
@@ -30,7 +29,6 @@ export function KolamSettingsRoleManagementSurface({
   roleMemberPreview,
   rolePermissionMatrixGroups,
   rolePermissionPreviewRows,
-  roleResourceGroups,
   roleRows,
   roleTabItems,
   selectedRole,
@@ -55,7 +53,6 @@ export function KolamSettingsRoleManagementSurface({
   roleMemberPreview: SettingsRoleMemberPreview;
   rolePermissionMatrixGroups: SettingsRolePermissionMatrixGroup[];
   rolePermissionPreviewRows: SettingsRolePermissionPreviewRow[];
-  roleResourceGroups: SettingsRoleResourceGroup[];
   roleRows: SettingsRoleAccessRow[];
   roleTabItems: SettingsRoleTabItem[];
   selectedRole?: SettingsRoleAccessRow;
@@ -130,7 +127,6 @@ export function KolamSettingsRoleManagementSurface({
           memberPreview={roleMemberPreview}
           permissionRows={rolePermissionPreviewRows}
           permissionMatrixGroups={rolePermissionMatrixGroups}
-          resourceGroups={roleResourceGroups}
           onAction={onAction}
           onTogglePermissionAction={onTogglePermissionAction}
         />

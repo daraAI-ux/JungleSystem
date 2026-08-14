@@ -5,12 +5,10 @@ import type {
   SettingsRoleMemberPreview,
   SettingsRolePermissionMatrixGroup,
   SettingsRolePermissionPreviewRow,
-  SettingsRoleResourceGroup,
 } from '../domain/settings-surface';
 import {KolamListFrame} from './kolam-list-frame';
 import {KolamSettingsRoleEditorHeader} from './kolam-settings-role-editor-header';
 import {KolamSettingsRoleEditorPermissionPreviewList} from './kolam-settings-role-editor-permission-preview-list';
-import {KolamSettingsRoleEditorResourceSummaryList} from './kolam-settings-role-editor-resource-summary-list';
 import {KolamSettingsRoleMemberPreview} from './kolam-settings-role-member-preview';
 import {KolamSettingsRolePermissionMatrix} from './kolam-settings-role-permission-matrix';
 
@@ -20,7 +18,6 @@ export function KolamSettingsRoleEditorToolbar({
   memberPreview,
   permissionRows,
   permissionMatrixGroups,
-  resourceGroups,
   onAction = noopRoleEditorAction,
   onTogglePermissionAction,
 }: {
@@ -29,7 +26,6 @@ export function KolamSettingsRoleEditorToolbar({
   memberPreview: SettingsRoleMemberPreview;
   permissionRows: SettingsRolePermissionPreviewRow[];
   permissionMatrixGroups: SettingsRolePermissionMatrixGroup[];
-  resourceGroups: SettingsRoleResourceGroup[];
   onAction?: (actionId: SettingsRoleEditorActionId) => void;
   onTogglePermissionAction?: (resource: string, action: string) => void;
 }) {
@@ -46,9 +42,6 @@ export function KolamSettingsRoleEditorToolbar({
         onTogglePermissionAction={onTogglePermissionAction}
       />
       <KolamSettingsRoleEditorPermissionPreviewList rows={permissionRows} />
-      <KolamSettingsRoleEditorResourceSummaryList
-        resourceGroups={resourceGroups}
-      />
     </KolamListFrame>
   );
 }

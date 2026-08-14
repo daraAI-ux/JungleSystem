@@ -352,7 +352,6 @@ export function KolamSettingsSurfaceBody({
         roleMemberPreview={controller.roleMemberPreview}
         rolePermissionMatrixGroups={controller.rolePermissionMatrixGroups}
         rolePermissionPreviewRows={controller.rolePermissionPreviewRows}
-        roleResourceGroups={controller.roleResourceGroups}
         roleRows={controller.roleRows}
         roleTabItems={controller.roleTabItems}
         draft={controller.roleDraft}

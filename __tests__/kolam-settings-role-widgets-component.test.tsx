@@ -13,7 +13,6 @@ import {
   getSettingsRoleMemberPreview,
   getSettingsRolePermissionMatrixGroups,
   getSettingsRolePermissionPreviewRows,
-  getSettingsRoleResourceGroups,
   getSettingsRoleTabItems,
 } from '../src/domain/settings-surface';
 
@@ -59,7 +58,6 @@ describe('settings role widgets', () => {
               selectedRole.id,
               selectedRole.defaultRole,
             )}
-            resourceGroups={getSettingsRoleResourceGroups()}
           />
         </View>,
       );
