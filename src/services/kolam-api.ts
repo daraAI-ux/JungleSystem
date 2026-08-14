@@ -740,6 +740,7 @@ export interface KolamChatMessageContent {
     stock?: number;
     imageUrl?: string;
     detailHref?: string;
+    variantId?: string;
     marketplace?: {
       platform?: 'shopee' | 'tokopedia';
       productId?: string;
@@ -2483,6 +2484,30 @@ export async function sendKolamChatTextMessage(
       content: {
         type: 'text',
         text,
+      },
+      ...(options.replyToMessageId
+        ? {replyToMessageId: options.replyToMessageId}
+        : {}),
+    },
+  );
+
+  return response.data;
+}
+
+export async function sendKolamChatCatalogCardMessage(
+  conversationId: string,
+  content: {
+    type: 'product_card' | 'species_card';
+    card: NonNullable<KolamChatMessageContent['card']>;
+  },
+  options: KolamChatSendMessageOptions = {},
+): Promise<KolamChatMessage> {
+  const response = await kolamPost<DataResponse<KolamChatMessage>>(
+    `/chat/conversations/${encodeURIComponent(conversationId)}/messages`,
+    {
+      content: {
+        type: content.type,
+        card: content.card,
       },
       ...(options.replyToMessageId
         ? {replyToMessageId: options.replyToMessageId}

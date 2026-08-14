@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KolamGlobalChatRailMode } from '../components/kolam-global-chat-rail';
 import {
   attachKolamChatMarketplaceProduct,
+  sendKolamChatCatalogCardMessage,
   assignKolamChatConversation,
   declineKolamTeamChatCall,
   endKolamTeamChatCall,
@@ -24,6 +25,7 @@ import {
   raiseKolamTeamChatCallHand,
   redialKolamTeamChatCall,
   searchKolamTeamChatMessages,
+  sendKolamChatCatalogCardMessage,
   sendKolamChatImageMessage,
   sendKolamChatTextMessage,
   sendKolamTeamChatMessage,
@@ -60,6 +62,7 @@ import {
   isKolamInboxAiMessage,
   resolveKolamInboxMessageAuthor,
 } from '../domain/kolam-inbox-dara-display';
+import type { KolamChatCatalogCardContent } from '../domain/kolam-chat-catalog-card';
 import { resolveKolamTeamChatBotDisplayName } from '../domain/kolam-team-chat-bot-display';
 
 const EMPTY_TEAM_CHAT_PRESENCE: KolamTeamChatPresence = {
@@ -172,6 +175,7 @@ export interface KolamChatRailDetailState {
   sendMarketplaceProduct: (
     item: KolamChatMarketplaceListingHit,
   ) => Promise<void>;
+  sendCatalogCard: (content: KolamChatCatalogCardContent) => Promise<void>;
   setInboxLabels: (labelIds: string[]) => Promise<void>;
   signalTyping: (typing: boolean) => void;
   sending: boolean;
@@ -613,6 +617,53 @@ export function useKolamChatRailDetail({
           error instanceof Error
             ? error.message
             : 'Produk marketplace gagal dikirim.',
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [conversation, mode, selectedId, sending],
+  );
+
+  const sendCatalogCard = useCallback(
+    async (content: KolamChatCatalogCardContent) => {
+      if (!selectedId || mode !== 'inbox' || sending) {
+        return;
+      }
+
+      const tempId = `temp_catalog_${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      const optimistic = buildOptimisticCatalogCardMessage(content, tempId);
+
+      setSending(true);
+      setErrorMessage(undefined);
+      setMessages(current => [...current, optimistic]);
+
+      try {
+        const message = await sendKolamChatCatalogCardMessage(
+          selectedId,
+          content,
+        );
+        setMessages(current =>
+          current.map(existing =>
+            existing.id === tempId
+              ? mapInboxMessage(
+                  message,
+                  getInboxBuyerDisplayName(conversation),
+                  getInboxBuyerAvatarUrl(conversation),
+                )
+              : existing,
+          ),
+        );
+      } catch (error) {
+        setMessages(current =>
+          current.filter(existing => existing.id !== tempId),
+        );
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : 'Kartu katalog gagal dikirim.',
         );
       } finally {
         setSending(false);
@@ -1073,6 +1124,7 @@ export function useKolamChatRailDetail({
     sendInboxImage,
     sendMessage,
     sendMarketplaceProduct,
+    sendCatalogCard,
     setInboxLabels,
     signalTyping,
     sending,
@@ -1299,6 +1351,38 @@ function buildOptimisticMarketplaceMessage(
           sku: item.sku ?? undefined,
         },
       },
+    },
+    daraMeta: null,
+    editedAt: null,
+    editedByName: null,
+    embeds: [],
+    id: tempId,
+    linkPreviews: [],
+    mine: true,
+    reactions: [],
+    replyContent: null,
+    replyPreview: null,
+    sentAt: now,
+    status: 'pending',
+  };
+}
+
+function buildOptimisticCatalogCardMessage(
+  content: KolamChatCatalogCardContent,
+  tempId: string,
+): KolamChatRailDetailMessage {
+  const label = content.type === 'species_card' ? 'Livestock' : 'Produk';
+  const name = content.card.name || label;
+  const now = new Date().toISOString();
+
+  return {
+    attachments: [],
+    author: 'Anda',
+    body: `[${label}] ${name}`,
+    content: {
+      type: content.type,
+      text: `[${label}] ${name}`,
+      card: content.card,
     },
     daraMeta: null,
     editedAt: null,

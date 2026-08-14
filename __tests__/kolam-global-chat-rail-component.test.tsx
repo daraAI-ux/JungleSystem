@@ -33,6 +33,14 @@ import {
   searchKolamChatMarketplaceListings,
   updateKolamChatLabel,
 } from '../src/services/kolam-api';
+import {
+  getKolamProductDetail,
+  getKolamProducts,
+} from '../src/services/kolam-product-api';
+import {
+  getKolamSpecies,
+  getKolamSpeciesList,
+} from '../src/services/kolam-species-api';
 import {createKolamNotificationSoundService} from '../src/services/kolam-notification-sound-service';
 import {
   pickNativeAssetFile,
@@ -110,6 +118,16 @@ jest.mock('../src/services/kolam-api', () => {
     updateKolamChatLabel: jest.fn(),
   };
 });
+
+jest.mock('../src/services/kolam-product-api', () => ({
+  getKolamProducts: jest.fn(),
+  getKolamProductDetail: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-species-api', () => ({
+  getKolamSpeciesList: jest.fn(),
+  getKolamSpecies: jest.fn(),
+}));
 
 jest.mock('../src/services/kolam-notification-sound-service', () => ({
   createKolamNotificationSoundService: jest.fn(() => ({
@@ -209,6 +227,18 @@ const searchMarketplaceListingsMock =
   searchKolamChatMarketplaceListings as jest.MockedFunction<
     typeof searchKolamChatMarketplaceListings
   >;
+const getKolamProductsMock = getKolamProducts as jest.MockedFunction<
+  typeof getKolamProducts
+>;
+const getKolamProductDetailMock = getKolamProductDetail as jest.MockedFunction<
+  typeof getKolamProductDetail
+>;
+const getKolamSpeciesListMock = getKolamSpeciesList as jest.MockedFunction<
+  typeof getKolamSpeciesList
+>;
+const getKolamSpeciesMock = getKolamSpecies as jest.MockedFunction<
+  typeof getKolamSpecies
+>;
 const createSoundServiceMock =
   createKolamNotificationSoundService as jest.MockedFunction<
     typeof createKolamNotificationSoundService
@@ -271,6 +301,7 @@ function getDefaultDetailMock() {
     sendInboxImage: jest.fn(),
     sendMessage: jest.fn(),
     sendMarketplaceProduct: jest.fn(),
+    sendCatalogCard: jest.fn(),
     setInboxLabels: jest.fn(),
     signalTyping: jest.fn(),
     sending: false,
@@ -320,6 +351,10 @@ describe('KolamGlobalChatRail', () => {
     getChatLabelsMock.mockClear();
     getChatTemplatesMock.mockClear();
     searchMarketplaceListingsMock.mockClear();
+    getKolamProductsMock.mockClear();
+    getKolamProductDetailMock.mockClear();
+    getKolamSpeciesListMock.mockClear();
+    getKolamSpeciesMock.mockClear();
     getWebSettingMock.mockClear();
     fetchShippingStatsMock.mockClear();
     getChatAnalyticsMock.mockResolvedValue({
@@ -349,6 +384,14 @@ describe('KolamGlobalChatRail', () => {
     searchMarketplaceListingsMock.mockResolvedValue({
       items: [],
       platform: 'tokopedia',
+    });
+    getKolamProductsMock.mockResolvedValue({
+      data: [],
+      pagination: {page: 1, limit: 15, total: 0, totalPages: 0},
+    });
+    getKolamSpeciesListMock.mockResolvedValue({
+      data: [],
+      pagination: {page: 1, limit: 15, total: 0, totalPages: 0},
     });
     getWebSettingMock.mockResolvedValue({
       daraAvatarUrl: '/media/dara/avatar.png',
@@ -2325,6 +2368,7 @@ describe('KolamGlobalChatRail', () => {
     expect(labels).toEqual(
       expect.arrayContaining([
         'Lampirkan gambar inbox',
+        'Lampirkan produk',
         'Buka emoji chat',
         'Buka template chat',
         'Aksi pesan Buyer',
@@ -2336,6 +2380,117 @@ describe('KolamGlobalChatRail', () => {
         'Buka produk Tokopedia',
       ]),
     );
+  });
+
+  it('loads store catalog products and sends the selected card through the detail hook', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer | null = null;
+
+    try {
+      const product = {
+        id: 'prod-1',
+        name: 'Nemo Clownfish',
+        priceToSell: 85000,
+        onlinePrice: 0,
+        stock: 4,
+        hasVariants: false,
+        variants: [],
+        photoUris: ['https://cdn.example/nemo.jpg'],
+        thumbnailUri: 'https://cdn.example/nemo.jpg',
+      };
+      const sendCatalogCard = jest.fn().mockResolvedValue(undefined);
+      getKolamProductsMock.mockResolvedValue({
+        data: [product],
+        pagination: {page: 1, limit: 15, total: 1, totalPages: 1},
+      });
+      useReadonlyDataMock.mockReturnValue({
+        conversations: [
+          {
+            _id: 'conv-store',
+            platform: 'store',
+            contactId: {displayName: 'Buyer Store'},
+            lastMessagePreview: 'Mau Nemo',
+            unreadCount: 0,
+          },
+        ],
+        loading: false,
+        refresh: jest.fn(),
+        rooms: [],
+        totalUnread: 0,
+      });
+      useDetailMock.mockReturnValue({
+        ...getDefaultDetailMock(),
+        conversation: {
+          _id: 'conv-store',
+          assignedStaffId: {_id: 'staff-1', first_name: 'Staff'},
+          isAiHandled: false,
+          platform: 'store',
+          status: 'open',
+        },
+        loading: false,
+        messages: [],
+        sendCatalogCard,
+        sending: false,
+      });
+
+      await ReactTestRenderer.act(async () => {
+        renderer = ReactTestRenderer.create(
+          <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+        );
+      });
+
+      const selectButton = renderer!.root
+        .findAllByType(KolamPressable)
+        .find(
+          node =>
+            node.props.accessibilityLabel === 'Pilih conversation Buyer Store',
+        );
+      expect(selectButton).toBeTruthy();
+      await ReactTestRenderer.act(async () => {
+        selectButton!.props.onPress();
+      });
+
+      const catalogButton = renderer!.root
+        .findAllByType(KolamPressable)
+        .find(node => node.props.accessibilityLabel === 'Lampirkan produk');
+      expect(catalogButton).toBeTruthy();
+
+      await ReactTestRenderer.act(async () => {
+        catalogButton!.props.onPress();
+      });
+      await ReactTestRenderer.act(async () => {
+        await new Promise<void>(resolve => setTimeout(resolve, 350));
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(getKolamProductsMock).toHaveBeenCalled();
+      const productRow = renderer!.root
+        .findAllByType(KolamPressable)
+        .find(
+          node => node.props.accessibilityLabel === 'Pilih Nemo Clownfish',
+        );
+      expect(productRow).toBeTruthy();
+      await ReactTestRenderer.act(async () => {
+        productRow!.props.onPress();
+      });
+
+      expect(sendCatalogCard).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'product_card',
+          card: expect.objectContaining({
+            entityId: 'prod-1',
+            entityType: 'product',
+            name: 'Nemo Clownfish',
+          }),
+        }),
+      );
+    } finally {
+      if (renderer) {
+        await ReactTestRenderer.act(async () => {
+          renderer!.unmount();
+        });
+      }
+    }
   });
 
   it('loads only mapped marketplace listings for Tokopedia and sends the selected card through the detail hook', async () => {

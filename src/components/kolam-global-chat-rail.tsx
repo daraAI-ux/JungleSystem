@@ -26,6 +26,18 @@ import { KOLAM_TIKTOK_LOGO_SVG } from '../assets/marketplace/tiktok-logo-svg';
 import { KOLAM_WEBSTORE_LOGO_SVG } from '../assets/marketplace/web-logo-svg';
 import { tryClaimKolamChatLiveAlert } from '../domain/kolam-chat-desktop-toast';
 import {
+  buildKolamChatCatalogCardFromProduct,
+  buildKolamChatCatalogCardFromSpecies,
+  effectiveKolamCatalogStock,
+  formatKolamCatalogPriceLabel,
+  formatKolamCatalogRupiah,
+  hasKolamCatalogVariants,
+  pickKolamCatalogPrice,
+  type KolamChatCatalogCardContent,
+  variantKolamCatalogDisplayName,
+  variantKolamCatalogPriceRange,
+} from '../domain/kolam-chat-catalog-card';
+import {
   classifyKolamChatLiveEvent,
   getKolamChatLiveEventTargetId,
 } from '../domain/kolam-chat-live-classifier';
@@ -97,6 +109,19 @@ import {
 import { createKolamNotificationSoundService } from '../services/kolam-notification-sound-service';
 import { createKolamRuntimeNotificationSoundAdapter } from '../services/kolam-notification-sound-runtime';
 import { fetchKolamShippingDeliveryStats } from '../services/kolam-dara-shipping-copilot-api';
+import {
+  getKolamProductDetail,
+  getKolamProducts,
+} from '../services/kolam-product-api';
+import {
+  getKolamSpecies,
+  getKolamSpeciesList,
+} from '../services/kolam-species-api';
+import type { KolamProduct, KolamProductVariant } from '../domain/kolam-product';
+import type {
+  KolamSpecies,
+  KolamSpeciesVariantMedia,
+} from '../domain/kolam-species';
 import {
   pickNativeAssetFile,
   pickNativeImageFile,
@@ -277,6 +302,12 @@ interface KolamChatRailMarketplacePickerState {
   items: KolamChatMarketplaceListingHit[];
   loading: boolean;
 }
+
+type KolamChatCatalogPickerTab = 'product' | 'species';
+
+type KolamChatCatalogPickerParent =
+  | {kind: 'product'; raw: KolamProduct}
+  | {kind: 'species'; raw: KolamSpecies};
 
 interface KolamChatRailContactDetailsState {
   data: KolamChatContactDetails | null;
@@ -4381,6 +4412,7 @@ function KolamChatRailDetailPanel({
   const [templatePickerOpen, setTemplatePickerOpen] = React.useState(false);
   const [marketplacePickerOpen, setMarketplacePickerOpen] =
     React.useState(false);
+  const [catalogPickerOpen, setCatalogPickerOpen] = React.useState(false);
   const [emojiPickerOpen, setEmojiPickerOpen] = React.useState(false);
   const [templateSearch, setTemplateSearch] = React.useState('');
   const [marketplaceSearch, setMarketplaceSearch] = React.useState('');
@@ -4435,6 +4467,8 @@ function KolamChatRailDetailPanel({
   const marketplaceAttachLabel = marketplaceAttachPlatform
     ? formatMarketplaceComposerToolLabel(marketplaceAttachPlatform)
     : '';
+  const storeCatalogAttachEnabled =
+    mode === 'inbox' && detail.conversation?.platform === 'store';
   const attachmentLabel = pendingAttachment
     ? getPendingChatAttachmentLabel(pendingAttachment)
     : '';
@@ -4476,6 +4510,7 @@ function KolamChatRailDetailPanel({
   React.useEffect(() => {
     setTemplatePickerOpen(false);
     setMarketplacePickerOpen(false);
+    setCatalogPickerOpen(false);
     setEmojiPickerOpen(false);
     setTemplateSearch('');
     setMarketplaceSearch('');
@@ -4500,6 +4535,12 @@ function KolamChatRailDetailPanel({
       setMarketplacePickerState({ items: [], loading: false });
     }
   }, [marketplaceAttachPlatform]);
+
+  React.useEffect(() => {
+    if (!storeCatalogAttachEnabled) {
+      setCatalogPickerOpen(false);
+    }
+  }, [storeCatalogAttachEnabled]);
 
   React.useEffect(() => {
     if (!marketplacePickerOpen || !marketplaceAttachPlatform) {
@@ -5243,6 +5284,20 @@ function KolamChatRailDetailPanel({
           />
         ) : null}
 
+        {storeCatalogAttachEnabled && catalogPickerOpen ? (
+          <KolamChatStoreCatalogPicker
+            disabled={detail.sending || inboxComposerBlocked}
+            onClose={() => setCatalogPickerOpen(false)}
+            onPick={content => {
+              if (detail.sending || inboxComposerBlocked) {
+                return;
+              }
+              setCatalogPickerOpen(false);
+              detail.sendCatalogCard(content).catch(() => undefined);
+            }}
+          />
+        ) : null}
+
         {emojiPickerOpen ? (
           <KolamChatComposerEmojiPicker
             disabled={detail.sending || inboxComposerBlocked}
@@ -5329,6 +5384,7 @@ function KolamChatRailDetailPanel({
                     disabled={detail.sending || inboxComposerBlocked}
                     onPress={() => {
                       setMarketplacePickerOpen(current => !current);
+                      setCatalogPickerOpen(false);
                       setEmojiPickerOpen(false);
                       setTemplatePickerOpen(false);
                     }}
@@ -5344,6 +5400,26 @@ function KolamChatRailDetailPanel({
                     />
                   </KolamPressable>
                 ) : null}
+                {storeCatalogAttachEnabled ? (
+                  <KolamPressable
+                    accessibilityLabel="Lampirkan produk"
+                    disabled={detail.sending || inboxComposerBlocked}
+                    onPress={() => {
+                      setCatalogPickerOpen(current => !current);
+                      setMarketplacePickerOpen(false);
+                      setEmojiPickerOpen(false);
+                      setTemplatePickerOpen(false);
+                    }}
+                    style={[
+                      styles.composerIconButton,
+                      catalogPickerOpen && styles.composerIconButtonActive,
+                      (detail.sending || inboxComposerBlocked) &&
+                        styles.composerIconButtonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.composerIconButtonText}>📦</Text>
+                  </KolamPressable>
+                ) : null}
                 <KolamPressable
                   accessibilityLabel="Buka emoji chat"
                   disabled={detail.sending || inboxComposerBlocked}
@@ -5351,6 +5427,7 @@ function KolamChatRailDetailPanel({
                     setEmojiPickerOpen(current => !current);
                     setTemplatePickerOpen(false);
                     setMarketplacePickerOpen(false);
+                    setCatalogPickerOpen(false);
                   }}
                   style={[
                     styles.composerIconButton,
@@ -5369,6 +5446,7 @@ function KolamChatRailDetailPanel({
                       setTemplatePickerOpen(current => !current);
                       setEmojiPickerOpen(false);
                       setMarketplacePickerOpen(false);
+                      setCatalogPickerOpen(false);
                     }}
                     style={[
                       styles.composerIconButton,
@@ -5521,7 +5599,7 @@ function KolamChatMarketplaceProductPicker({
         <View style={styles.templatePickerCopy}>
           <Text style={styles.templatePickerTitle}>Produk {platformLabel}</Text>
           <Text style={styles.templatePickerMeta}>
-            Listing ter-map sync. Attach aktif di fase berikutnya.
+            Listing ter-map sync.
           </Text>
         </View>
         <KolamPressable
@@ -5589,6 +5667,402 @@ function KolamChatMarketplaceProductPicker({
                 <Text style={styles.marketplaceListingState}>Kirim</Text>
               </KolamPressable>
             )}
+          />
+        </ScrollView>
+      ) : null}
+    </View>
+  );
+}
+
+function KolamChatStoreCatalogPicker({
+  disabled,
+  onClose,
+  onPick,
+}: {
+  disabled: boolean;
+  onClose: () => void;
+  onPick: (content: KolamChatCatalogCardContent) => void;
+}) {
+  const [tab, setTab] = React.useState<KolamChatCatalogPickerTab>('product');
+  const [query, setQuery] = React.useState('');
+  const [debouncedQuery, setDebouncedQuery] = React.useState('');
+  const [pickedParent, setPickedParent] =
+    React.useState<KolamChatCatalogPickerParent | null>(null);
+  const [browseLoading, setBrowseLoading] = React.useState(false);
+  const [browseError, setBrowseError] = React.useState<string | undefined>();
+  const [products, setProducts] = React.useState<KolamProduct[]>([]);
+  const [species, setSpecies] = React.useState<KolamSpecies[]>([]);
+  const [detailLoading, setDetailLoading] = React.useState(false);
+  const [detailProduct, setDetailProduct] = React.useState<KolamProduct | null>(
+    null,
+  );
+  const [detailSpecies, setDetailSpecies] = React.useState<KolamSpecies | null>(
+    null,
+  );
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  React.useEffect(() => {
+    if (pickedParent) {
+      return;
+    }
+
+    let active = true;
+    setBrowseLoading(true);
+    setBrowseError(undefined);
+
+    const load =
+      tab === 'product'
+        ? getKolamProducts({
+            limit: 15,
+            page: 1,
+            search: debouncedQuery || undefined,
+          }).then(result => {
+            if (!active) {
+              return;
+            }
+            setProducts(result.data);
+            setSpecies([]);
+          })
+        : getKolamSpeciesList({
+            limit: 15,
+            page: 1,
+            search: debouncedQuery || undefined,
+          }).then(result => {
+            if (!active) {
+              return;
+            }
+            setSpecies(result.data);
+            setProducts([]);
+          });
+
+    load
+      .catch(error => {
+        if (!active) {
+          return;
+        }
+        setProducts([]);
+        setSpecies([]);
+        setBrowseError(
+          error instanceof Error
+            ? error.message
+            : 'Katalog belum bisa dibaca.',
+        );
+      })
+      .finally(() => {
+        if (active) {
+          setBrowseLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [debouncedQuery, pickedParent, tab]);
+
+  React.useEffect(() => {
+    if (!pickedParent) {
+      setDetailProduct(null);
+      setDetailSpecies(null);
+      setDetailLoading(false);
+      return;
+    }
+
+    let active = true;
+    setDetailLoading(true);
+
+    const load =
+      pickedParent.kind === 'product'
+        ? getKolamProductDetail(pickedParent.raw.id).then(detail => {
+            if (!active) {
+              return;
+            }
+            setDetailProduct(detail);
+            setDetailSpecies(null);
+          })
+        : getKolamSpecies(pickedParent.raw.id).then(detail => {
+            if (!active) {
+              return;
+            }
+            setDetailSpecies(detail);
+            setDetailProduct(null);
+          });
+
+    load
+      .catch(() => {
+        if (!active) {
+          return;
+        }
+        if (pickedParent.kind === 'product') {
+          setDetailProduct(pickedParent.raw);
+          setDetailSpecies(null);
+        } else {
+          setDetailSpecies(pickedParent.raw);
+          setDetailProduct(null);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setDetailLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [pickedParent]);
+
+  const sendProductPick = (
+    product: KolamProduct,
+    variant?: KolamProductVariant,
+  ) => {
+    onPick(buildKolamChatCatalogCardFromProduct(product, variant));
+    onClose();
+  };
+
+  const sendSpeciesPick = (
+    item: KolamSpecies,
+    variant?: KolamSpeciesVariantMedia,
+  ) => {
+    onPick(buildKolamChatCatalogCardFromSpecies(item, variant));
+    onClose();
+  };
+
+  const handleParentPress = (parent: KolamChatCatalogPickerParent) => {
+    if (hasKolamCatalogVariants(parent.raw)) {
+      setPickedParent(parent);
+      return;
+    }
+    if (parent.kind === 'product') {
+      sendProductPick(parent.raw);
+      return;
+    }
+    sendSpeciesPick(parent.raw);
+  };
+
+  const parentTitle = pickedParent
+    ? pickedParent.kind === 'product'
+      ? pickedParent.raw.name
+      : pickedParent.raw.scientificName || pickedParent.raw.displayName
+    : '';
+  const detailRaw =
+    pickedParent?.kind === 'product'
+      ? detailProduct ?? pickedParent.raw
+      : pickedParent?.kind === 'species'
+      ? detailSpecies ?? pickedParent.raw
+      : null;
+  const browseRows: KolamChatCatalogPickerParent[] =
+    tab === 'product'
+      ? products.map(raw => ({kind: 'product' as const, raw}))
+      : species.map(raw => ({kind: 'species' as const, raw}));
+
+  return (
+    <View style={styles.marketplacePicker}>
+      <View style={styles.templatePickerHeader}>
+        <View style={styles.templatePickerCopy}>
+          <View style={styles.catalogPickerTitleRow}>
+            {pickedParent ? (
+              <KolamPressable
+                accessibilityLabel="Kembali ke daftar katalog"
+                onPress={() => setPickedParent(null)}
+                style={styles.catalogPickerBack}
+              >
+                <Text style={styles.templatePickerCloseText}>←</Text>
+              </KolamPressable>
+            ) : null}
+            <Text style={styles.templatePickerTitle}>
+              {pickedParent ? `Varian — ${parentTitle}` : 'Lampirkan katalog'}
+            </Text>
+          </View>
+        </View>
+        <KolamPressable
+          accessibilityLabel="Tutup katalog"
+          onPress={onClose}
+          style={styles.templatePickerClose}
+        >
+          <Text style={styles.templatePickerCloseText}>x</Text>
+        </KolamPressable>
+      </View>
+
+      {!pickedParent ? (
+        <>
+          <View style={styles.catalogPickerTabs}>
+            {(
+              [
+                {id: 'product', label: 'Produk'},
+                {id: 'species', label: 'Livestock'},
+              ] as const
+            ).map(option => (
+              <KolamPressable
+                key={option.id}
+                accessibilityLabel={`Tab ${option.label}`}
+                onPress={() => {
+                  setTab(option.id);
+                  setPickedParent(null);
+                }}
+                style={[
+                  styles.catalogPickerTab,
+                  tab === option.id && styles.catalogPickerTabActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.catalogPickerTabText,
+                    tab === option.id && styles.catalogPickerTabTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </KolamPressable>
+            ))}
+          </View>
+          <TextInput
+            accessibilityLabel="Cari katalog"
+            onChangeText={setQuery}
+            placeholder="Cari…"
+            placeholderTextColor={V.colors.mutedFg}
+            style={styles.templateSearchInput}
+            value={query}
+          />
+        </>
+      ) : null}
+
+      {pickedParent && detailLoading ? (
+        <Text style={styles.templatePickerMessage}>Loading...</Text>
+      ) : null}
+
+      {pickedParent && !detailLoading && detailRaw ? (
+        <ScrollView
+          style={styles.marketplaceListScroll}
+          showsVerticalScrollIndicator
+        >
+          <KolamMappedList
+            items={detailRaw.variants}
+            getKey={variant => variant.id || variantKolamCatalogDisplayName(variant)}
+            renderItem={variant => {
+              const stock = effectiveKolamCatalogStock(detailRaw, variant);
+              const price = pickKolamCatalogPrice(variant);
+              const title = variantKolamCatalogDisplayName(variant);
+              return (
+                <KolamPressable
+                  accessibilityLabel={`Kirim varian ${title}`}
+                  disabled={disabled}
+                  onPress={() => {
+                    if (pickedParent.kind === 'product') {
+                      sendProductPick(
+                        detailRaw as KolamProduct,
+                        variant as KolamProductVariant,
+                      );
+                      return;
+                    }
+                    sendSpeciesPick(
+                      detailRaw as KolamSpecies,
+                      variant as KolamSpeciesVariantMedia,
+                    );
+                  }}
+                  style={[
+                    styles.marketplaceListingRow,
+                    disabled && styles.marketplaceListingRowDisabled,
+                  ]}
+                >
+                  <View style={styles.marketplaceListingCopy}>
+                    <Text
+                      numberOfLines={2}
+                      style={styles.marketplaceListingTitle}
+                    >
+                      {title}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={styles.marketplaceListingMeta}
+                    >
+                      {`${formatKolamCatalogRupiah(price) || '-'} · Stok ${stock}`}
+                    </Text>
+                  </View>
+                  <Text style={styles.marketplaceListingState}>Kirim</Text>
+                </KolamPressable>
+              );
+            }}
+          />
+        </ScrollView>
+      ) : null}
+
+      {!pickedParent && browseLoading ? (
+        <Text style={styles.templatePickerMessage}>Loading...</Text>
+      ) : null}
+      {!pickedParent && !browseLoading && browseError ? (
+        <Text style={styles.templatePickerError}>{browseError}</Text>
+      ) : null}
+      {!pickedParent &&
+      !browseLoading &&
+      !browseError &&
+      browseRows.length === 0 ? (
+        <Text style={styles.templatePickerMessage}>
+          {debouncedQuery
+            ? 'Tidak ada hasil.'
+            : 'Ketik nama untuk mencari katalog.'}
+        </Text>
+      ) : null}
+      {!pickedParent &&
+      !browseLoading &&
+      !browseError &&
+      browseRows.length > 0 ? (
+        <ScrollView
+          style={styles.marketplaceListScroll}
+          showsVerticalScrollIndicator
+        >
+          <KolamMappedList
+            items={browseRows}
+            getKey={item => `${item.kind}-${item.raw.id}`}
+            renderItem={item => {
+              const hasVars = hasKolamCatalogVariants(item.raw);
+              const stock = effectiveKolamCatalogStock(item.raw);
+              const range = hasVars
+                ? variantKolamCatalogPriceRange(item.raw.variants)
+                : null;
+              const priceLabel = range
+                ? formatKolamCatalogPriceLabel(range.min, range.max)
+                : formatKolamCatalogRupiah(pickKolamCatalogPrice(item.raw)) ||
+                  '-';
+              const title =
+                item.kind === 'product'
+                  ? item.raw.name
+                  : item.raw.scientificName || item.raw.displayName;
+              return (
+                <KolamPressable
+                  accessibilityLabel={`Pilih ${title}`}
+                  disabled={disabled}
+                  onPress={() => handleParentPress(item)}
+                  style={[
+                    styles.marketplaceListingRow,
+                    disabled && styles.marketplaceListingRowDisabled,
+                  ]}
+                >
+                  <View style={styles.marketplaceListingCopy}>
+                    <Text
+                      numberOfLines={2}
+                      style={styles.marketplaceListingTitle}
+                    >
+                      {title}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={styles.marketplaceListingMeta}
+                    >
+                      {hasVars
+                        ? `${priceLabel} · ${item.raw.variants.length} varian`
+                        : `${priceLabel} · Stok ${stock}`}
+                    </Text>
+                  </View>
+                  <Text style={styles.marketplaceListingState}>
+                    {hasVars ? 'Pilih' : 'Kirim'}
+                  </Text>
+                </KolamPressable>
+              );
+            }}
           />
         </ScrollView>
       ) : null}
@@ -11980,6 +12454,43 @@ const styles = StyleSheet.create({
     minWidth: 0,
     flex: 1,
     gap: 2,
+  },
+  catalogPickerBack: {
+    alignItems: 'center',
+    height: 24,
+    justifyContent: 'center',
+    width: 24,
+  },
+  catalogPickerTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    minWidth: 0,
+  },
+  catalogPickerTabs: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 8,
+  },
+  catalogPickerTab: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderRadius: 8,
+    justifyContent: 'center',
+    minHeight: 28,
+    paddingHorizontal: 10,
+  },
+  catalogPickerTabActive: {
+    backgroundColor: V.colors.primary,
+  },
+  catalogPickerTabText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  catalogPickerTabTextActive: {
+    color: V.colors.primaryFg,
   },
   templatePickerTitle: {
     color: V.colors.fg,
