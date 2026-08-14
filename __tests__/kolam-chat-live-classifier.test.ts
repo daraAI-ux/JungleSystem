@@ -274,4 +274,42 @@ describe('kolam chat live classifier', () => {
     expect(classification.refreshList).toBe(true);
     expect(classification.soundIntent).toBe('none');
   });
+
+  it('does not ding call.updated for hosts or non-invitees (gate owns ringtone)', () => {
+    expect(
+      classifyKolamChatLiveEvent(
+        {
+          contract: contract('team-chat', 'call.updated'),
+          payload: {
+            call: {
+              _id: 'call-1',
+              participants: [{status: 'joined', userId: 'host-1'}],
+              startedBy: 'host-1',
+              status: 'ringing',
+            },
+            roomId: 'room-1',
+          },
+        },
+        {currentUserId: 'host-1'},
+      ).soundIntent,
+    ).toBe('none');
+
+    expect(
+      classifyKolamChatLiveEvent(
+        {
+          contract: contract('team-chat', 'call.updated'),
+          payload: {
+            call: {
+              _id: 'call-1',
+              participants: [{status: 'ringing', userId: 'invitee-1'}],
+              startedBy: 'host-1',
+              status: 'ringing',
+            },
+            roomId: 'room-1',
+          },
+        },
+        {currentUserId: 'invitee-1'},
+      ).soundIntent,
+    ).toBe('none');
+  });
 });

@@ -187,6 +187,15 @@ function resolveKolamChatLiveSoundIntent(
     return resolveTeamIncomingSoundIntent(event.payload, context);
   }
 
+  if (
+    event.contract.stream === 'team-chat' &&
+    event.contract.eventName === 'call.updated'
+  ) {
+    // Continuous ringtone is owned by TeamChatGroupCallGate while isRingingForMe.
+    // Live ding must not fire for hosts / already-joined / declined peers.
+    return resolveTeamCallUpdatedSoundIntent(event.payload, context);
+  }
+
   if (event.contract.soundIntent !== 'incoming-assigned-or-unassigned') {
     return event.contract.soundIntent;
   }
@@ -194,6 +203,17 @@ function resolveKolamChatLiveSoundIntent(
   return resolveInboxIncomingSoundIntent(event.payload, context, {
     directionSource: 'message',
   });
+}
+
+function resolveTeamCallUpdatedSoundIntent(
+  _payload: unknown,
+  _context: {
+    currentUserId?: string | null;
+  },
+): KolamChatLiveResolvedSoundIntent {
+  // Continuous ringtone is owned by TeamChatGroupCallGate while isRingingForMe.
+  // Returning the contract's group-call here dinged hosts / joined peers on every SSE.
+  return 'none';
 }
 
 function resolveTeamIncomingSoundIntent(

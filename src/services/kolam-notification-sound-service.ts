@@ -26,6 +26,10 @@ export type KolamNotificationSoundServiceOptions = {
 export type KolamNotificationSoundRequest = {
   intent: KolamNotificationSoundIntent;
   /**
+   * Skip the global cooldown (group-call ringtone loop / Settings preview).
+   */
+  bypassCooldown?: boolean;
+  /**
    * Chat ding should not wait on a remote custom file download.
    * Settings preview keeps remote playback when this is false/omitted.
    */
@@ -80,7 +84,11 @@ export function createKolamNotificationSoundService({
       }
 
       const now = clock();
-      if (lastPlayedAt > 0 && now - lastPlayedAt < cooldownMs) {
+      if (
+        !request.bypassCooldown &&
+        lastPlayedAt > 0 &&
+        now - lastPlayedAt < cooldownMs
+      ) {
         return {played: false, reason: 'cooldown'};
       }
 

@@ -1,0 +1,37 @@
+import {createKolamGroupCallRingtoneController} from '../src/services/kolam-group-call-ringtone';
+
+describe('kolam group call ringtone controller', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('loops group-call playback while started and stops cleanly', async () => {
+    const play = jest.fn().mockResolvedValue({played: true, intent: 'group-call', uri: 'x'});
+    const controller = createKolamGroupCallRingtoneController({
+      createSoundService: () => ({play}),
+      intervalMs: 1000,
+    });
+
+    controller.setRingtonePath('/media/ring.wav');
+    controller.start();
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(play).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bypassCooldown: true,
+        intent: 'group-call',
+        preferInstantLocal: true,
+      }),
+    );
+
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(play).toHaveBeenCalledTimes(2);
+
+    controller.stop();
+    await jest.advanceTimersByTimeAsync(2000);
+    expect(play).toHaveBeenCalledTimes(2);
+  });
+});

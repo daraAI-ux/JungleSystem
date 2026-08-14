@@ -11,7 +11,7 @@ import {KolamPressable} from './kolam-pressable';
 
 /**
  * Global group-call invite overlay (SoT `TeamChatGroupCallGate`).
- * Signaling-only — no WebRTC. Ringtone deferred to Batch 3.
+ * Signaling-only — no WebRTC. Ringtone loops while `isRingingForMe`.
  */
 export function KolamTeamChatGroupCallGateHost() {
   const {authUser} = useKolamAuthContext();

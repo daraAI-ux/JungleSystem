@@ -280,7 +280,7 @@ export const KOLAM_CHAT_LIVE_EVENT_CONTRACTS: readonly KolamChatLiveEventContrac
       refreshTargets: ['call-state', 'team-room-detail'],
       soundIntent: 'group-call',
       legacySources: TEAM_CHAT_LEGACY_SOURCES,
-      note: 'Legacy team stream reserves call events; 6D/6F should route this to groupCallRingtone.',
+      note: 'Call.updated ringtone only when isRingingForMe; continuous loop owned by group-call gate.',
     },
     {
       stream: 'team-chat',
