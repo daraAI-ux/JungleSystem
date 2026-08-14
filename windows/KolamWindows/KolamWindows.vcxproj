@@ -104,6 +104,20 @@
     <FindInvalidProjectReferences>false</FindInvalidProjectReferences>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <KolamLiveKitSdkVersion Condition="'$(KolamLiveKitSdkVersion)' == ''">1.4.0</KolamLiveKitSdkVersion>
+    <KolamLiveKitSdkRoot>$(MSBuildThisFileDirectory)..\third_party\livekit-sdk\livekit-sdk-windows-x64-$(KolamLiveKitSdkVersion)\</KolamLiveKitSdkRoot>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>KOLAM_HAS_LIVEKIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(KolamLiveKitSdkRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(KolamLiveKitSdkRoot)lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>livekit.lib;livekit_ffi.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="KolamWindows.h" />
     <ClInclude Include="KolamWindowsDeviceIdentity.h" />
@@ -114,6 +128,7 @@
     <ClInclude Include="KolamWindowsSQLiteStore.h" />
     <ClInclude Include="KolamWindowsPackageUpdate.h" />
     <ClInclude Include="KolamWindowsSseStream.h" />
+    <ClInclude Include="KolamWindowsLiveKitRoom.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="AutolinkedNativeModules.g.h" />
     <ClInclude Include="pch.h" />
@@ -129,6 +144,7 @@
     <ClCompile Include="KolamWindowsSQLiteStore.cpp" />
     <ClCompile Include="KolamWindowsPackageUpdate.cpp" />
     <ClCompile Include="KolamWindowsSseStream.cpp" />
+    <ClCompile Include="KolamWindowsLiveKitRoom.cpp" />
     <ClCompile Include="AutolinkedNativeModules.g.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -149,12 +165,25 @@
     </Image>
     <Image Include="small.ico" />
   </ItemGroup>
+  <ItemGroup Condition="'$(Platform)'=='x64'">
+    <None Include="$(KolamLiveKitSdkRoot)bin\livekit.dll">
+      <DeploymentContent>true</DeploymentContent>
+      <Link>livekit.dll</Link>
+    </None>
+    <None Include="$(KolamLiveKitSdkRoot)bin\livekit_ffi.dll">
+      <DeploymentContent>true</DeploymentContent>
+      <Link>livekit_ffi.dll</Link>
+    </None>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ReactNativeWindowsTargets">
     <Import Project="$(ReactNativeWindowsDir)\PropertySheets\External\Microsoft.ReactNative.Composition.CppApp.targets" Condition="Exists('$(ReactNativeWindowsDir)\PropertySheets\External\Microsoft.ReactNative.Composition.CppApp.targets')" />
   </ImportGroup>
   <ItemGroup>
   </ItemGroup>
+  <Target Name="FetchKolamLiveKitSdk" BeforeTargets="PrepareForBuild" Condition="'$(Platform)'=='x64'">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)..\..\scripts\fetch-livekit-sdk.ps1&quot;" />
+  </Target>
   <Target Name="EnsureReactNativeWindowsTargets" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references targets in your node_modules\react-native-windows folder. The missing file is {0}.</ErrorText>

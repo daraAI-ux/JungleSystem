@@ -11,6 +11,7 @@
 #include "KolamWindowsSecureTokenStore.h"
 #include "KolamWindowsPackageUpdate.h"
 #include "KolamWindowsSseStream.h"
+#include "KolamWindowsLiveKitRoom.h"
 #include "resource.h"
 
 #include "AutolinkedNativeModules.g.h"
