@@ -141,7 +141,10 @@
     <ResourceCompile Include="KolamWindows.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="KolamWindows.ico" />
+    <Image Include="KolamWindows.ico">
+      <!-- Loose .ico next to the EXE so AppWindow.SetIcon(path) works in the package. -->
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
     <Image Include="small.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

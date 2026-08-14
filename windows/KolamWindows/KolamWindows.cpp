@@ -10,12 +10,14 @@
 #include "KolamWindowsSQLiteStore.h"
 #include "KolamWindowsSecureTokenStore.h"
 #include "KolamWindowsPackageUpdate.h"
+#include "resource.h"
 
 #include "AutolinkedNativeModules.g.h"
 
 #include "NativeModules.h"
 
 #include <shellapi.h>
+#include <string>
 
 namespace {
 
@@ -75,6 +77,30 @@ void EnableKolamFileDrop() {
   DragAcceptFiles(hwnd, TRUE);
   g_kolamPreviousWndProc =
       reinterpret_cast<WNDPROC>(SetWindowLongPtr(hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(KolamWindowProc)));
+}
+
+// WinUI title bar does not take package/EXE icons automatically (unlike Electron).
+void ApplyKolamAppWindowIcon(
+    winrt::Microsoft::UI::Windowing::AppWindow const &appWindow,
+    wchar_t const *appDirectory) {
+  try {
+    std::wstring iconPath = std::wstring(appDirectory) + L"\\KolamWindows.ico";
+    if (GetFileAttributesW(iconPath.c_str()) != INVALID_FILE_ATTRIBUTES) {
+      appWindow.SetIcon(iconPath);
+      return;
+    }
+  } catch (...) {
+  }
+
+  HICON hIcon = LoadIconW(GetModuleHandleW(nullptr), MAKEINTRESOURCEW(IDI_ICON1));
+  if (!hIcon) {
+    return;
+  }
+
+  try {
+    appWindow.SetIcon(winrt::Microsoft::UI::GetIconIdFromIcon(hIcon));
+  } catch (...) {
+  }
 }
 
 } // namespace
@@ -147,6 +173,7 @@ _Use_decl_annotations_ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE, PSTR 
   auto appWindow{reactNativeWin32App.AppWindow()};
   appWindow.Title(L"JungleSystem");
   appWindow.Resize({1800, 1000});
+  ApplyKolamAppWindowIcon(appWindow, appDirectory);
   if (auto presenter = appWindow.Presenter().try_as<winrt::Microsoft::UI::Windowing::OverlappedPresenter>()) {
     presenter.Maximize();
   }
