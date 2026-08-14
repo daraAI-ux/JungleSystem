@@ -4,8 +4,11 @@ import {
   buildKolamChatCatalogCardFromSpecies,
   effectiveKolamCatalogStock,
   hasKolamCatalogVariants,
+  isKolamProductShareBody,
+  kolamChatCatalogCardToShareText,
   marketplaceProductUrl,
   marketplaceSpeciesUrl,
+  parseKolamLegacyProductShareText,
   pickKolamCatalogPrice,
   slugifyKolamMarketplaceSegment,
   variantKolamCatalogDisplayName,
@@ -103,5 +106,32 @@ describe('kolam-chat-catalog-card', () => {
       'species_card',
     );
     expect(pickKolamCatalogPrice(species)).toBe(12000);
+  });
+
+  it('builds and parses team-chat [Product] share text', () => {
+    const content = buildKolamChatCatalogCardContent({
+      entityType: 'product',
+      entityId: 'p1',
+      name: 'Nemo — Hitam',
+      price: 85000,
+      stock: 4,
+      imageUrl: 'https://cdn.example/nemo.jpg',
+      detailHref: 'https://dunia-anura.com/id/products/nemo',
+    });
+    const share = kolamChatCatalogCardToShareText(content);
+    expect(isKolamProductShareBody(share)).toBe(true);
+    expect(share).toContain('[Product] Nemo — Hitam — Rp85.000 — Stok 4');
+    expect(share).toContain('https://cdn.example/nemo.jpg');
+    expect(share).toContain('[Link] https://dunia-anura.com/id/products/nemo');
+
+    const parsed = parseKolamLegacyProductShareText(share);
+    expect(parsed).toEqual(
+      expect.objectContaining({
+        name: 'Nemo — Hitam',
+        priceLabel: 'Rp85.000',
+        imageUrl: 'https://cdn.example/nemo.jpg',
+        detailHref: 'https://dunia-anura.com/id/products/nemo',
+      }),
+    );
   });
 });

@@ -32,6 +32,9 @@ import {
   formatKolamCatalogPriceLabel,
   formatKolamCatalogRupiah,
   hasKolamCatalogVariants,
+  isKolamProductShareBody,
+  kolamChatCatalogCardToShareText,
+  parseKolamLegacyProductShareText,
   pickKolamCatalogPrice,
   type KolamChatCatalogCardContent,
   variantKolamCatalogDisplayName,
@@ -3608,7 +3611,7 @@ function KolamTeamChatDaraWindowMessages({
               <Text style={styles.messageAuthor}>{message.author}</Text>
             </View>
             {getDaraStreamedMessageBody(message, daraStream) ? (
-              <KolamTeamMentionText
+              <KolamTeamMessageBody
                 body={getDaraStreamedMessageBody(message, daraStream)}
               />
             ) : null}
@@ -4469,6 +4472,9 @@ function KolamChatRailDetailPanel({
     : '';
   const storeCatalogAttachEnabled =
     mode === 'inbox' && detail.conversation?.platform === 'store';
+  const teamCatalogAttachEnabled = mode === 'team-chat';
+  const catalogAttachEnabled =
+    storeCatalogAttachEnabled || teamCatalogAttachEnabled;
   const attachmentLabel = pendingAttachment
     ? getPendingChatAttachmentLabel(pendingAttachment)
     : '';
@@ -4537,10 +4543,10 @@ function KolamChatRailDetailPanel({
   }, [marketplaceAttachPlatform]);
 
   React.useEffect(() => {
-    if (!storeCatalogAttachEnabled) {
+    if (!catalogAttachEnabled) {
       setCatalogPickerOpen(false);
     }
-  }, [storeCatalogAttachEnabled]);
+  }, [catalogAttachEnabled]);
 
   React.useEffect(() => {
     if (!marketplacePickerOpen || !marketplaceAttachPlatform) {
@@ -5143,7 +5149,7 @@ function KolamChatRailDetailPanel({
                                   message,
                                   daraStream,
                                 ) ? (
-                                  <KolamTeamMentionText
+                                  <KolamTeamMessageBody
                                     body={getDaraStreamedMessageBody(
                                       message,
                                       daraStream,
@@ -5284,15 +5290,28 @@ function KolamChatRailDetailPanel({
           />
         ) : null}
 
-        {storeCatalogAttachEnabled && catalogPickerOpen ? (
+        {catalogAttachEnabled && catalogPickerOpen ? (
           <KolamChatStoreCatalogPicker
-            disabled={detail.sending || inboxComposerBlocked}
+            disabled={
+              detail.sending ||
+              (mode === 'inbox' && inboxComposerBlocked)
+            }
             onClose={() => setCatalogPickerOpen(false)}
             onPick={content => {
-              if (detail.sending || inboxComposerBlocked) {
+              if (
+                detail.sending ||
+                (mode === 'inbox' && inboxComposerBlocked)
+              ) {
                 return;
               }
               setCatalogPickerOpen(false);
+              if (mode === 'team-chat') {
+                const share = kolamChatCatalogCardToShareText(content);
+                onComposerTextChange(
+                  composerText.trim() ? `${composerText}\n${share}` : share,
+                );
+                return;
+              }
               detail.sendCatalogCard(content).catch(() => undefined);
             }}
           />
@@ -5364,6 +5383,30 @@ function KolamChatRailDetailPanel({
                     <Text style={styles.composerIconButtonText}>+</Text>
                   </KolamPressable>
                 ) : null}
+                {catalogAttachEnabled ? (
+                  <KolamPressable
+                    accessibilityLabel="Lampirkan produk"
+                    disabled={
+                      detail.sending ||
+                      (mode === 'inbox' && inboxComposerBlocked)
+                    }
+                    onPress={() => {
+                      setCatalogPickerOpen(current => !current);
+                      setMarketplacePickerOpen(false);
+                      setEmojiPickerOpen(false);
+                      setTemplatePickerOpen(false);
+                    }}
+                    style={[
+                      styles.composerIconButton,
+                      catalogPickerOpen && styles.composerIconButtonActive,
+                      (detail.sending ||
+                        (mode === 'inbox' && inboxComposerBlocked)) &&
+                        styles.composerIconButtonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.composerIconButtonText}>📦</Text>
+                  </KolamPressable>
+                ) : null}
                 {mode === 'inbox' ? (
                   <KolamPressable
                     accessibilityLabel="Lampirkan gambar inbox"
@@ -5398,26 +5441,6 @@ function KolamChatRailDetailPanel({
                     <KolamPlatformFilterLogo
                       platform={marketplaceAttachPlatform}
                     />
-                  </KolamPressable>
-                ) : null}
-                {storeCatalogAttachEnabled ? (
-                  <KolamPressable
-                    accessibilityLabel="Lampirkan produk"
-                    disabled={detail.sending || inboxComposerBlocked}
-                    onPress={() => {
-                      setCatalogPickerOpen(current => !current);
-                      setMarketplacePickerOpen(false);
-                      setEmojiPickerOpen(false);
-                      setTemplatePickerOpen(false);
-                    }}
-                    style={[
-                      styles.composerIconButton,
-                      catalogPickerOpen && styles.composerIconButtonActive,
-                      (detail.sending || inboxComposerBlocked) &&
-                        styles.composerIconButtonDisabled,
-                    ]}
-                  >
-                    <Text style={styles.composerIconButtonText}>📦</Text>
                   </KolamPressable>
                 ) : null}
                 <KolamPressable
@@ -6211,6 +6234,25 @@ function KolamChatLinkifiedText({
       })}
     </Text>
   );
+}
+
+function KolamTeamMessageBody({ body }: { body: string }) {
+  if (isKolamProductShareBody(body)) {
+    const share = parseKolamLegacyProductShareText(body);
+    if (share) {
+      const card: KolamInboxResolvedCard = {
+        actionUrl: share.detailHref,
+        imageUrl: normalizeChatMediaUri(share.imageUrl) ?? undefined,
+        kind: share.entityType === 'species' ? 'species' : 'product',
+        label: share.entityType === 'species' ? 'Livestock' : 'Product',
+        priceLabel: share.priceLabel,
+        title: share.name,
+      };
+      return <KolamInboxProductCard card={card} />;
+    }
+  }
+
+  return <KolamTeamMentionText body={body} />;
 }
 
 function KolamTeamMentionText({ body }: { body: string }) {

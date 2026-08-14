@@ -312,3 +312,96 @@ export function buildKolamChatCatalogCardFromSpecies(
     variantId: variant?.id,
   });
 }
+
+export interface KolamChatLegacyProductShare {
+  entityType: KolamChatCatalogEntityType;
+  name: string;
+  priceLabel?: string;
+  imageUrl?: string;
+  detailHref?: string;
+}
+
+/** Plain-text product share for team-chat (and legacy channels). */
+export function kolamChatCatalogCardToShareText(
+  content: KolamChatCatalogCardContent,
+): string {
+  const card = content.card;
+  const priceLabel =
+    card.priceLabel || formatKolamCatalogRupiah(card.price ?? 0);
+  const stock = card.stock ?? 0;
+  const head = priceLabel
+    ? `[Product] ${card.name} — ${priceLabel} — Stok ${stock}`
+    : `[Product] ${card.name} — Stok ${stock}`;
+  const lines = [head];
+  if (card.imageUrl) {
+    lines.push(card.imageUrl);
+  }
+  if (card.detailHref) {
+    lines.push(`[Link] ${card.detailHref}`);
+  }
+  return lines.join('\n');
+}
+
+export function isKolamProductShareBody(body: string): boolean {
+  return (body || '').trim().startsWith('[Product]');
+}
+
+export function parseKolamLegacyProductShareText(
+  raw: string,
+): KolamChatLegacyProductShare | null {
+  const text = raw?.trim() || '';
+  if (!text.startsWith('[Product]')) {
+    return null;
+  }
+
+  const lines = text.split('\n').map(line => line.trim());
+  const head = lines[0] || '';
+  let imageUrl: string | undefined;
+  let detailHref: string | undefined;
+  for (let i = 1; i < lines.length; i += 1) {
+    const line = lines[i] || '';
+    if (line.startsWith('[Link]')) {
+      const href = line.replace(/^\[Link\]\s*/, '').trim();
+      if (href) {
+        detailHref = toKolamMarketplaceAbsoluteHref(href);
+      }
+    } else if (!imageUrl && /^https?:\/\//i.test(line)) {
+      imageUrl = line;
+    }
+  }
+
+  const segments = head
+    .replace(/^\[Product\]\s*/, '')
+    .split(/\s*—\s*/)
+    .map(part => part.trim())
+    .filter(Boolean);
+  if (segments.length === 0) {
+    return null;
+  }
+
+  const baseName = segments[0];
+  let priceLabel: string | undefined;
+  const extraParts: string[] = [];
+  for (let i = 1; i < segments.length; i += 1) {
+    const seg = segments[i];
+    if (/^Rp/i.test(seg)) {
+      priceLabel = seg;
+    } else if (/(sold|terjual)/i.test(seg) || /^Stok\s+\d+/i.test(seg)) {
+      continue;
+    } else {
+      extraParts.push(seg);
+    }
+  }
+
+  const name = extraParts.length
+    ? `${baseName} — ${extraParts.join(' — ')}`
+    : baseName;
+
+  return {
+    entityType: 'product',
+    name,
+    priceLabel,
+    imageUrl,
+    detailHref,
+  };
+}

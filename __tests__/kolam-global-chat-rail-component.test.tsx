@@ -2493,6 +2493,134 @@ describe('KolamGlobalChatRail', () => {
     }
   });
 
+  it('renders team-chat [Product] share as a card and inserts catalog share text into the composer', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer | null = null;
+
+    try {
+      const product = {
+        id: 'prod-team-1',
+        name: 'Anemon Premium',
+        priceToSell: 150000,
+        onlinePrice: 0,
+        stock: 3,
+        hasVariants: false,
+        variants: [],
+        photoUris: ['https://cdn.example/anemon.jpg'],
+        thumbnailUri: 'https://cdn.example/anemon.jpg',
+      };
+      getKolamProductsMock.mockResolvedValue({
+        data: [product],
+        pagination: {page: 1, limit: 15, total: 1, totalPages: 1},
+      });
+      useReadonlyDataMock.mockReturnValue({
+        conversations: [],
+        loading: false,
+        refresh: jest.fn(),
+        rooms: [
+          {
+            _id: 'room-1',
+            category: 'project',
+            name: 'Ops Room',
+            lastMessagePreview: 'Share produk',
+            unreadCount: 0,
+          },
+        ],
+        totalUnread: 0,
+      });
+      useDetailMock.mockImplementation(() => ({
+        ...getDefaultDetailMock(),
+        loading: false,
+        messages: [
+          {
+            attachments: [],
+            author: 'Maya',
+            body: [
+              '[Product] Anemon Premium — Rp150.000 — Stok 3',
+              'https://cdn.example/anemon.jpg',
+              '[Link] https://dunia-anura.com/id/products/anemon-premium',
+            ].join('\n'),
+            embeds: [],
+            id: 'msg-share',
+            linkPreviews: [],
+            mine: false,
+            reactions: [],
+            replyPreview: null,
+            sentAt: '2026-08-14T10:00:00.000Z',
+            status: 'sent',
+          },
+        ],
+        sending: false,
+      }));
+
+      await ReactTestRenderer.act(async () => {
+        renderer = ReactTestRenderer.create(
+          <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+        );
+      });
+
+      const selectButton = renderer!.root
+        .findAllByType(KolamPressable)
+        .find(node => node.props.accessibilityLabel === 'Pilih room Ops Room');
+      expect(selectButton).toBeTruthy();
+      await ReactTestRenderer.act(async () => {
+        selectButton!.props.onPress();
+      });
+      await ReactTestRenderer.act(async () => {
+        await Promise.resolve();
+      });
+
+      const labels = renderer!.root
+        .findAllByType(KolamPressable)
+        .map(node => node.props.accessibilityLabel)
+        .filter(Boolean);
+      expect(labels).toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(/^Buka card Anemon Premium/),
+          'Lampirkan produk',
+        ]),
+      );
+
+      const catalogButton = renderer!.root
+        .findAllByType(KolamPressable)
+        .find(node => node.props.accessibilityLabel === 'Lampirkan produk');
+      expect(catalogButton).toBeTruthy();
+
+      await ReactTestRenderer.act(async () => {
+        catalogButton!.props.onPress();
+      });
+      await ReactTestRenderer.act(async () => {
+        await new Promise<void>(resolve => setTimeout(resolve, 350));
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      const productRow = renderer!.root
+        .findAllByType(KolamPressable)
+        .find(
+          node => node.props.accessibilityLabel === 'Pilih Anemon Premium',
+        );
+      expect(productRow).toBeTruthy();
+
+      await ReactTestRenderer.act(async () => {
+        productRow!.props.onPress();
+      });
+
+      const composer = renderer!.root
+        .findAllByType(TextInput)
+        .find(
+          node => node.props.accessibilityLabel === 'Tulis pesan team chat',
+        );
+      expect(composer?.props.value).toContain('[Product] Anemon Premium');
+      expect(composer?.props.value).toContain('Stok 3');
+    } finally {
+      if (renderer) {
+        await ReactTestRenderer.act(async () => {
+          renderer!.unmount();
+        });
+      }
+    }
+  });
+
   it('loads only mapped marketplace listings for Tokopedia and sends the selected card through the detail hook', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer | null = null;
 
