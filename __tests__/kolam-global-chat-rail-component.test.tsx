@@ -13,7 +13,10 @@ import {KolamBadge} from '../src/components/kolam-badge';
 import {KolamButton} from '../src/components/kolam-button';
 import {KolamGlobalChatRail} from '../src/components/kolam-global-chat-rail';
 import {KolamPressable} from '../src/components/kolam-pressable';
-import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
+import {
+  useKolamAuthContext,
+  useKolamNavigationContext,
+} from '../src/context/kolam-app-contexts';
 import {useKolamChatLiveStream} from '../src/hooks/use-kolam-chat-live-stream';
 import {useKolamChatRailDetail} from '../src/hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../src/hooks/use-kolam-chat-rail-readonly-data';
@@ -68,6 +71,7 @@ jest.mock('react-native-webview', () => {
 
 jest.mock('../src/context/kolam-app-contexts', () => ({
   useKolamAuthContext: jest.fn(),
+  useKolamNavigationContext: jest.fn(),
 }));
 
 jest.mock('../src/hooks/use-kolam-chat-rail-detail', () => ({
@@ -166,6 +170,12 @@ jest.mock('../src/lib/native-clipboard', () => ({
 const useAuthContextMock = useKolamAuthContext as jest.MockedFunction<
   typeof useKolamAuthContext
 >;
+const useNavigationContextMock =
+  useKolamNavigationContext as jest.MockedFunction<
+    typeof useKolamNavigationContext
+  >;
+const handleDashboardRouteContextMock = jest.fn();
+const handleChatRailCloseMock = jest.fn();
 const useDetailMock = useKolamChatRailDetail as jest.MockedFunction<
   typeof useKolamChatRailDetail
 >;
@@ -325,6 +335,12 @@ describe('KolamGlobalChatRail', () => {
   beforeEach(() => {
     mockSoundPlay.mockClear();
     openUrlMock.mockClear();
+    handleDashboardRouteContextMock.mockClear();
+    handleChatRailCloseMock.mockClear();
+    useNavigationContextMock.mockReturnValue({
+      handleChatRailClose: handleChatRailCloseMock,
+      handleDashboardRouteContext: handleDashboardRouteContextMock,
+    } as ReturnType<typeof useKolamNavigationContext>);
     copyTextToClipboardMock.mockClear();
     createTeamChatRoomMock.mockClear();
     createChatLabelMock.mockClear();
@@ -3470,6 +3486,8 @@ describe('KolamGlobalChatRail', () => {
     expect(openUrlMock).toHaveBeenCalledWith(
       'https://store.example.test/species/anemon',
     );
+    expect(handleDashboardRouteContextMock).not.toHaveBeenCalled();
+    expect(handleChatRailCloseMock).not.toHaveBeenCalled();
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining(['Preview proof.jpg', 'Tutup']),
     );
@@ -3504,6 +3522,138 @@ describe('KolamGlobalChatRail', () => {
     expect(renderText(renderer!)).not.toEqual(
       expect.arrayContaining(['Preview proof.jpg']),
     );
+  });
+
+  it('opens in-app product/species routes from catalog cards with entityId', async () => {
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-deeplink',
+          assignedStaffId: null,
+          platform: 'web',
+          contactId: {displayName: 'Buyer Web'},
+          lastMessagePreview: 'Kartu katalog',
+          unreadCount: 1,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 1,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-deeplink',
+        assignedStaffId: null,
+        isAiHandled: false,
+        labelIds: [],
+        platform: 'web',
+        status: 'open',
+      },
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          content: {
+            card: {
+              detailHref: 'https://store.example.test/products/nemo',
+              entityId: 'prod-deeplink-1',
+              entityType: 'product',
+              name: 'Nemo Deeplink',
+              price: 99000,
+              stock: 2,
+            },
+            type: 'product_card',
+          },
+          embeds: [],
+          id: 'msg-product-deeplink',
+          author: 'Anda',
+          body: 'Nemo Deeplink',
+          linkPreviews: [],
+          mine: true,
+          reactions: [],
+          replyPreview: null,
+          sentAt: '2026-08-14T08:00:00.000Z',
+          status: 'sent',
+        },
+        {
+          attachments: [],
+          content: {
+            card: {
+              detailHref: 'https://store.example.test/species/anemon',
+              entityId: 'sp-deeplink-1',
+              entityType: 'species',
+              name: 'Anemon Deeplink',
+              price: 175000,
+              stock: 8,
+            },
+            type: 'species_card',
+          },
+          embeds: [],
+          id: 'msg-species-deeplink',
+          author: 'Anda',
+          body: 'Anemon Deeplink',
+          linkPreviews: [],
+          mine: true,
+          reactions: [],
+          replyPreview: null,
+          sentAt: '2026-08-14T08:01:00.000Z',
+          status: 'sent',
+        },
+      ],
+      sending: false,
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const conversationButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Pilih conversation Buyer Web',
+      );
+    await ReactTestRenderer.act(async () => {
+      conversationButton!.props.onPress();
+    });
+
+    const productCard = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node => node.props.accessibilityLabel === 'Buka card Nemo Deeplink',
+      );
+    const speciesCard = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Buka card Anemon Deeplink',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      productCard!.props.onPress();
+    });
+    expect(handleDashboardRouteContextMock).toHaveBeenCalledWith(
+      '/products/prod-deeplink-1',
+    );
+    expect(handleChatRailCloseMock).toHaveBeenCalled();
+    expect(openUrlMock).not.toHaveBeenCalled();
+
+    handleDashboardRouteContextMock.mockClear();
+    handleChatRailCloseMock.mockClear();
+
+    await ReactTestRenderer.act(async () => {
+      speciesCard!.props.onPress();
+    });
+    expect(handleDashboardRouteContextMock).toHaveBeenCalledWith(
+      '/species/sp-deeplink-1',
+    );
+    expect(handleChatRailCloseMock).toHaveBeenCalled();
+    expect(openUrlMock).not.toHaveBeenCalled();
   });
 
   it('renders inbound web, marketplace, youtube, and clickable link cards', async () => {

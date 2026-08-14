@@ -16,7 +16,10 @@ import {
   View,
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
-import { useKolamAuthContext } from '../context/kolam-app-contexts';
+import {
+  useKolamAuthContext,
+  useKolamNavigationContext,
+} from '../context/kolam-app-contexts';
 import { KOLAM_CALL_ICON_SVG } from '../assets/icons/call-icon-svg';
 import { KOLAM_DELETE_ROOM_ICON_SVG } from '../assets/icons/delete-room-icon-svg';
 import { KOLAM_ALL_PLATFORM_LOGO_SVG } from '../assets/marketplace/all-logo-svg';
@@ -6965,6 +6968,8 @@ function KolamInboxYoutubeCard({
 }
 
 function KolamInboxProductCard({ card }: { card: KolamInboxResolvedCard }) {
+  const { handleChatRailClose, handleDashboardRouteContext } =
+    useKolamNavigationContext();
   const content = (
     <>
       {card.imageUrl ? (
@@ -7013,11 +7018,19 @@ function KolamInboxProductCard({ card }: { card: KolamInboxResolvedCard }) {
     </>
   );
 
-  if (card.actionUrl) {
+  const canOpen = Boolean(
+    card.actionUrl ||
+      ((card.kind === 'product' || card.kind === 'species') && card.entityId),
+  );
+
+  if (canOpen) {
     return (
       <KolamPressable
         accessibilityLabel={`Buka card ${card.title}`}
-        onPress={() => openInboxExternalUrl(card.actionUrl)}
+        onPress={() => openInboxCatalogCard(card, {
+          handleChatRailClose,
+          handleDashboardRouteContext,
+        })}
         style={styles.inboxRichCard}
       >
         {content}
@@ -8550,6 +8563,7 @@ function getInboxComposerAccess(
 
 interface KolamInboxResolvedCard {
   actionUrl?: string;
+  entityId?: string;
   imageUrl?: string;
   kind: 'product' | 'species' | 'marketplace';
   label: string;
@@ -8693,6 +8707,7 @@ function resolveInboxCard(
         : 'product';
     return {
       actionUrl: toMarketplaceAbsoluteHref(card.detailHref),
+      entityId: card.entityId?.trim() || undefined,
       imageUrl: normalizeChatMediaUri(card.imageUrl) ?? undefined,
       kind,
       label: getInboxCardLabel(kind, card.marketplace?.platform),
@@ -8886,6 +8901,30 @@ function openInboxExternalUrl(url?: string | null) {
   }
 
   Linking.openURL(target).catch(() => undefined);
+}
+
+function openInboxCatalogCard(
+  card: KolamInboxResolvedCard,
+  navigation: {
+    handleChatRailClose: () => void;
+    handleDashboardRouteContext: (route: string) => void;
+  },
+) {
+  if (
+    (card.kind === 'product' || card.kind === 'species') &&
+    card.entityId?.trim()
+  ) {
+    const entityId = card.entityId.trim();
+    navigation.handleDashboardRouteContext(
+      card.kind === 'species'
+        ? `/species/${entityId}`
+        : `/products/${entityId}`,
+    );
+    navigation.handleChatRailClose();
+    return;
+  }
+
+  openInboxExternalUrl(card.actionUrl);
 }
 
 function normalizeChatMediaUri(uri?: string | null) {
