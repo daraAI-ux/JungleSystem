@@ -334,6 +334,28 @@ function isComposerNewlineEnter(
   );
 }
 
+function normalizeComposerText(value: string) {
+  return value.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+}
+
+/** True when native echoed the pre-newline text and dropped the just-inserted \n. */
+function isStaleComposerNewlineEcho(pending: string, incoming: string) {
+  if (incoming.includes('\n') || pending.length !== incoming.length + 1) {
+    return false;
+  }
+
+  for (let index = 0; index < pending.length; index += 1) {
+    if (
+      pending[index] === '\n' &&
+      `${pending.slice(0, index)}${pending.slice(index + 1)}` === incoming
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function useKolamComposerEnterKey(
   value: string,
   onChangeText: (next: string) => void,
@@ -342,22 +364,76 @@ function useKolamComposerEnterKey(
   const hasSelectionRef = React.useRef(false);
   const shiftHeldRef = React.useRef(false);
   const skipSubmitRef = React.useRef(false);
+  const valueRef = React.useRef(value);
+  const pendingNewlineRef = React.useRef<string | null>(null);
+  const lastNewlineAtRef = React.useRef(0);
   const [selection, setSelection] = React.useState<
     KolamComposerSelection | undefined
   >(undefined);
 
+  valueRef.current = value;
+
+  const commitText = React.useCallback(
+    (next: string) => {
+      const normalized = normalizeComposerText(next);
+      valueRef.current = normalized;
+      onChangeText(normalized);
+    },
+    [onChangeText],
+  );
+
   const applyNewline = React.useCallback(() => {
+    const now =
+      typeof performance !== 'undefined' && performance.now
+        ? performance.now()
+        : Date.now();
+    // onKeyPress + onSubmitEditing can both see Shift+Enter; insert once.
+    if (now - lastNewlineAtRef.current < 80) {
+      skipSubmitRef.current = true;
+      return;
+    }
+    lastNewlineAtRef.current = now;
     skipSubmitRef.current = true;
-    consumeKolamWindowsShiftEnterChord();
     const next = insertComposerNewline(
-      value,
+      valueRef.current,
       hasSelectionRef.current ? selectionRef.current : null,
     );
     hasSelectionRef.current = true;
     selectionRef.current = next.selection;
+    pendingNewlineRef.current = next.text;
     setSelection(next.selection);
-    onChangeText(next.text);
-  }, [onChangeText, value]);
+    commitText(next.text);
+    // Release controlled selection after paint so native caret can settle.
+    const releaseSelection = () => {
+      setSelection(undefined);
+      setTimeout(() => {
+        if (pendingNewlineRef.current === next.text) {
+          pendingNewlineRef.current = null;
+        }
+      }, 64);
+    };
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(releaseSelection);
+    } else {
+      releaseSelection();
+    }
+  }, [commitText]);
+
+  const handleChangeText = React.useCallback(
+    (text: string) => {
+      const normalized = normalizeComposerText(text);
+      const pending = pendingNewlineRef.current;
+      if (pending != null) {
+        if (isStaleComposerNewlineEcho(pending, normalized)) {
+          commitText(pending);
+          return;
+        }
+        pendingNewlineRef.current = null;
+      }
+      commitText(normalized);
+    },
+    [commitText],
+  );
 
   const handleSelectionChange = React.useCallback(
     (event: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
@@ -402,11 +478,13 @@ function useKolamComposerEnterKey(
         }
         event.preventDefault();
         skipSubmitRef.current = false;
+        consumeKolamWindowsShiftEnterChord();
         return 'submit';
       }
 
       event.preventDefault();
       applyNewline();
+      consumeKolamWindowsShiftEnterChord();
       return 'newline';
     },
     [applyNewline],
@@ -417,19 +495,25 @@ function useKolamComposerEnterKey(
       return false;
     }
     skipSubmitRef.current = false;
+    consumeKolamWindowsShiftEnterChord();
     return true;
   }, []);
 
   const insertNewlineIfShiftHeld = React.useCallback(() => {
+    if (skipSubmitRef.current) {
+      return true;
+    }
     if (!isKolamWindowsShiftKeyDown() && !shiftHeldRef.current) {
       return false;
     }
     applyNewline();
+    consumeKolamWindowsShiftEnterChord();
     return true;
   }, [applyNewline]);
 
   return {
     consumeSkipSubmit,
+    handleChangeText,
     handleKeyPress,
     handleSelectionChange,
     insertNewlineIfShiftHeld,
@@ -3258,7 +3342,7 @@ function KolamTeamChatDaraWindow({
             accessibilityLabel="Tulis pesan DARA team chat"
             editable={!composerDisabled}
             multiline
-            onChangeText={onComposerTextChange}
+            onChangeText={composerEnter.handleChangeText}
             onKeyPress={handleComposerKeyPress}
             onSelectionChange={composerEnter.handleSelectionChange}
             onSubmitEditing={handleSubmitComposer}
@@ -4496,13 +4580,6 @@ function KolamChatRailDetailPanel({
     );
   }, [daraThinkingLiveSignal, mode, selectedItem.id]);
 
-  const handleComposerInputChange = React.useCallback(
-    (value: string) => {
-      onComposerTextChange(value);
-    },
-    [onComposerTextChange],
-  );
-
   const handlePickMention = React.useCallback(
     (username: string) => {
       const tag = `@${username} `;
@@ -4555,7 +4632,7 @@ function KolamChatRailDetailPanel({
 
   const composerEnter = useKolamComposerEnterKey(
     composerText,
-    handleComposerInputChange,
+    onComposerTextChange,
   );
   const handleSubmitComposer = React.useCallback(() => {
     if (composerEnter.consumeSkipSubmit()) {
@@ -5167,7 +5244,7 @@ function KolamChatRailDetailPanel({
               }
               editable={!detail.sending && !inboxComposerBlocked}
               multiline
-              onChangeText={handleComposerInputChange}
+              onChangeText={composerEnter.handleChangeText}
               onKeyPress={handleComposerKeyPress}
               onSelectionChange={composerEnter.handleSelectionChange}
               onSubmitEditing={handleSubmitComposer}

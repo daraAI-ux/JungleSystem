@@ -4049,6 +4049,23 @@ describe('KolamGlobalChatRail', () => {
         .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat')!
         .props.value,
     ).toBe('Baris satu\n');
+
+    const afterNewlineInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat');
+
+    // Native echo without \n must not snap the caret/value back up.
+    await ReactTestRenderer.act(async () => {
+      await afterNewlineInput!.props.onChangeText('Baris satu');
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(TextInput)
+        .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat')!
+        .props.value,
+    ).toBe('Baris satu\n');
+    expect(sendMessage).not.toHaveBeenCalled();
   });
 
   it('shows a DARA thinking bubble after sending a team message that mentions DARA', async () => {
