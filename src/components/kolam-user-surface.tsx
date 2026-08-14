@@ -1,5 +1,11 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {
   getKolamUserAccountStatusLabel,
@@ -2706,67 +2712,86 @@ function KolamUserEditSurface({
 
         <View style={styles.formGrid}>
           <View style={styles.formFieldWide}>
-            <View style={styles.accessSectionHeader}>
-              <Text style={styles.detailPanelTitle}>Informasi Dasar</Text>
-              <Text style={styles.detailSubtitle}>
-                Perbarui informasi pribadi pengguna.
-              </Text>
+            <View style={styles.basicInfoCard}>
+              <View style={styles.accessSectionHeader}>
+                <Text style={styles.detailPanelTitle}>Informasi Dasar</Text>
+                <Text style={styles.detailSubtitle}>
+                  Perbarui informasi pribadi pengguna.
+                </Text>
+              </View>
+              <View style={styles.basicInfoRow}>
+                <UserFormField label="Nama Pengguna" style={styles.basicInfoHalf}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value => setField('username', value)}
+                    style={styles.formInput}
+                    value={form.username}
+                  />
+                </UserFormField>
+                <UserFormField
+                  label="Zona Waktu"
+                  required
+                  style={styles.basicInfoHalf}>
+                  <KolamDropdownSelect
+                    label="Zona Waktu"
+                    onChange={value => setField('timezone', value)}
+                    options={TIMEZONE_OPTIONS.map(timezone => ({
+                      label: timezone.label,
+                      value: timezone.value,
+                    }))}
+                    value={form.timezone}
+                  />
+                </UserFormField>
+              </View>
+              <View style={styles.basicInfoRow}>
+                <UserFormField
+                  label="Nama Depan"
+                  required
+                  style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value => setField('first_name', value)}
+                    style={styles.formInput}
+                    value={form.first_name}
+                  />
+                </UserFormField>
+                <UserFormField
+                  label="Nama Belakang"
+                  required
+                  style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value => setField('last_name', value)}
+                    style={styles.formInput}
+                    value={form.last_name}
+                  />
+                </UserFormField>
+                <UserFormField
+                  label="Email"
+                  required
+                  style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    mode="email"
+                    onChangeText={value => setField('email', value)}
+                    style={styles.formInput}
+                    value={form.email}
+                  />
+                </UserFormField>
+                <UserFormField
+                  label="Nomor Telepon"
+                  required
+                  style={styles.basicInfoQuarter}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    onChangeText={value => setField('phone_number', value)}
+                    style={styles.formInput}
+                    value={form.phone_number}
+                  />
+                </UserFormField>
+              </View>
             </View>
           </View>
-          <UserFormField label="Nama Pengguna">
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value => setField('username', value)}
-              style={styles.formInput}
-              value={form.username}
-            />
-          </UserFormField>
-          <View style={styles.formFieldWide}>
-            <UserFormField label="Zona Waktu" required>
-              <KolamDropdownSelect
-                label="Zona Waktu"
-                onChange={value => setField('timezone', value)}
-                options={TIMEZONE_OPTIONS.map(timezone => ({
-                  label: timezone.label,
-                  value: timezone.value,
-                }))}
-                value={form.timezone}
-              />
-            </UserFormField>
-          </View>
-          <UserFormField label="Nama Depan" required>
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value => setField('first_name', value)}
-              style={styles.formInput}
-              value={form.first_name}
-            />
-          </UserFormField>
-          <UserFormField label="Nama Belakang" required>
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value => setField('last_name', value)}
-              style={styles.formInput}
-              value={form.last_name}
-            />
-          </UserFormField>
-          <UserFormField label="Email" required>
-            <KolamFormTextField
-              editable={!formDisabled}
-              mode="email"
-              onChangeText={value => setField('email', value)}
-              style={styles.formInput}
-              value={form.email}
-            />
-          </UserFormField>
-          <UserFormField label="Nomor Telepon" required>
-            <KolamFormTextField
-              editable={!formDisabled}
-              onChangeText={value => setField('phone_number', value)}
-              style={styles.formInput}
-              value={form.phone_number}
-            />
-          </UserFormField>
           <View style={styles.formFieldWide}>
             <View style={styles.accessSectionHeader}>
               <Text style={styles.detailPanelTitle}>Peran & Izin Akses</Text>
@@ -3352,13 +3377,15 @@ function UserFormField({
   children,
   label,
   required = false,
+  style,
 }: {
   children: React.ReactNode;
   label: string;
   required?: boolean;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <View style={styles.formField}>
+    <View style={[styles.formField, style]}>
       <Text style={styles.formLabel}>
         {label}
         {required ? <Text style={styles.formRequired}> *</Text> : null}
@@ -4534,6 +4561,30 @@ const styles = StyleSheet.create({
   formFieldWide: {
     flexBasis: '100%',
     flexGrow: 1,
+  },
+  basicInfoCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    padding: 14,
+  },
+  basicInfoRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  basicInfoHalf: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 280,
+  },
+  basicInfoQuarter: {
+    flexBasis: '23%',
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 180,
   },
   resignStatusCard: {
     backgroundColor: V.colors.dangerSoft,
