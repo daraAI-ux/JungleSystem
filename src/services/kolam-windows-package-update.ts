@@ -19,6 +19,7 @@ export type KolamPackageInstallProgress = {
 type KolamWindowsPackageUpdateNativeBridge = {
   addListener?: (eventName: string) => void;
   downloadMsix?: (options: {
+    authorization?: string;
     fileName?: string;
     sha256?: string;
     sha512?: string;
@@ -95,6 +96,7 @@ export function getKolamWindowsPackageInfo(): KolamPackageInfo {
 }
 
 export async function downloadKolamWindowsMsix(options: {
+  authorization?: string;
   fileName?: string;
   sha256?: string;
   sha512?: string;
@@ -106,7 +108,15 @@ export async function downloadKolamWindowsMsix(options: {
     throw new Error('Gagal unduh');
   }
 
-  const result = await bridge.downloadMsix(options);
+  const authorization = options.authorization?.trim();
+  if (!authorization) {
+    throw new Error('Login dulu');
+  }
+
+  const result = await bridge.downloadMsix({
+    ...options,
+    authorization,
+  });
   const path = typeof result?.path === 'string' ? result.path.trim() : '';
   if (!path) {
     throw new Error('Gagal unduh');

@@ -275,9 +275,14 @@ winrt::fire_and_forget DownloadMsixAsync(
     auto sha256 = ToLowerHex(ReadString(options, "sha256"));
     auto expectedSize = ReadUint64(options, "size");
     auto fileName = SanitizeMsixFileName(ReadString(options, "fileName"));
+    auto authorization = ReadString(options, "authorization");
 
     if (!IsHttpsUrl(url)) {
       result.Reject("URL unduhan tidak valid.");
+      co_return;
+    }
+    if (authorization.empty()) {
+      result.Reject("Login dulu");
       co_return;
     }
     if (sha512.empty() && sha256.empty()) {
@@ -299,8 +304,15 @@ winrt::fire_and_forget DownloadMsixAsync(
     auto request = winrt::Windows::Web::Http::HttpRequestMessage(
         winrt::Windows::Web::Http::HttpMethod::Get(),
         winrt::Windows::Foundation::Uri(winrt::to_hstring(url)));
+    request.Headers().TryAppendWithoutValidation(
+        L"Authorization", winrt::to_hstring(authorization));
     auto response = co_await client.SendRequestAsync(
         request, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead);
+    if (response.StatusCode() == winrt::Windows::Web::Http::HttpStatusCode::Unauthorized ||
+        response.StatusCode() == winrt::Windows::Web::Http::HttpStatusCode::Forbidden) {
+      result.Reject("Akses ditolak");
+      co_return;
+    }
     if (response.StatusCode() != winrt::Windows::Web::Http::HttpStatusCode::Ok) {
       result.Reject("Gagal unduh.");
       co_return;

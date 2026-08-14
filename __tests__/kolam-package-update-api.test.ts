@@ -3,21 +3,31 @@ import {
   getKolamPackageUpdateLatestUrl,
   KolamPackageUpdateRequestError,
 } from '../src/services/kolam-package-update-api';
+import {getAccessToken} from '../src/lib/api-client';
+
+jest.mock('../src/lib/api-client', () => ({
+  getAccessToken: jest.fn(),
+}));
 
 const VALID_SHA512 = 'ab'.repeat(64);
+const mockedGetAccessToken = getAccessToken as jest.MockedFunction<
+  typeof getAccessToken
+>;
 
 describe('kolam package update api', () => {
   beforeEach(() => {
     globalThis.fetch = jest.fn();
+    mockedGetAccessToken.mockReset();
+    mockedGetAccessToken.mockReturnValue('test-token');
   });
 
-  it('reads the public JungleSystem latest.json URL', () => {
+  it('reads the JungleSystem latest.json URL', () => {
     expect(getKolamPackageUpdateLatestUrl()).toBe(
       'https://amfibi.dunia-anura.com/desktop/jungle-system/latest.json',
     );
   });
 
-  it('returns a parsed release without sending a bearer token', async () => {
+  it('returns a parsed release with a bearer token', async () => {
     (globalThis.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
@@ -40,9 +50,22 @@ describe('kolam package update api', () => {
     expect(globalThis.fetch).toHaveBeenCalledWith(
       'https://amfibi.dunia-anura.com/desktop/jungle-system/latest.json',
       expect.objectContaining({
-        headers: {Accept: 'application/json'},
+        headers: {
+          Accept: 'application/json',
+          Authorization: 'Bearer test-token',
+        },
       }),
     );
+  });
+
+  it('rejects when no access token is available', async () => {
+    mockedGetAccessToken.mockReturnValue(undefined);
+
+    await expect(fetchKolamPackageLatestRelease()).rejects.toMatchObject({
+      status: 401,
+      message: 'Login dulu',
+    });
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
   it('maps a missing release to Tidak ada rilis', async () => {
@@ -57,6 +80,18 @@ describe('kolam package update api', () => {
     await expect(fetchKolamPackageLatestRelease()).rejects.toMatchObject({
       status: 404,
       message: 'Tidak ada rilis',
+    });
+  });
+
+  it('maps forbidden responses to Akses ditolak', async () => {
+    (globalThis.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 403,
+    });
+
+    await expect(fetchKolamPackageLatestRelease()).rejects.toMatchObject({
+      status: 403,
+      message: 'Akses ditolak',
     });
   });
 });

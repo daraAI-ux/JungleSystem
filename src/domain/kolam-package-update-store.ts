@@ -1,3 +1,4 @@
+import {getAccessToken} from '../lib/api-client';
 import {
   isKolamPackageUpdateNewer,
   kolamPackageUpdateErrorMessage,
@@ -169,12 +170,18 @@ async function runInstall(release: KolamPackageReleaseManifest) {
   });
 
   try {
+    const token = getAccessToken()?.trim();
+    if (!token) {
+      throw new Error('Login dulu');
+    }
+
     const downloaded = await downloadKolamWindowsMsix({
       url: release.url,
       sha512: release.sha512,
       sha256: release.sha256,
       size: release.size,
       fileName: release.artifact,
+      authorization: `Bearer ${token}`,
     });
 
     patchState({

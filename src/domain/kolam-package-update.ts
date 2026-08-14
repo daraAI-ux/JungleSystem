@@ -127,6 +127,9 @@ export function kolamPackageUpdateErrorMessage(
     if (status === 404) {
       return 'Tidak ada rilis';
     }
+    if (status === 401 || status === 403) {
+      return 'Akses ditolak';
+    }
   }
 
   if (error instanceof Error) {
@@ -137,6 +140,15 @@ export function kolamPackageUpdateErrorMessage(
       /\b404\b/.test(message)
     ) {
       return 'Tidak ada rilis';
+    }
+    if (
+      message === 'Login dulu' ||
+      message === 'Akses ditolak' ||
+      /\b401\b/.test(message) ||
+      /\b403\b/.test(message) ||
+      /unauthorized|forbidden|restricted|resign/i.test(message)
+    ) {
+      return message === 'Login dulu' ? 'Login dulu' : 'Akses ditolak';
     }
     if (/hash/i.test(message)) {
       return 'Hash tidak cocok';

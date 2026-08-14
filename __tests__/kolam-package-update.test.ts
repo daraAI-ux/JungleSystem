@@ -93,6 +93,14 @@ describe('kolam package update domain', () => {
     expect(
       kolamPackageUpdateErrorMessage(new Error('Update manifest error')),
     ).toBe('Gagal cek');
+    expect(
+      kolamPackageUpdateErrorMessage(
+        new KolamPackageUpdateRequestError(403, 'Akses ditolak'),
+      ),
+    ).toBe('Akses ditolak');
+    expect(kolamPackageUpdateErrorMessage(new Error('Login dulu'))).toBe(
+      'Login dulu',
+    );
   });
 
   it('maps empty-release style status copy', () => {

@@ -5,6 +5,7 @@ import {
   resetKolamPackageUpdateStoreForTests,
   startKolamPackageUpdateAutoCheck,
 } from '../src/domain/kolam-package-update-store';
+import {getAccessToken} from '../src/lib/api-client';
 import {fetchKolamPackageLatestRelease} from '../src/services/kolam-package-update-api';
 import {
   downloadKolamWindowsMsix,
@@ -12,6 +13,10 @@ import {
   installKolamWindowsMsix,
   restartKolamWindowsApp,
 } from '../src/services/kolam-windows-package-update';
+
+jest.mock('../src/lib/api-client', () => ({
+  getAccessToken: jest.fn(() => 'test-token'),
+}));
 
 jest.mock('../src/services/kolam-package-update-api', () => ({
   fetchKolamPackageLatestRelease: jest.fn(),
@@ -40,6 +45,9 @@ const mockedInstall = installKolamWindowsMsix as jest.MockedFunction<
 const mockedRestart = restartKolamWindowsApp as jest.MockedFunction<
   typeof restartKolamWindowsApp
 >;
+const mockedGetAccessToken = getAccessToken as jest.MockedFunction<
+  typeof getAccessToken
+>;
 
 const RELEASE = {
   appId: 'JungleSystem',
@@ -58,6 +66,8 @@ describe('kolam package update store', () => {
     mockedDownload.mockReset();
     mockedInstall.mockReset();
     mockedRestart.mockReset();
+    mockedGetAccessToken.mockReset();
+    mockedGetAccessToken.mockReturnValue('test-token');
     mockedInfo.mockReturnValue({
       familyName: 'JungleSystem_test',
       name: 'JungleSystem',
@@ -169,6 +179,7 @@ describe('kolam package update store', () => {
       expect.objectContaining({
         url: RELEASE.url,
         sha512: RELEASE.sha512,
+        authorization: 'Bearer test-token',
       }),
     );
     expect(mockedInstall).toHaveBeenCalledWith('C:\\cache\\update.msix');

@@ -158,6 +158,10 @@ Script akan membuat `JungleSystem.appinstaller` dengan `MainPackage` x64.
 URL wajib HTTPS untuk distribusi/update. File harus signed dan identity harus
 sama dengan rilis sebelumnya.
 
+Endpoint `/desktop/jungle-system/*` wajib Bearer (`verifyToken`). Klien RNW
+mengirim `Authorization` saat cek `latest.json` dan unduh MSIX. Tanpa token /
+user resign / `account_restricted` → ditolak.
+
 ## Install Manual
 
 Install MSIX:
