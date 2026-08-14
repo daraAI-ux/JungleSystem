@@ -3,6 +3,7 @@ import {
   getKolamTeamChatCallStartedById,
   isKolamTeamChatCallMediaReady,
   isKolamTeamChatCallRingingForMe,
+  isKolamTeamChatCallWaitingRingbackForMe,
   pickPrimaryKolamTeamChatCall,
   secondsUntilKolamTeamChatCallRing,
   withKolamTeamChatCallMyParticipantStatus,
@@ -198,24 +199,29 @@ export function useKolamTeamChatGroupCallGate({
   }, [liveCall?._id, liveCall?.status]);
 
   const ringingMe = isKolamTeamChatCallRingingForMe(liveCall, userId);
-  const ringingMeRef = useRef(ringingMe);
-  ringingMeRef.current = ringingMe;
+  const waitingRingback = isKolamTeamChatCallWaitingRingbackForMe(
+    liveCall,
+    userId,
+  );
+  const shouldPlayCallTone = ringingMe || waitingRingback;
+  const shouldPlayCallToneRef = useRef(shouldPlayCallTone);
+  shouldPlayCallToneRef.current = shouldPlayCallTone;
 
   useEffect(() => {
-    if (!enabled || !featureEnabled || !ringingMe) {
+    if (!enabled || !featureEnabled || !shouldPlayCallTone) {
       stopSharedKolamGroupCallRingtone();
       return;
     }
 
     ringtone.start();
     return () => {
-      // Only halt playback when we are truly leaving the ringing state.
-      // Cleanup during re-render/remount must not kill a still-valid invite ring.
-      if (!ringingMeRef.current) {
+      // Only halt playback when we are truly leaving invite/ringback state.
+      // Cleanup during re-render/remount must not kill a still-valid tone.
+      if (!shouldPlayCallToneRef.current) {
         stopSharedKolamGroupCallRingtone();
       }
     };
-  }, [enabled, featureEnabled, ringingMe, ringtone]);
+  }, [enabled, featureEnabled, ringtone, shouldPlayCallTone]);
 
   useEffect(() => {
     return () => {

@@ -120,6 +120,25 @@ export function isKolamTeamChatCallRingingForMe(
   return status === 'ringing' || status === 'invited';
 }
 
+/**
+ * Outbound ringback for a joined host/peer while the call is still waiting
+ * for someone else (call.status === 'ringing'). Mutual exclusive with invite ring.
+ */
+export function isKolamTeamChatCallWaitingRingbackForMe(
+  call: KolamTeamChatCall | null | undefined,
+  userId?: string | null,
+) {
+  if (!call || call.status !== 'ringing') {
+    return false;
+  }
+
+  if (isKolamTeamChatCallRingingForMe(call, userId)) {
+    return false;
+  }
+
+  return getKolamTeamChatCallMyParticipantStatus(call, userId) === 'joined';
+}
+
 export function canManageKolamTeamChatCall({
   call,
   isRoomAdmin,

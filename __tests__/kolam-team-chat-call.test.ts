@@ -8,6 +8,7 @@ import {
   isKolamTeamChatCallMediaReady,
   isKolamTeamChatCallParticipantMuted,
   isKolamTeamChatCallRingingForMe,
+  isKolamTeamChatCallWaitingRingbackForMe,
   pickPrimaryKolamTeamChatCall,
   withKolamTeamChatCallMyParticipantStatus,
 } from '../src/domain/kolam-team-chat-call';
@@ -77,6 +78,42 @@ describe('kolam-team-chat-call domain', () => {
     expect(pickPrimaryKolamTeamChatCall([active, ringing], 'me')?._id).toBe(
       'c-ring',
     );
+  });
+
+  it('plays ringback for joined host while call is still ringing', () => {
+    const hostWaiting: KolamTeamChatCall = {
+      _id: 'c-wait',
+      participants: [
+        {status: 'joined', userId: 'host'},
+        {status: 'ringing', userId: 'peer'},
+      ],
+      status: 'ringing',
+    };
+    const invitee: KolamTeamChatCall = {
+      _id: 'c-invite',
+      participants: [
+        {status: 'joined', userId: 'host'},
+        {status: 'ringing', userId: 'peer'},
+      ],
+      status: 'ringing',
+    };
+    const active: KolamTeamChatCall = {
+      _id: 'c-active',
+      participants: [
+        {status: 'joined', userId: 'host'},
+        {status: 'joined', userId: 'peer'},
+      ],
+      status: 'active',
+    };
+
+    expect(isKolamTeamChatCallWaitingRingbackForMe(hostWaiting, 'host')).toBe(
+      true,
+    );
+    expect(isKolamTeamChatCallWaitingRingbackForMe(invitee, 'peer')).toBe(
+      false,
+    );
+    expect(isKolamTeamChatCallRingingForMe(invitee, 'peer')).toBe(true);
+    expect(isKolamTeamChatCallWaitingRingbackForMe(active, 'host')).toBe(false);
   });
 
   it('gates manage vs mute roles', () => {

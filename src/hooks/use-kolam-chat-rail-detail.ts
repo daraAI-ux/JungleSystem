@@ -67,10 +67,14 @@ import {
   formatKolamTeamChatCallHandoverNotice,
   getKolamTeamChatCallParticipantUserId,
   isKolamTeamChatCallMediaReady,
+  isKolamTeamChatCallWaitingRingbackForMe,
   withKolamTeamChatCallMyParticipantStatus,
 } from '../domain/kolam-team-chat-call';
 import { copyTextToClipboard } from '../lib/native-clipboard';
-import { stopSharedKolamGroupCallRingtone } from '../services/kolam-group-call-ringtone';
+import {
+  getSharedKolamGroupCallRingtoneController,
+  stopSharedKolamGroupCallRingtone,
+} from '../services/kolam-group-call-ringtone';
 import {
   getSharedKolamTeamChatCallMediaSession,
   stopSharedKolamTeamChatCallMediaSession,
@@ -1081,13 +1085,17 @@ export function useKolamChatRailDetail({
     await runCallAction(
       async () => {
         const call = await startKolamTeamChatCall(selectedId);
-        return (
+        const next =
           withKolamTeamChatCallMyParticipantStatus(
             call,
             currentUserId,
             'joined',
-          ) ?? call
-        );
+          ) ?? call;
+        // Immediate outbound ringback while waiting for peers (gate also owns loop).
+        if (isKolamTeamChatCallWaitingRingbackForMe(next, currentUserId)) {
+          getSharedKolamGroupCallRingtoneController().start();
+        }
+        return next;
       },
       {startMediaAfterJoin: true},
     );
