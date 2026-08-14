@@ -9,6 +9,9 @@ import {
   isKolamTeamChatCallParticipantMuted,
   isKolamTeamChatCallRingingForMe,
   isKolamTeamChatCallWaitingRingbackForMe,
+  formatKolamTeamChatCallParticipantRowLabel,
+  formatKolamTeamChatCallParticipantStatusLabel,
+  resolveKolamTeamChatCallParticipantDisplayName,
   pickPrimaryKolamTeamChatCall,
   withKolamTeamChatCallMyParticipantStatus,
 } from '../src/domain/kolam-team-chat-call';
@@ -114,6 +117,43 @@ describe('kolam-team-chat-call domain', () => {
     );
     expect(isKolamTeamChatCallRingingForMe(invitee, 'peer')).toBe(true);
     expect(isKolamTeamChatCallWaitingRingbackForMe(active, 'host')).toBe(false);
+  });
+
+  it('resolves participant display name from room members and status label', () => {
+    const participant = {
+      status: 'ringing' as const,
+      userId: 'u-peer',
+    };
+    const members = [
+      {
+        _id: 'u-peer',
+        first_name: 'Budi',
+        last_name: 'Santoso',
+        username: 'budi',
+      },
+    ];
+
+    expect(
+      resolveKolamTeamChatCallParticipantDisplayName({
+        participant,
+        members,
+      }),
+    ).toBe('Budi Santoso');
+    expect(formatKolamTeamChatCallParticipantStatusLabel('ringing')).toBe(
+      'Memanggil',
+    );
+    expect(
+      formatKolamTeamChatCallParticipantRowLabel({
+        participant,
+        members,
+      }),
+    ).toBe('Budi Santoso · Memanggil');
+    expect(
+      resolveKolamTeamChatCallParticipantDisplayName({
+        participant: {status: 'joined', userId: 'unknown'},
+        members,
+      }),
+    ).toBe('Peserta');
   });
 
   it('gates manage vs mute roles', () => {

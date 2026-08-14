@@ -139,6 +139,93 @@ export function isKolamTeamChatCallWaitingRingbackForMe(
   return getKolamTeamChatCallMyParticipantStatus(call, userId) === 'joined';
 }
 
+/** Short operator label for participant invite/presence state. */
+export function formatKolamTeamChatCallParticipantStatusLabel(
+  status: KolamTeamChatCallParticipant['status'] | null | undefined,
+): string {
+  switch (status) {
+    case 'invited':
+    case 'ringing':
+      return 'Memanggil';
+    case 'joined':
+      return 'Online';
+    case 'declined':
+      return 'Tolak';
+    case 'no_answer':
+      return 'Tidak jawab';
+    case 'left':
+      return 'Keluar';
+    default:
+      return '';
+  }
+}
+
+function formatKolamTeamChatUserRefLabel(
+  user: KolamTeamChatUserRef | null | undefined,
+): string {
+  if (!user) {
+    return '';
+  }
+
+  return (
+    [user.first_name, user.last_name].filter(Boolean).join(' ').trim() ||
+    user.username?.trim() ||
+    user.email?.trim() ||
+    ''
+  );
+}
+
+/**
+ * BE serializeParticipant only sends userId — resolve display name from room members.
+ */
+export function resolveKolamTeamChatCallParticipantDisplayName({
+  participant,
+  members,
+}: {
+  participant: KolamTeamChatCallParticipant | null | undefined;
+  members?: KolamTeamChatUserRef[] | null;
+}): string {
+  if (!participant) {
+    return 'Peserta';
+  }
+
+  const embedded =
+    typeof participant.user === 'object' && participant.user
+      ? formatKolamTeamChatUserRefLabel(participant.user)
+      : '';
+  if (embedded) {
+    return embedded;
+  }
+
+  const userId = getKolamTeamChatCallParticipantUserId(participant);
+  if (userId && members?.length) {
+    const member = members.find(item => String(item._id) === String(userId));
+    const fromMember = formatKolamTeamChatUserRefLabel(member);
+    if (fromMember) {
+      return fromMember;
+    }
+  }
+
+  return 'Peserta';
+}
+
+export function formatKolamTeamChatCallParticipantRowLabel({
+  participant,
+  members,
+}: {
+  participant: KolamTeamChatCallParticipant | null | undefined;
+  members?: KolamTeamChatUserRef[] | null;
+}): string {
+  const name = resolveKolamTeamChatCallParticipantDisplayName({
+    participant,
+    members,
+  });
+  const status = formatKolamTeamChatCallParticipantStatusLabel(
+    participant?.status,
+  );
+  return status ? `${name} · ${status}` : name;
+}
+
 export function canManageKolamTeamChatCall({
   call,
   isRoomAdmin,

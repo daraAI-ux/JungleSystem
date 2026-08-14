@@ -52,6 +52,7 @@ import {
   canManageKolamTeamChatCall,
   canMuteKolamTeamChatCallParticipants,
   formatKolamTeamChatCallOnlineLabel,
+  formatKolamTeamChatCallParticipantRowLabel,
   getKolamTeamChatCallParticipantUserId,
   isKolamTeamChatCallParticipantMuted,
   isKolamTeamChatCallRingingForMe,
@@ -7908,16 +7909,13 @@ function KolamChatCallStrip({
     activeCall?.participants?.filter(participant =>
       ['declined', 'no_answer'].includes(participant.status),
     ).length ?? 0;
-  const participantControls =
-    canMute && activeCall
-      ? activeCall.participants
-          ?.map(participant => ({
-            participant,
-            userId: getCallParticipantUserId(participant),
-          }))
-          .filter(item => item.userId && item.userId !== currentUserId)
-          .slice(0, 3) ?? []
-      : [];
+  const participantRows =
+    activeCall?.participants
+      ?.map(participant => ({
+        participant,
+        userId: getCallParticipantUserId(participant),
+      }))
+      .filter(item => item.userId && item.userId !== currentUserId) ?? [];
 
   return (
     <View style={[styles.callStrip, !activeCall && styles.callStripIdle]}>
@@ -8032,40 +8030,45 @@ function KolamChatCallStrip({
           ) : null}
         </View>
       ) : null}
-      {participantControls.length > 0 ? (
+      {participantRows.length > 0 ? (
         <View style={styles.callParticipantList}>
           <KolamMappedList
-            items={participantControls}
+            items={participantRows}
             getKey={item => item.userId ?? 'participant'}
             renderItem={({ participant, userId }) => {
               const muted = isKolamTeamChatCallParticipantMuted(participant);
               return (
                 <View style={styles.callParticipantRow}>
                   <Text numberOfLines={1} style={styles.callParticipantText}>
-                    {getCallParticipantLabel(participant)}
+                    {formatKolamTeamChatCallParticipantRowLabel({
+                      participant,
+                      members: detail.teamRoomMetadata.members,
+                    })}
                   </Text>
-                  <KolamPressable
-                    accessibilityLabel={`${
-                      muted ? 'Unmute' : 'Mute'
-                    } team chat participant`}
-                    disabled={detail.callBusy || !userId}
-                    onPress={() =>
-                      userId
-                        ? muted
-                          ? detail.unmuteCallParticipant(userId)
-                          : detail.muteCallParticipant(userId)
-                        : undefined
-                    }
-                    style={[
-                      styles.callButton,
-                      styles.callButtonGhost,
-                      detail.callBusy && styles.callButtonDisabled,
-                    ]}
-                  >
-                    <Text style={styles.callButtonGhostText}>
-                      {muted ? 'Unmute' : 'Mute'}
-                    </Text>
-                  </KolamPressable>
+                  {canMute ? (
+                    <KolamPressable
+                      accessibilityLabel={`${
+                        muted ? 'Unmute' : 'Mute'
+                      } team chat participant`}
+                      disabled={detail.callBusy || !userId}
+                      onPress={() =>
+                        userId
+                          ? muted
+                            ? detail.unmuteCallParticipant(userId)
+                            : detail.muteCallParticipant(userId)
+                          : undefined
+                      }
+                      style={[
+                        styles.callButton,
+                        styles.callButtonGhost,
+                        detail.callBusy && styles.callButtonDisabled,
+                      ]}
+                    >
+                      <Text style={styles.callButtonGhostText}>
+                        {muted ? 'Unmute' : 'Mute'}
+                      </Text>
+                    </KolamPressable>
+                  ) : null}
                 </View>
               );
             }}
@@ -9812,17 +9815,6 @@ function formatTeamChatPresence(presence: KolamTeamChatPresence) {
 
 function getCallParticipantUserId(participant: KolamTeamChatCallParticipant) {
   return getKolamTeamChatCallParticipantUserId(participant);
-}
-
-function getCallParticipantLabel(participant: KolamTeamChatCallParticipant) {
-  const user = typeof participant.user === 'object' ? participant.user : null;
-  const name = user
-    ? [user.first_name, user.last_name].filter(Boolean).join(' ').trim() ||
-      user.username ||
-      user.email
-    : '';
-
-  return name || getCallParticipantUserId(participant) || 'Participant';
 }
 
 function getChatStaffId(staff?: KolamChatStaffRef | string | null) {
