@@ -89,6 +89,19 @@ export const authPanelStyles = StyleSheet.create({
     flexDirection: 'row',
     gap: 6,
   },
+  authPasswordField: {
+    position: 'relative',
+    width: '100%',
+    justifyContent: 'center',
+  },
+  authPasswordInputWithReveal: {
+    paddingRight: 42,
+  },
+  authPasswordRevealButton: {
+    position: 'absolute',
+    right: 5,
+    top: 3,
+  },
   authModeTabs: {
     flexDirection: 'row',
     gap: 4,

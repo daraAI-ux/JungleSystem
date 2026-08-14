@@ -1,5 +1,5 @@
 import React from 'react';
-import {Text, View} from 'react-native';
+import {Text, TextInput, View} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamLoginScreen} from '../src/components/kolam-login-screen';
 import {authSources} from '../src/domain/auth';
@@ -100,6 +100,58 @@ describe('KolamLoginScreen', () => {
     });
 
     expect(onLogin).toHaveBeenCalled();
+  });
+
+  it('reveals and hides the login password with the eye button', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamLoginScreen
+            auth={{
+              accessScope: {am: false, kolam: false, pos: false},
+              amApiBaseUrl: 'https://frogs.dunia-anura.com/api',
+              authEmail: '',
+              authMessage: 'Mode server existing siap.',
+              authPassword: 'secret',
+              authSource: 'kolam',
+              authSourceHint: 'Inventory/Kolam access_inventory.',
+              authSources,
+              displayName: 'Belum login',
+              isSigningIn: false,
+              onAmApiBaseUrlChange: () => undefined,
+              onAuthEmailChange: () => undefined,
+              onAuthPasswordChange: () => undefined,
+              onAuthSourceChange: () => undefined,
+              onLogin: () => undefined,
+              onLogout: () => undefined,
+              onSync: () => undefined,
+            }}
+            deviceIdentityStatus="mac-only"
+            syncStatus={{
+              loading: false,
+              message: 'Sync: POS seed, Kolam seed, AM disabled.',
+            }}
+          />
+        </View>,
+      );
+    });
+
+    const passwordInput = () =>
+      renderer!.root
+        .findAllByType(TextInput)
+        .find(node => node.props.placeholder === 'Kata sandi');
+
+    expect(passwordInput()?.props.secureTextEntry).toBe(true);
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.root
+        .findByProps({accessibilityLabel: 'Tampilkan kata sandi'})
+        .props.onPress();
+    });
+
+    expect(passwordInput()?.props.secureTextEntry).toBe(false);
   });
 
   it('keeps the OTP tab visible on compact Kolam login when the server enables it', async () => {
