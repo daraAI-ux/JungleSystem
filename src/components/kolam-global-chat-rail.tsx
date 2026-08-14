@@ -4780,8 +4780,31 @@ function KolamChatRailDetailPanel({
   const scrollMessagesToEnd = React.useCallback(() => {
     messageScrollRef.current?.scrollToEnd({ animated: false });
   }, []);
+  const stickMessagesToBottomRef = React.useRef(true);
+  const handleMessagesScroll = React.useCallback(
+    (event: {
+      nativeEvent: {
+        contentOffset: {y: number};
+        contentSize: {height: number};
+        layoutMeasurement: {height: number};
+      };
+    }) => {
+      const {contentOffset, contentSize, layoutMeasurement} = event.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - layoutMeasurement.height - contentOffset.y;
+      stickMessagesToBottomRef.current = distanceFromBottom <= 96;
+    },
+    [],
+  );
+  const scrollMessagesToEndIfPinned = React.useCallback(() => {
+    if (!stickMessagesToBottomRef.current) {
+      return;
+    }
+    scrollMessagesToEnd();
+  }, [scrollMessagesToEnd]);
 
   React.useEffect(() => {
+    stickMessagesToBottomRef.current = true;
     scrollMessagesToEnd();
   }, [
     displayedMessageScrollKey,
@@ -5158,8 +5181,9 @@ function KolamChatRailDetailPanel({
                 fullPage && styles.messageScrollFull,
               ]}
               contentContainerStyle={styles.messageList}
-              onContentSizeChange={scrollMessagesToEnd}
-              onLayout={scrollMessagesToEnd}
+              onContentSizeChange={scrollMessagesToEndIfPinned}
+              onScroll={handleMessagesScroll}
+              scrollEventThrottle={16}
               showsVerticalScrollIndicator
             >
               <KolamMappedList
@@ -6539,9 +6563,13 @@ function KolamTeamMessageBody({ body }: { body: string }) {
 
 function KolamTeamMentionText({ body }: { body: string }) {
   const parts = splitTeamChatMentionText(body);
+  if (parts.length === 1 && parts[0]?.type === 'text') {
+    return <Text style={styles.messageBodyText}>{body}</Text>;
+  }
 
+  // Nested Text (not row+wrap Views) keeps large bubbles stable while wrapping.
   return (
-    <View style={styles.messageBodyFlow}>
+    <Text style={styles.messageBodyText}>
       {parts.map((part, index) => {
         if (part.type === 'url') {
           return (
@@ -6550,7 +6578,7 @@ function KolamTeamMentionText({ body }: { body: string }) {
               accessibilityRole="link"
               key={`u-${index}`}
               onPress={() => openInboxExternalUrl(part.value)}
-              style={[styles.messageBodyText, styles.messageBodyLink]}
+              style={styles.messageBodyLink}
             >
               {part.value}
             </Text>
@@ -6569,30 +6597,25 @@ function KolamTeamMentionText({ body }: { body: string }) {
         const label = part.username.trim() || part.raw.replace(/^@/, '');
         const mentionColors = getTeamChatMentionColorSet(part.username);
         return (
-          <View
+          <Text
             key={`m-${index}-${part.username}`}
             accessibilityLabel={
               isDara ? 'Mention DARA' : `Mention ${part.username}`
             }
             style={[
-              styles.messageMention,
-              {backgroundColor: mentionColors.backgroundColor},
-              isDara && styles.messageMentionAi,
+              styles.messageMentionTextInline,
+              {
+                backgroundColor: mentionColors.backgroundColor,
+                color: mentionColors.color,
+              },
+              isDara && styles.messageMentionTextAi,
             ]}
           >
-            <Text
-              style={[
-                styles.messageMentionText,
-                {color: mentionColors.color},
-                isDara && styles.messageMentionTextAi,
-              ]}
-            >
-              {label}
-            </Text>
-          </View>
+            {` ${label} `}
+          </Text>
         );
       })}
-    </View>
+    </Text>
   );
 }
 
@@ -12092,11 +12115,6 @@ const styles = StyleSheet.create({
     color: '#2563eb',
     textDecorationLine: 'underline',
   },
-  messageBodyFlow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
   messageBodyText: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
@@ -12260,6 +12278,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 15,
     fontWeight: '900',
+  },
+  messageMentionTextInline: {
+    borderRadius: 999,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 17,
   },
   messageMentionAi: {
     backgroundColor: V.colors.infoSoft,
