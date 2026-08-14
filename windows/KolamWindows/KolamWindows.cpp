@@ -10,6 +10,7 @@
 #include "KolamWindowsSQLiteStore.h"
 #include "KolamWindowsSecureTokenStore.h"
 #include "KolamWindowsPackageUpdate.h"
+#include "KolamWindowsSseStream.h"
 #include "resource.h"
 
 #include "AutolinkedNativeModules.g.h"

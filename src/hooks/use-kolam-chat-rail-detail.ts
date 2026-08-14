@@ -437,8 +437,19 @@ export function useKolamChatRailDetail({
         return;
       }
 
+      const tempId = `temp_send_${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      const optimistic = buildOptimisticTextMessage({
+        body,
+        currentUserId,
+        mode,
+        tempId,
+      });
+
       setSending(true);
       setErrorMessage(undefined);
+      setMessages(current => [...current, optimistic]);
 
       try {
         if (mode === 'team-chat') {
@@ -447,7 +458,12 @@ export function useKolamChatRailDetail({
             replyToMessageId: options?.replyToMessageId ?? undefined,
           });
           const nextMessage = mapTeamChatMessage(message, currentUserId);
-          setMessages(current => upsertRailDetailMessage(current, nextMessage));
+          setMessages(current =>
+            upsertRailDetailMessage(
+              current.filter(item => item.id !== tempId),
+              nextMessage,
+            ),
+          );
           return;
         }
 
@@ -459,8 +475,14 @@ export function useKolamChatRailDetail({
           getInboxBuyerDisplayName(conversation),
           getInboxBuyerAvatarUrl(conversation),
         );
-        setMessages(current => upsertRailDetailMessage(current, nextMessage));
+        setMessages(current =>
+          upsertRailDetailMessage(
+            current.filter(item => item.id !== tempId),
+            nextMessage,
+          ),
+        );
       } catch (error) {
+        setMessages(current => current.filter(item => item.id !== tempId));
         setErrorMessage(
           error instanceof Error ? error.message : 'Pesan gagal dikirim.',
         );
@@ -1196,6 +1218,46 @@ function mapInboxMessagePatch(
   }
 
   return next;
+}
+
+function buildOptimisticTextMessage({
+  body,
+  currentUserId,
+  mode,
+  tempId,
+}: {
+  body: string;
+  currentUserId?: string;
+  mode: KolamGlobalChatRailMode;
+  tempId: string;
+}): KolamChatRailDetailMessage {
+  const now = new Date().toISOString();
+  return {
+    attachments: [],
+    author: 'Anda',
+    body,
+    content:
+      mode === 'inbox'
+        ? {
+            type: 'text',
+            text: body,
+          }
+        : null,
+    daraMeta: null,
+    editedAt: null,
+    editedByName: null,
+    embeds: [],
+    id: tempId,
+    linkPreviews: [],
+    mine: true,
+    reactions: [],
+    replyContent: null,
+    replyPreview: null,
+    senderId: currentUserId ?? null,
+    senderIsAi: false,
+    sentAt: now,
+    status: 'pending',
+  };
 }
 
 function buildMarketplaceAttachBody(item: KolamChatMarketplaceListingHit) {

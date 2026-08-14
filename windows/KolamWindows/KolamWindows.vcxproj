@@ -113,6 +113,7 @@
     <ClInclude Include="KolamWindowsSecureTokenStore.h" />
     <ClInclude Include="KolamWindowsSQLiteStore.h" />
     <ClInclude Include="KolamWindowsPackageUpdate.h" />
+    <ClInclude Include="KolamWindowsSseStream.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="AutolinkedNativeModules.g.h" />
     <ClInclude Include="pch.h" />
@@ -127,6 +128,7 @@
     <ClCompile Include="KolamWindowsSecureTokenStore.cpp" />
     <ClCompile Include="KolamWindowsSQLiteStore.cpp" />
     <ClCompile Include="KolamWindowsPackageUpdate.cpp" />
+    <ClCompile Include="KolamWindowsSseStream.cpp" />
     <ClCompile Include="AutolinkedNativeModules.g.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

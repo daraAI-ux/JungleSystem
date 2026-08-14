@@ -236,6 +236,8 @@ const CHAT_ADMIN_ROLE_KEYS = new Set([
 ]);
 const CHAT_LIVE_STALE_MS = 15_000;
 const CHAT_LIVE_FALLBACK_INTERVAL_MS = 5_000;
+/** Open-thread REST safety net — does not depend on XHR SSE delivery. */
+const CHAT_LIVE_OPEN_DETAIL_POLL_MS = 2_000;
 /** Live frames that prove transcript/list content may have changed. */
 const CHAT_LIVE_CONTENT_EVENT_NAMES = new Set([
   'message.created',
@@ -1320,6 +1322,21 @@ export function KolamGlobalChatRail({
       syncFromLiveClassification,
     ],
   );
+
+  React.useEffect(() => {
+    if (!selectedItemId) {
+      return undefined;
+    }
+
+    const timer = setInterval(() => {
+      Promise.resolve(detail.refresh({quiet: true})).catch(() => undefined);
+    }, CHAT_LIVE_OPEN_DETAIL_POLL_MS);
+    (timer as {unref?: () => void}).unref?.();
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [detail.refresh, selectedItemId]);
 
   React.useEffect(() => {
     const isLiveStale = () =>

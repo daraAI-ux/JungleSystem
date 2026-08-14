@@ -1,4 +1,5 @@
 import {useEffect, useMemo, useRef} from 'react';
+import {NativeEventEmitter, NativeModules, Platform} from 'react-native';
 import {appConfig} from '../config/app';
 import {
   getKolamChatLiveEventContracts,
@@ -285,6 +286,11 @@ export function clearKolamChatLiveLastEventIdsForTest() {
 }
 
 function getGlobalEventSourceFactory(): KolamEventSourceFactory | undefined {
+  const nativeFactory = getNativeSseEventSourceFactory();
+  if (nativeFactory) {
+    return nativeFactory;
+  }
+
   const xhrFactory = getXmlHttpRequestEventSourceFactory();
   if (xhrFactory) {
     return xhrFactory;
@@ -297,6 +303,217 @@ function getGlobalEventSourceFactory(): KolamEventSourceFactory | undefined {
   }
 
   return undefined;
+}
+
+type KolamWindowsSseStreamBridge = {
+  addListener?: (eventName: string) => void;
+  close?: (
+    streamId: string,
+  ) => Promise<{closed?: boolean; streamId?: string} | void> | void;
+  open?: (options: {
+    headers?: Record<string, string>;
+    url: string;
+    withCredentials?: boolean;
+  }) => Promise<{streamId?: string} | void> | {streamId?: string};
+  removeListeners?: (count: number) => void;
+};
+
+function getNativeSseEventSourceFactory(): KolamEventSourceFactory | undefined {
+  if (Platform.OS !== 'windows') {
+    return undefined;
+  }
+
+  const bridge = (
+    NativeModules as Record<string, KolamWindowsSseStreamBridge | undefined>
+  ).KolamWindowsSseStream;
+  if (typeof bridge?.open !== 'function' || typeof bridge.close !== 'function') {
+    return undefined;
+  }
+
+  return (url, options) => createNativeSseEventSource(url, options, bridge);
+}
+
+function createNativeSseEventSource(
+  url: string,
+  options: Parameters<KolamEventSourceFactory>[1],
+  bridge: KolamWindowsSseStreamBridge,
+): KolamEventSourceLike {
+  const listeners = new Map<string, Set<KolamEventSourceListener>>();
+  let closed = false;
+  let opened = false;
+  let streamId: string | null = null;
+  let pendingChunk = '';
+  const subscriptions: Array<{remove: () => void}> = [];
+
+  const source: KolamEventSourceLike = {
+    addEventListener(eventName, listener) {
+      const existing = listeners.get(eventName) ?? new Set();
+      existing.add(listener);
+      listeners.set(eventName, existing);
+    },
+    close() {
+      if (closed) {
+        return;
+      }
+
+      closed = true;
+      subscriptions.forEach(subscription => {
+        try {
+          subscription.remove();
+        } catch {
+          // Ignore emitter teardown races.
+        }
+      });
+      subscriptions.length = 0;
+      const id = streamId;
+      streamId = null;
+      if (id && typeof bridge.close === 'function') {
+        Promise.resolve(bridge.close(id)).catch(() => undefined);
+      }
+    },
+    onerror: null,
+    onopen: null,
+  };
+
+  const emitParsed = (eventName: string, data: string, eventId?: string) => {
+    listeners.get(eventName)?.forEach(listener => {
+      listener({data, lastEventId: eventId});
+    });
+  };
+
+  const ingestText = (text: string) => {
+    if (closed || !text) {
+      return;
+    }
+
+    pendingChunk = parseKolamSseText(
+      `${pendingChunk}${text}`,
+      emitParsed,
+      () => source.onactivity?.(),
+    );
+  };
+
+  try {
+    const emitter = new NativeEventEmitter(
+      bridge as ConstructorParameters<typeof NativeEventEmitter>[0],
+    );
+
+    subscriptions.push(
+      emitter.addListener('SseOpened', payload => {
+        if (closed) {
+          return;
+        }
+        const id =
+          payload && typeof payload === 'object'
+            ? String((payload as {streamId?: unknown}).streamId ?? '')
+            : '';
+        if (!id || (streamId && id !== streamId)) {
+          return;
+        }
+        if (!opened) {
+          opened = true;
+          source.onopen?.();
+        }
+        source.onactivity?.();
+      }),
+    );
+
+    subscriptions.push(
+      emitter.addListener('SseChunk', payload => {
+        if (closed) {
+          return;
+        }
+        const record =
+          payload && typeof payload === 'object'
+            ? (payload as {streamId?: unknown; text?: unknown})
+            : null;
+        const id = String(record?.streamId ?? '');
+        if (!id || (streamId && id !== streamId)) {
+          return;
+        }
+        if (typeof record?.text === 'string') {
+          ingestText(record.text);
+        }
+      }),
+    );
+
+    subscriptions.push(
+      emitter.addListener('SseError', payload => {
+        if (closed) {
+          return;
+        }
+        const id =
+          payload && typeof payload === 'object'
+            ? String((payload as {streamId?: unknown}).streamId ?? '')
+            : '';
+        if (!id || (streamId && id !== streamId)) {
+          return;
+        }
+        source.onerror?.();
+      }),
+    );
+
+    subscriptions.push(
+      emitter.addListener('SseClosed', payload => {
+        if (closed) {
+          return;
+        }
+        const id =
+          payload && typeof payload === 'object'
+            ? String((payload as {streamId?: unknown}).streamId ?? '')
+            : '';
+        if (!id || (streamId && id !== streamId)) {
+          return;
+        }
+        const activeId = streamId;
+        streamId = null;
+        if (activeId && typeof bridge.close === 'function') {
+          Promise.resolve(bridge.close(activeId)).catch(() => undefined);
+        }
+        source.onerror?.();
+      }),
+    );
+  } catch {
+    // Fall through — open() below will still fail clearly if bridge is broken.
+  }
+
+  Promise.resolve(
+    bridge.open?.({
+      headers: options?.headers,
+      url,
+      withCredentials: options?.withCredentials === true,
+    }),
+  )
+    .then(result => {
+      if (closed) {
+        const id =
+          result && typeof result === 'object'
+            ? String((result as {streamId?: unknown}).streamId ?? '')
+            : '';
+        if (id && typeof bridge.close === 'function') {
+          Promise.resolve(bridge.close(id)).catch(() => undefined);
+        }
+        return;
+      }
+
+      const id =
+        result && typeof result === 'object'
+          ? String((result as {streamId?: unknown}).streamId ?? '')
+          : '';
+      if (!id) {
+        source.onerror?.();
+        return;
+      }
+
+      streamId = id;
+    })
+    .catch(() => {
+      if (!closed) {
+        source.onerror?.();
+      }
+    });
+
+  return source;
 }
 
 function getXmlHttpRequestEventSourceFactory():
