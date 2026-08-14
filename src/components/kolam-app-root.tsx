@@ -6,6 +6,7 @@ import {KolamLoginScreen} from './kolam-login-screen';
 import {KolamMaintenanceLockScreen} from './kolam-maintenance-lock-screen';
 import {KolamMediaPreviewHost} from './kolam-media-preview-dialog';
 import {KolamPackageUpdateSessionHost} from './kolam-package-update-session-host';
+import {KolamTeamChatGroupCallGateHost} from './kolam-team-chat-group-call-gate-host';
 import {KolamWorkspaceSurface} from './kolam-workspace-surface';
 import {
   useKolamAuthContext,
@@ -43,6 +44,7 @@ const KolamSignedInLayout = React.memo(function KolamSignedInLayout() {
       <KolamShellWorkspaceHost />
       <KolamImagePreviewHost />
       <KolamMediaPreviewHost />
+      <KolamTeamChatGroupCallGateHost />
     </View>
   );
 });

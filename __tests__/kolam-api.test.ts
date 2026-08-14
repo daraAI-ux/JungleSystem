@@ -1732,7 +1732,15 @@ describe('Kolam Settings API contracts', () => {
         jsonResponse({success: true, data: {_id: 'call-2', status: 'active'}}),
       )
       .mockResolvedValueOnce(
-        jsonResponse({success: true, data: {_id: 'call-2', status: 'active'}}),
+        jsonResponse({
+          success: true,
+          data: {
+            call: {_id: 'call-2', status: 'active'},
+            handoverToken: 'token-abc-123456',
+            expiresAt: '2026-08-14T12:00:00.000Z',
+            platform: 'google-meet',
+          },
+        }),
       );
 
     await expect(getKolamTeamChatCallConfig()).resolves.toMatchObject({enabled: true});
@@ -1770,7 +1778,9 @@ describe('Kolam Settings API contracts', () => {
       unmuteKolamTeamChatCallParticipant('call-2', 'user-1'),
     ).resolves.toMatchObject({status: 'active'});
     await expect(handoverKolamTeamChatCall('call-2', 'google-meet')).resolves.toMatchObject({
-      status: 'active',
+      call: {_id: 'call-2', status: 'active'},
+      handoverToken: 'token-abc-123456',
+      platform: 'google-meet',
     });
 
     expect(fetchMock).toHaveBeenNthCalledWith(

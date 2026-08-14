@@ -63,6 +63,7 @@ import {
 } from '../domain/kolam-inbox-dara-display';
 import type { KolamChatCatalogCardContent } from '../domain/kolam-chat-catalog-card';
 import { resolveKolamTeamChatBotDisplayName } from '../domain/kolam-team-chat-bot-display';
+import { getKolamTeamChatCallParticipantUserId } from '../domain/kolam-team-chat-call';
 
 const EMPTY_TEAM_CHAT_PRESENCE: KolamTeamChatPresence = {
   onlineCount: 0,
@@ -357,11 +358,14 @@ export function useKolamChatRailDetail({
     setCallErrorMessage(undefined);
 
     try {
-      const [config, call] = await Promise.all([
-        getKolamTeamChatCallConfig(),
-        getKolamRoomActiveTeamChatCall(selectedId),
-      ]);
+      const config = await getKolamTeamChatCallConfig();
       setCallConfig(config);
+      if (!config.enabled) {
+        setActiveCall(null);
+        return;
+      }
+
+      const call = await getKolamRoomActiveTeamChatCall(selectedId);
       setActiveCall(call && call.status !== 'ended' ? call : null);
     } catch (error) {
       setCallErrorMessage(
@@ -1075,9 +1079,10 @@ export function useKolamChatRailDetail({
       return;
     }
 
-    await runCallAction(() =>
-      handoverKolamTeamChatCall(activeCall._id, 'android'),
-    );
+    await runCallAction(async () => {
+      const result = await handoverKolamTeamChatCall(activeCall._id, 'android');
+      return result.call;
+    });
   }, [activeCall, runCallAction]);
 
   const muteCallParticipant = useCallback(
@@ -1156,9 +1161,7 @@ export function useKolamChatRailDetail({
 }
 
 function getCallParticipantUserId(participant: KolamTeamChatCallParticipant) {
-  return typeof participant.user === 'string'
-    ? participant.user
-    : participant.user?._id;
+  return getKolamTeamChatCallParticipantUserId(participant);
 }
 
 function mergeRailDetailMessages(

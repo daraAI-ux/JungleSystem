@@ -5234,6 +5234,7 @@ describe('KolamGlobalChatRail', () => {
       liveOptions = options;
     });
     useReadonlyDataMock.mockReturnValue({
+      clearItemUnread: jest.fn(() => 0),
       conversations: [],
       loading: false,
       refresh: jest.fn(),
@@ -5252,36 +5253,40 @@ describe('KolamGlobalChatRail', () => {
       ...getDefaultDetailMock(),
       activeCall: {
         _id: 'call-1',
+        isHost: true,
         participantCount: 3,
         participants: [
           {
             handRaised: false,
-            muted: false,
+            mutedByAdmin: false,
             status: 'joined',
-            user: 'staff-1',
+            userId: 'staff-1',
           },
           {
-            muted: false,
+            mutedByAdmin: false,
             status: 'joined',
             user: {
               _id: 'staff-2',
               first_name: 'Maya',
             },
+            userId: 'staff-2',
           },
           {
-            muted: true,
+            mutedByAdmin: true,
             status: 'joined',
             user: {
               _id: 'staff-3',
               first_name: 'Bima',
             },
+            userId: 'staff-3',
           },
           {
-            muted: false,
+            mutedByAdmin: false,
             status: 'declined',
-            user: 'staff-4',
+            userId: 'staff-4',
           },
         ],
+        startedBy: 'staff-1',
         status: 'active',
       },
       callConfig: {enabled: true},
@@ -5294,6 +5299,13 @@ describe('KolamGlobalChatRail', () => {
       redialCall,
       refreshCall,
       startCall,
+      teamRoomMetadata: {
+        bots: [],
+        canManageAiRoomAccess: false,
+        dara: null,
+        daraReplyEnabled: true,
+        members: [{_id: 'staff-1', role: 'admin'}],
+      },
       toggleCallHand,
       unmuteCallParticipant,
     });
@@ -5317,7 +5329,6 @@ describe('KolamGlobalChatRail', () => {
       expect.arrayContaining([
         'Call aktif',
         '3 peserta',
-        'Join',
         'End',
         'Raise',
         'Handover',
@@ -5327,10 +5338,10 @@ describe('KolamGlobalChatRail', () => {
         'Unmute',
       ]),
     );
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining(['Join']),
+    );
 
-    const joinButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(node => node.props.accessibilityLabel === 'Join team chat call');
     const endButton = renderer!.root
       .findAllByType(KolamPressable)
       .find(node => node.props.accessibilityLabel === 'End team chat call');
@@ -5351,7 +5362,6 @@ describe('KolamGlobalChatRail', () => {
       .find(node => node.props.accessibilityLabel === 'Unmute team chat participant');
 
     await ReactTestRenderer.act(async () => {
-      await joinButton!.props.onPress();
       await endButton!.props.onPress();
       await handButton!.props.onPress();
       await redialButton!.props.onPress();
@@ -5360,7 +5370,7 @@ describe('KolamGlobalChatRail', () => {
       await unmuteButton!.props.onPress();
     });
 
-    expect(joinCall).toHaveBeenCalledTimes(1);
+    expect(joinCall).not.toHaveBeenCalled();
     expect(endCall).toHaveBeenCalledTimes(1);
     expect(toggleCallHand).toHaveBeenCalledTimes(1);
     expect(redialCall).toHaveBeenCalledTimes(1);

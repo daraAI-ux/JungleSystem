@@ -470,10 +470,20 @@ export type KolamTeamChatCallParticipantStatus =
   | 'left';
 
 export interface KolamTeamChatCallParticipant {
-  user: string | KolamTeamChatUserRef;
+  /** Canonical BE/plugin field (`serializeParticipant.userId`). */
+  userId?: string;
+  /**
+   * Legacy dual-read: older RNW fixtures/mocks used `user` instead of `userId`.
+   * Prefer `userId` via `getKolamTeamChatCallParticipantUserId`.
+   */
+  user?: string | KolamTeamChatUserRef;
   status: KolamTeamChatCallParticipantStatus;
   joinedAt?: string | null;
   leftAt?: string | null;
+  respondedAt?: string | null;
+  /** Canonical BE/plugin mute flag. */
+  mutedByAdmin?: boolean;
+  /** Legacy dual-read alias for `mutedByAdmin`. */
   muted?: boolean;
   handRaised?: boolean;
 }
@@ -492,9 +502,18 @@ export interface KolamTeamChatCall {
   isHost?: boolean;
   handover?: {
     platform?: string;
+    expiresAt?: string | null;
+    claimedAt?: string | null;
     startedAt?: string;
     endedAt?: string;
-  };
+  } | null;
+}
+
+export interface KolamTeamChatCallHandoverResult {
+  call: KolamTeamChatCall;
+  handoverToken: string;
+  expiresAt?: string;
+  platform?: string;
 }
 
 export interface KolamTeamChatCallConfig {
@@ -2835,12 +2854,14 @@ export async function unmuteKolamTeamChatCallParticipant(
 export async function handoverKolamTeamChatCall(
   callId: string,
   platform: string,
-): Promise<KolamTeamChatCall> {
+): Promise<KolamTeamChatCallHandoverResult> {
   const response = await kolamPost<
-    DataResponse<KolamTeamChatCall> | KolamTeamChatCall
+    | DataResponse<KolamTeamChatCallHandoverResult | KolamTeamChatCall>
+    | KolamTeamChatCallHandoverResult
+    | KolamTeamChatCall
   >(`/team-chat/calls/${encodeURIComponent(callId)}/handover`, {platform});
 
-  return unwrapData(response);
+  return normalizeKolamTeamChatCallHandoverResult(unwrapData(response));
 }
 
 export async function getKolamChatAnalytics(
@@ -3003,6 +3024,32 @@ function normalizeKolamTeamChatMembersPayload(
     bots: Array.isArray(payload?.bots) ? payload.bots : [],
     daraReplyEnabled: payload?.daraReplyEnabled !== false,
     canManageAiRoomAccess: payload?.canManageAiRoomAccess === true,
+  };
+}
+
+function normalizeKolamTeamChatCallHandoverResult(
+  payload: KolamTeamChatCallHandoverResult | KolamTeamChatCall | null | undefined,
+): KolamTeamChatCallHandoverResult {
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    'call' in payload &&
+    payload.call &&
+    typeof payload.call === 'object'
+  ) {
+    const nested = payload as KolamTeamChatCallHandoverResult;
+    return {
+      call: nested.call,
+      handoverToken: String(nested.handoverToken ?? ''),
+      expiresAt:
+        typeof nested.expiresAt === 'string' ? nested.expiresAt : undefined,
+      platform: typeof nested.platform === 'string' ? nested.platform : undefined,
+    };
+  }
+
+  return {
+    call: (payload as KolamTeamChatCall) ?? {_id: '', status: 'ended'},
+    handoverToken: '',
   };
 }
 
