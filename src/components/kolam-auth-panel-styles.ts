@@ -89,6 +89,56 @@ export const authPanelStyles = StyleSheet.create({
     flexDirection: 'row',
     gap: 6,
   },
+  authModeTabs: {
+    flexDirection: 'row',
+    gap: 4,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    paddingBottom: 6,
+  },
+  authModeTab: {
+    minHeight: 28,
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    borderRadius: 6,
+  },
+  authModeTabActive: {
+    backgroundColor: V.colors.fg,
+  },
+  authModeTabText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  authModeTabTextActive: {
+    color: V.colors.bg,
+  },
+  authOtpHintBox: {
+    gap: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+  },
+  authOtpHintText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
+  authOtpBackButton: {
+    alignSelf: 'flex-start',
+    minHeight: 24,
+    justifyContent: 'center',
+  },
+  authOtpBackText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+  },
   authInput: {
     flex: 1,
     minHeight: KOLAM_AUTH_FORM_VISUAL.input.height,

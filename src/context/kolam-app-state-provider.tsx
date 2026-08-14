@@ -8,6 +8,7 @@ import type {AttentionPanelItem} from '../domain/attention-panel';
 import type {DashboardSalesGraphRange} from '../domain/dashboard-sales-graph';
 import type {TopNavRightControl} from '../domain/top-nav';
 import type {KolamWorkspaceTabSnapshot} from '../domain/kolam-workspace-tabs';
+import {getAccessScope} from '../domain/auth';
 import {
   DEFAULT_SETTINGS_TAB_ID,
   getSettingsTabItemById,
@@ -69,17 +70,27 @@ export function KolamAppStateProvider({
   const {
     accessScope,
     authEmail,
+    authLoginMode,
     authMessage,
+    authOtpCode,
+    authOtpConfig,
+    authOtpStep,
     authPassword,
     authSource,
     authSourceHint,
     authUser,
     displayName,
+    handleRequestOtp,
     handleSignIn: signInAuth,
     handleSignOut: signOutAuth,
+    handleVerifyOtp: verifyOtpAuth,
+    isRequestingOtp,
     isSigningIn,
     setAuthEmail,
+    setAuthLoginMode,
     setAuthMessage,
+    setAuthOtpCode,
+    setAuthOtpStep,
     setAuthPassword,
     setAuthSource,
   } = useKolamAuthController();
@@ -277,6 +288,42 @@ export function KolamAppStateProvider({
         await signOutAuth();
       },
     });
+
+  const handleVerifyOtp = React.useCallback(async () => {
+    if (authSource === 'kolam' && deviceIdentityStatus === 'missing') {
+      setAuthMessage(getKolamLoginDeviceIdentityMessage());
+      return;
+    }
+
+    const session = await verifyOtpAuth();
+    if (!session) {
+      return;
+    }
+
+    localFirstSyncedOwnerRef.current = getCacheOwnerId(session.user);
+    try {
+      const nextDataset = await refreshUnifiedDataset({
+        cacheOwnerId: getCacheOwnerId(session.user) ?? undefined,
+        preferLiveApi: true,
+        enabledAreas: getAccessScope(session.user),
+      });
+      reconcileCheckoutWithDataset(nextDataset);
+      setAuthMessage(getUnifiedSyncMessage(nextDataset));
+    } catch (error) {
+      setAuthMessage(
+        error instanceof Error
+          ? `Login berhasil, tetapi sinkronisasi data gagal: ${error.message}`
+          : 'Login berhasil, tetapi sinkronisasi data gagal.',
+      );
+    }
+  }, [
+    authSource,
+    deviceIdentityStatus,
+    reconcileCheckoutWithDataset,
+    refreshUnifiedDataset,
+    setAuthMessage,
+    verifyOtpAuth,
+  ]);
 
   const handleHeaderRefresh = React.useCallback(() => {
     void refreshDataset(true, accessScope, kolamDashboardRange);
@@ -630,6 +677,10 @@ export function KolamAppStateProvider({
     authPassword,
     authSource,
     authSourceHint,
+    authLoginMode,
+    authOtpCode,
+    authOtpConfig,
+    authOtpStep,
     commandSearch,
     commandTotalCount: commandIndex.length,
     commands: filteredCommands,
@@ -638,9 +689,12 @@ export function KolamAppStateProvider({
     displayName,
     isLoadingDataset,
     isSigningIn,
+    isRequestingOtp,
     onCommandSelect: handleCommandSelect,
     onRuntimeAction: handleRuntimeAction,
     onSignIn: handleSignIn,
+    onRequestOtp: handleRequestOtp,
+    onVerifyOtp: handleVerifyOtp,
     onSignOut: handleSignOut,
     onSync: () => refreshDataset(true),
     readinessChecks,
@@ -649,6 +703,9 @@ export function KolamAppStateProvider({
     runtimeIdentityMeta,
     setAmApiBaseUrl,
     setAuthEmail,
+    setAuthLoginMode,
+    setAuthOtpCode,
+    setAuthOtpStep,
     setAuthPassword,
     setAuthSource,
     setCommandSearch,
@@ -689,36 +746,56 @@ export function KolamAppStateProvider({
     () => ({
       accessScope,
       authEmail,
+      authLoginMode,
       authMessage,
+      authOtpCode,
+      authOtpConfig,
+      authOtpStep,
       authPassword,
       authSource,
       authSourceHint,
       authUser,
       deviceIdentityStatus,
       displayName,
+      handleRequestOtp,
       handleSignIn,
       handleSignOut,
+      handleVerifyOtp,
+      isRequestingOtp,
       isSigningIn,
       setAuthEmail,
+      setAuthLoginMode,
       setAuthMessage,
+      setAuthOtpCode,
+      setAuthOtpStep,
       setAuthPassword,
       setAuthSource,
     }),
     [
       accessScope,
       authEmail,
+      authLoginMode,
       authMessage,
+      authOtpCode,
+      authOtpConfig,
+      authOtpStep,
       authPassword,
       authSource,
       authSourceHint,
       authUser,
       deviceIdentityStatus,
       displayName,
+      handleRequestOtp,
       handleSignIn,
       handleSignOut,
+      handleVerifyOtp,
+      isRequestingOtp,
       isSigningIn,
       setAuthEmail,
+      setAuthLoginMode,
       setAuthMessage,
+      setAuthOtpCode,
+      setAuthOtpStep,
       setAuthPassword,
       setAuthSource,
     ],

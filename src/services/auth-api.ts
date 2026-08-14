@@ -24,6 +24,24 @@ export interface SignInBody {
   source?: AuthSource;
 }
 
+export interface StaffOtpLoginConfig {
+  enabled: boolean;
+  otpExpireMinutes: number;
+  resendCooldownSeconds: number;
+}
+
+export interface StaffOtpRequestResponse {
+  message: string;
+  maskedEmail?: string | null;
+  email?: string;
+}
+
+export interface StaffOtpVerifyBody {
+  email: string;
+  otpCode: string;
+  source?: AuthSource;
+}
+
 export interface SignedInUser {
   id?: string;
   email?: string;
@@ -137,6 +155,92 @@ export async function signIn(body: SignInBody): Promise<AuthSession> {
     authSource.id === 'kolam'
       ? await signInKolamDirect(body, authSource)
       : await signInDirect(body, authSource);
+
+  saveAuthToken(response.accessToken);
+  saveAuthSource(authSource.id);
+  activeAuthSource = authSource.id;
+  const userPayload = response.user ?? response;
+  const fallbackUser = mapSignedInUser(userPayload, response.role?.key);
+  const user = await getCurrentUser({skipAuthRefresh: true}).catch(
+    () => fallbackUser,
+  );
+
+  return {
+    token: response.accessToken,
+    source: authSource.id,
+    user,
+  };
+}
+
+export async function getStaffOtpLoginConfig(): Promise<StaffOtpLoginConfig> {
+  const response = await apiRequest<{
+    data?: StaffOtpLoginConfig;
+    enabled?: boolean;
+    otpExpireMinutes?: number;
+    resendCooldownSeconds?: number;
+  }>({
+    method: 'GET',
+    path: '/auth/staff-otp-login/config',
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: getAuthSource('kolam').headerSource,
+    skipAuthRefresh: true,
+    notifyOnAuthFailure: false,
+  });
+
+  const data: StaffOtpLoginConfig = response.data ?? {
+    enabled: Boolean(response.enabled),
+    otpExpireMinutes: Number(response.otpExpireMinutes) || 10,
+    resendCooldownSeconds: Number(response.resendCooldownSeconds) || 60,
+  };
+  return {
+    enabled: Boolean(data.enabled),
+    otpExpireMinutes: Number(data.otpExpireMinutes) || 10,
+    resendCooldownSeconds: Number(data.resendCooldownSeconds) || 60,
+  };
+}
+
+export async function requestStaffLoginOtp(
+  email: string,
+): Promise<StaffOtpRequestResponse> {
+  const response = await apiRequest<StaffOtpRequestResponse>({
+    method: 'POST',
+    path: '/auth/staff-otp-login/request',
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: getAuthSource('kolam').headerSource,
+    skipAuthRefresh: true,
+    notifyOnAuthFailure: false,
+    body: {
+      email,
+      source: getAuthSource('kolam').bodySource,
+    },
+  });
+
+  return response;
+}
+
+export async function verifyStaffLoginOtp(
+  body: StaffOtpVerifyBody,
+): Promise<AuthSession> {
+  const authSource = getAuthSource(body.source ?? 'kolam');
+  const identity = getNativeDeviceIdentity();
+  const response = await apiRequest<SignInResponse>({
+    method: 'POST',
+    path: '/auth/staff-otp-login/verify',
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: authSource.headerSource,
+    skipAuthRefresh: true,
+    notifyOnAuthFailure: false,
+    body: {
+      email: body.email,
+      otp_code: body.otpCode,
+      source: authSource.bodySource,
+      desktopClient: true,
+      nativeClientId: appConfig.nativeClientId,
+      nativeOrigin: appConfig.nativeOrigin,
+      nativeUserAgent: appConfig.nativeUserAgent,
+      deviceMacAddresses: identity.macAddresses ?? [],
+    },
+  });
 
   saveAuthToken(response.accessToken);
   saveAuthSource(authSource.id);

@@ -17,22 +17,37 @@ import type {
 } from '../services/unified-data';
 import type {RefreshUnifiedDatasetInput} from '../hooks/use-kolam-unified-data-controller';
 import type {useKolamNativeDeviceIdentity} from '../hooks/use-kolam-native-device-identity';
+import type {
+  KolamAuthLoginMode,
+  KolamAuthOtpStep,
+} from '../hooks/use-kolam-auth-controller';
+import type {StaffOtpLoginConfig} from '../services/auth-api';
 
 export type KolamAuthContextValue = {
   accessScope: AccessScope;
   authEmail: string;
+  authLoginMode?: KolamAuthLoginMode;
   authMessage: string;
+  authOtpCode?: string;
+  authOtpConfig?: StaffOtpLoginConfig | null;
+  authOtpStep?: KolamAuthOtpStep;
   authPassword: string;
   authSource: AuthSource;
   authSourceHint: string;
   authUser: SignedInUser | null;
   deviceIdentityStatus: ReturnType<typeof useKolamNativeDeviceIdentity>;
   displayName: string;
+  handleRequestOtp?: () => Promise<void>;
   handleSignIn: () => Promise<void>;
   handleSignOut: () => Promise<void>;
+  handleVerifyOtp?: () => Promise<void>;
+  isRequestingOtp?: boolean;
   isSigningIn: boolean;
   setAuthEmail: (value: string) => void;
+  setAuthLoginMode?: (value: KolamAuthLoginMode) => void;
   setAuthMessage: (value: string) => void;
+  setAuthOtpCode?: (value: string) => void;
+  setAuthOtpStep?: (value: KolamAuthOtpStep) => void;
   setAuthPassword: (value: string) => void;
   setAuthSource: (value: AuthSource) => void;
 };
