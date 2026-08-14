@@ -136,7 +136,7 @@ export function isKolamWindowsShiftKeyDown(
   }
 }
 
-/** Clears the Shift+Enter latch captured at physical key-down. */
+/** Consumes a short-lived physical Shift+Enter latch (TTL enforced native-side). */
 export function consumeKolamWindowsShiftEnterChord(
   nativeModules: Record<string, NativeDeviceIdentityModule | undefined> = NativeModules as Record<
     string,

@@ -250,9 +250,11 @@ std::string SignMacAddresses(std::vector<std::string> const &macs) {
 } // namespace
 
 namespace {
-std::atomic_bool g_shiftDown{false};
 std::atomic_bool g_shiftEnterChord{false};
+std::atomic_uint64_t g_shiftEnterChordAtMs{0};
 HHOOK g_composerKeyboardHook = nullptr;
+
+constexpr ULONGLONG kShiftEnterChordTtlMs = 100;
 
 bool IsPhysicalShiftDown() noexcept {
   return (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0 ||
@@ -264,18 +266,15 @@ LRESULT CALLBACK KolamComposerKeyboardProc(int code, WPARAM wParam, LPARAM lPara
   if (code == HC_ACTION && lParam != 0) {
     const auto *info = reinterpret_cast<KBDLLHOOKSTRUCT *>(lParam);
     const bool keyDown = wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN;
-    const bool keyUp = wParam == WM_KEYUP || wParam == WM_SYSKEYUP;
 
-    if (info->vkCode == VK_SHIFT || info->vkCode == VK_LSHIFT || info->vkCode == VK_RSHIFT) {
-      if (keyDown) {
-        g_shiftDown.store(true, std::memory_order_relaxed);
-      } else if (keyUp) {
-        g_shiftDown.store(IsPhysicalShiftDown(), std::memory_order_relaxed);
-      }
-    } else if (info->vkCode == VK_RETURN && keyDown) {
-      if (g_shiftDown.load(std::memory_order_relaxed) || IsPhysicalShiftDown()) {
-        // Latch at physical key-down — JS Enter handlers often run after Shift is up.
+    if (info->vkCode == VK_RETURN && keyDown) {
+      // Only physical Shift at this instant — never a sticky shift flag.
+      if (IsPhysicalShiftDown()) {
         g_shiftEnterChord.store(true, std::memory_order_relaxed);
+        g_shiftEnterChordAtMs.store(GetTickCount64(), std::memory_order_relaxed);
+      } else {
+        g_shiftEnterChord.store(false, std::memory_order_relaxed);
+        g_shiftEnterChordAtMs.store(0, std::memory_order_relaxed);
       }
     }
   }
@@ -317,13 +316,23 @@ void InstallKolamComposerKeyboardHook() noexcept {
 }
 
 bool KolamWindowsDeviceIdentity::isShiftKeyDown() noexcept {
-  return g_shiftEnterChord.load(std::memory_order_relaxed) ||
-      g_shiftDown.load(std::memory_order_relaxed) ||
-      IsPhysicalShiftDown();
+  return IsPhysicalShiftDown();
 }
 
 bool KolamWindowsDeviceIdentity::consumeShiftEnterChord() noexcept {
-  return g_shiftEnterChord.exchange(false, std::memory_order_relaxed);
+  const bool latched = g_shiftEnterChord.exchange(false, std::memory_order_relaxed);
+  const ULONGLONG atMs =
+      g_shiftEnterChordAtMs.exchange(0, std::memory_order_relaxed);
+  if (!latched || atMs == 0) {
+    return false;
+  }
+
+  const ULONGLONG nowMs = GetTickCount64();
+  if (nowMs < atMs) {
+    return false;
+  }
+
+  return (nowMs - atMs) <= kShiftEnterChordTtlMs;
 }
 
 } // namespace KolamWindows

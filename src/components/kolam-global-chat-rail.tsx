@@ -5,6 +5,7 @@ import {
   Linking,
   Modal,
   type NativeSyntheticEvent,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -341,14 +342,15 @@ function isComposerNewlineEnter(
     return false;
   }
 
-  // Do not use sticky JS shiftHeld — Shift keyup often never arrives on RNW,
-  // which made plain Enter keep inserting newlines instead of sending.
-  if (nativeEvent.shiftKey || nativeEvent.ctrlKey || nativeEvent.metaKey) {
-    return true;
+  // RNW TextInput often reports a false/sticky shiftKey on Enter. On Windows,
+  // only trust the short-lived physical Shift+Enter latch from the LL hook.
+  if (Platform.OS === 'windows') {
+    return consumeKolamWindowsShiftEnterChord();
   }
 
-  // One-shot latch from WH_KEYBOARD_LL at physical Shift+Enter key-down.
-  return consumeKolamWindowsShiftEnterChord();
+  return Boolean(
+    nativeEvent.shiftKey || nativeEvent.ctrlKey || nativeEvent.metaKey,
+  );
 }
 
 function normalizeComposerText(value: string) {
@@ -503,24 +505,11 @@ function useKolamComposerEnterKey(
     return true;
   }, []);
 
-  const insertNewlineIfShiftHeld = React.useCallback(() => {
-    if (skipSubmitRef.current) {
-      return true;
-    }
-    // Only the one-shot native chord — never a sticky JS shift flag.
-    if (!consumeKolamWindowsShiftEnterChord()) {
-      return false;
-    }
-    applyNewline();
-    return true;
-  }, [applyNewline]);
-
   return {
     consumeSkipSubmit,
     handleChangeText,
     handleKeyPress,
     handleSelectionChange,
-    insertNewlineIfShiftHeld,
   };
 }
 
@@ -3275,9 +3264,6 @@ function KolamTeamChatDaraWindow({
     if (composerEnter.consumeSkipSubmit()) {
       return;
     }
-    if (composerEnter.insertNewlineIfShiftHeld()) {
-      return;
-    }
     onSend().catch(() => undefined);
   }, [composerEnter, onSend]);
   const handlePickMention = React.useCallback(
@@ -4686,9 +4672,6 @@ function KolamChatRailDetailPanel({
   );
   const handleSubmitComposer = React.useCallback(() => {
     if (composerEnter.consumeSkipSubmit()) {
-      return;
-    }
-    if (composerEnter.insertNewlineIfShiftHeld()) {
       return;
     }
     handleSendFromComposer();
