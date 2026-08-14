@@ -47,7 +47,8 @@ import {
   classifyKolamChatLiveEvent,
   getKolamChatLiveEventTargetId,
 } from '../domain/kolam-chat-live-classifier';
-import { resolveKolamTeamChatBotAvatarRawUrl } from '../domain/kolam-team-chat-bot-display';
+import {resolveKolamTeamChatBotAvatarRawUrl} from '../domain/kolam-team-chat-bot-display';
+import {resolveKolamYoutubeFromMessage} from '../domain/kolam-chat-youtube';
 import {
   canManageKolamTeamChatCall,
   canMuteKolamTeamChatCallParticipants,
@@ -145,6 +146,7 @@ import {
   type NativeImagePickerResult,
 } from '../services/native-file-picker';
 import { KolamBadge } from './kolam-badge';
+import { KolamChatYoutubeCard } from './kolam-chat-youtube-card';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
@@ -626,13 +628,6 @@ type KolamTeamMentionTextPart =
   | { type: 'url'; value: string };
 
 const KOLAM_CHAT_URL_RE = /(https?:\/\/[^\s<>"']+)/gi;
-const KOLAM_YOUTUBE_HOSTS = new Set([
-  'm.youtube.com',
-  'www.youtu.be',
-  'www.youtube.com',
-  'youtu.be',
-  'youtube.com',
-]);
 const KOLAM_MARKETPLACE_SITE_URL = 'https://dunia-anura.com';
 
 interface KolamDaraThinkingLiveSignal {
@@ -3699,6 +3694,7 @@ function KolamTeamChatDaraWindowMessages({
             {getDaraStreamedMessageBody(message, daraStream) ? (
               <KolamTeamMessageBody
                 body={getDaraStreamedMessageBody(message, daraStream)}
+                messageId={message.id}
               />
             ) : null}
             {message.attachments.length > 0 ? (
@@ -5325,6 +5321,7 @@ function KolamChatRailDetailPanel({
                                       message,
                                       daraStream,
                                     )}
+                                    messageId={message.id}
                                   />
                                 ) : null}
                                 {message.attachments.length > 0 ? (
@@ -6543,7 +6540,23 @@ function KolamChatLinkifiedText({
   );
 }
 
-function KolamTeamMessageBody({ body }: { body: string }) {
+function KolamTeamMessageBody({
+  body,
+  messageId,
+}: {
+  body: string;
+  messageId?: string;
+}) {
+  const youtube = resolveKolamYoutubeFromMessage({body});
+  if (youtube) {
+    return (
+      <KolamChatYoutubeCard
+        playKey={`team-${messageId || youtube.videoId}`}
+        youtube={youtube}
+      />
+    );
+  }
+
   if (isKolamProductShareBody(body)) {
     const share = parseKolamLegacyProductShareText(body);
     if (share) {
@@ -6943,7 +6956,10 @@ function KolamInboxRichMessageContent({
   const content = message.content;
   const replyContent = message.replyContent;
   const image = resolveInboxImageContent(content, message.body);
-  const youtube = resolveInboxYoutube(content, message.body);
+  const youtube = resolveKolamYoutubeFromMessage({
+    body: message.body,
+    content: content ?? undefined,
+  });
   const card = resolveInboxCard(content, message.body, platform);
   const linkedCard = resolveInboxLinkedCard(message.body);
 
@@ -6953,7 +6969,10 @@ function KolamInboxRichMessageContent({
         <KolamInboxReplyPreview reply={replyContent} />
       ) : null}
       {youtube ? (
-        <KolamInboxYoutubeCard youtube={youtube} />
+        <KolamChatYoutubeCard
+          playKey={`inbox-${message.id}`}
+          youtube={youtube}
+        />
       ) : card ? (
         <KolamInboxProductCard card={card} />
       ) : linkedCard ? (
@@ -7022,47 +7041,6 @@ function KolamInboxReplyPreview({
         {reply.text?.trim() || formatReplyContentType(reply.type)}
       </Text>
     </View>
-  );
-}
-
-function KolamInboxYoutubeCard({
-  youtube,
-}: {
-  youtube: { title?: string; url: string; videoId?: string };
-}) {
-  const thumbnailUri = youtube.videoId
-    ? `https://i.ytimg.com/vi/${youtube.videoId}/hqdefault.jpg`
-    : null;
-
-  return (
-    <KolamPressable
-      accessibilityLabel="Buka YouTube inbox"
-      onPress={() => openInboxExternalUrl(youtube.url)}
-      style={styles.inboxRichCard}
-    >
-      {thumbnailUri ? (
-        <KolamRemoteImage
-          accessibilityLabel="Thumbnail YouTube inbox"
-          resizeMode="cover"
-          scope="chat-inbox-youtube"
-          sourceUri={thumbnailUri}
-          style={styles.inboxRichCardImage}
-        />
-      ) : (
-        <View style={styles.inboxRichCardIcon}>
-          <Text style={styles.inboxRichCardIconText}>YT</Text>
-        </View>
-      )}
-      <View style={styles.inboxRichCardCopy}>
-        <Text style={styles.chatPreviewKicker}>YouTube</Text>
-        <Text numberOfLines={2} style={styles.chatPreviewTitle}>
-          {youtube.title || 'Buka di YouTube'}
-        </Text>
-        <Text numberOfLines={1} style={styles.chatPreviewUrl}>
-          {youtube.url}
-        </Text>
-      </View>
-    </KolamPressable>
   );
 }
 
@@ -8793,44 +8771,6 @@ function isLikelyChatMediaReference(value: string) {
   return /^(https?:|file:|ms-appx:|ms-appdata:|data:|\/)/i.test(value.trim());
 }
 
-function resolveInboxYoutube(
-  content:
-    | ReturnType<typeof useKolamChatRailDetail>['messages'][number]['content']
-    | undefined,
-  body: string,
-) {
-  const videoId = content?.youtube?.videoId?.trim();
-  if (videoId) {
-    return {
-      title: content.youtube?.title?.trim() || undefined,
-      url:
-        content.youtube?.url?.trim() ||
-        `https://www.youtube.com/watch?v=${videoId}`,
-      videoId,
-    };
-  }
-
-  const text = String(content?.text || body || '').trim();
-  if (!text) {
-    return null;
-  }
-
-  if (content?.type === 'youtube' || isYoutubeOnlyMessage(text)) {
-    const resolved = extractYoutubeVideoId(text);
-    if (!resolved) {
-      return null;
-    }
-    return {
-      url: text.startsWith('http')
-        ? text
-        : `https://www.youtube.com/watch?v=${resolved}`,
-      videoId: resolved,
-    };
-  }
-
-  return null;
-}
-
 function resolveInboxCard(
   content:
     | ReturnType<typeof useKolamChatRailDetail>['messages'][number]['content']
@@ -8963,14 +8903,6 @@ function toMarketplaceAbsoluteHref(pathOrUrl?: string | null) {
   return `${KOLAM_MARKETPLACE_SITE_URL}${path}`;
 }
 
-function isYoutubeOnlyMessage(text: string) {
-  const trimmed = text.trim();
-  if (!trimmed || /\s/.test(trimmed)) {
-    return false;
-  }
-  return Boolean(extractYoutubeVideoId(trimmed));
-}
-
 function resolveInboxLinkedCard(body: string): KolamInboxLinkedCardData | null {
   const invoice = parseInboxTaggedCard(body, 'Invoice');
   if (invoice) {
@@ -9075,39 +9007,6 @@ function normalizeChatMediaUri(uri?: string | null) {
   }
 
   return getKolamFileUrl(value) ?? value;
-}
-
-function extractYoutubeVideoId(text: string) {
-  const trimmed = text.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  try {
-    const url = new URL(
-      trimmed.startsWith('http') ? trimmed : `https://${trimmed}`,
-    );
-    const host = url.hostname.toLowerCase();
-    if (!KOLAM_YOUTUBE_HOSTS.has(host)) {
-      return null;
-    }
-    if (host === 'youtu.be' || host === 'www.youtu.be') {
-      const id = url.pathname.replace(/^\//, '').split('/')[0];
-      return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : null;
-    }
-    const fromQuery = url.searchParams.get('v');
-    if (fromQuery && /^[a-zA-Z0-9_-]{11}$/.test(fromQuery)) {
-      return fromQuery;
-    }
-    const shorts = url.pathname.match(/^\/shorts\/([a-zA-Z0-9_-]{11})/);
-    if (shorts?.[1]) {
-      return shorts[1];
-    }
-    const embed = url.pathname.match(/^\/embed\/([a-zA-Z0-9_-]{11})/);
-    return embed?.[1] ?? null;
-  } catch {
-    return null;
-  }
 }
 
 function getInboxCardLabel(

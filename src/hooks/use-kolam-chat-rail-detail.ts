@@ -25,6 +25,7 @@ import {
   redialKolamTeamChatCall,
   searchKolamTeamChatMessages,
   sendKolamChatCatalogCardMessage,
+  sendKolamChatContentMessage,
   sendKolamChatImageMessage,
   sendKolamChatTextMessage,
   sendKolamTeamChatMessage,
@@ -70,6 +71,7 @@ import {
   isKolamTeamChatCallWaitingRingbackForMe,
   withKolamTeamChatCallMyParticipantStatus,
 } from '../domain/kolam-team-chat-call';
+import {buildKolamYoutubeContent} from '../domain/kolam-chat-youtube';
 import { copyTextToClipboard } from '../lib/native-clipboard';
 import {
   getSharedKolamGroupCallRingtoneController,
@@ -497,12 +499,19 @@ export function useKolamChatRailDetail({
       const tempId = `temp_send_${Date.now()}_${Math.random()
         .toString(36)
         .slice(2, 8)}`;
+      const storeYoutube =
+        mode === 'inbox' && conversation?.platform === 'store'
+          ? buildKolamYoutubeContent(body)
+          : null;
       const optimistic = buildOptimisticTextMessage({
         body,
         currentUserId,
         mode,
         tempId,
       });
+      if (storeYoutube) {
+        optimistic.content = storeYoutube;
+      }
 
       setSending(true);
       setErrorMessage(undefined);
@@ -524,9 +533,13 @@ export function useKolamChatRailDetail({
           return;
         }
 
-        const message = await sendKolamChatTextMessage(selectedId, body, {
-          replyToMessageId: options?.replyToMessageId ?? undefined,
-        });
+        const message = storeYoutube
+          ? await sendKolamChatContentMessage(selectedId, storeYoutube, {
+              replyToMessageId: options?.replyToMessageId ?? undefined,
+            })
+          : await sendKolamChatTextMessage(selectedId, body, {
+              replyToMessageId: options?.replyToMessageId ?? undefined,
+            });
         const nextMessage = mapInboxMessage(
           message,
           getInboxBuyerDisplayName(conversation),

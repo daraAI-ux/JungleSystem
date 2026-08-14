@@ -2514,13 +2514,25 @@ export async function sendKolamChatTextMessage(
   text: string,
   options: KolamChatSendMessageOptions = {},
 ): Promise<KolamChatMessage> {
+  return sendKolamChatContentMessage(
+    conversationId,
+    {
+      type: 'text',
+      text,
+    },
+    options,
+  );
+}
+
+export async function sendKolamChatContentMessage(
+  conversationId: string,
+  content: KolamChatMessageContent,
+  options: KolamChatSendMessageOptions = {},
+): Promise<KolamChatMessage> {
   const response = await kolamPost<DataResponse<KolamChatMessage>>(
     `/chat/conversations/${encodeURIComponent(conversationId)}/messages`,
     {
-      content: {
-        type: 'text',
-        text,
-      },
+      content,
       ...(options.replyToMessageId
         ? {replyToMessageId: options.replyToMessageId}
         : {}),
