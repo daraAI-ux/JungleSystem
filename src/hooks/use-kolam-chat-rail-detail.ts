@@ -219,11 +219,13 @@ export function useKolamChatRailDetail({
   const [teamRoomMetadata, setTeamRoomMetadata] =
     useState<KolamChatRailTeamRoomMetadata>(EMPTY_TEAM_ROOM_METADATA);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshGenerationRef = useRef(0);
 
   const refresh = useCallback(
     async (options?: KolamChatRailRefreshOptions) => {
       const quiet = options?.quiet === true;
       if (!selectedId) {
+        refreshGenerationRef.current += 1;
         setMessages([]);
         setMessageSearchResults(null);
         setMessageSearchQuery('');
@@ -237,6 +239,7 @@ export function useKolamChatRailDetail({
         return;
       }
 
+      const generation = ++refreshGenerationRef.current;
       if (!quiet) {
         setLoading(true);
       }
@@ -251,12 +254,19 @@ export function useKolamChatRailDetail({
               () => EMPTY_TEAM_ROOM_METADATA,
             ),
           ]);
+          if (generation !== refreshGenerationRef.current) {
+            return;
+          }
           await markKolamTeamChatRoomRead(selectedId).catch(() => undefined);
+          if (generation !== refreshGenerationRef.current) {
+            return;
+          }
           setTeamRoomMetadata(nextMetadata);
-          setMessages(
-            nextMessages.map(message =>
-              mapTeamChatMessage(message, currentUserId),
-            ),
+          const mapped = nextMessages.map(message =>
+            mapTeamChatMessage(message, currentUserId),
+          );
+          setMessages(current =>
+            quiet ? mergeRailDetailMessages(mapped, current) : mapped,
           );
           return;
         }
@@ -265,19 +275,29 @@ export function useKolamChatRailDetail({
           getKolamChatConversation(selectedId),
           getKolamChatMessages(selectedId, { limit: 50 }),
         ]);
+        if (generation !== refreshGenerationRef.current) {
+          return;
+        }
         await markKolamChatConversationRead(selectedId).catch(() => undefined);
+        if (generation !== refreshGenerationRef.current) {
+          return;
+        }
         setConversation(nextConversation);
         setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
         const buyerDisplayName = getInboxBuyerDisplayName(nextConversation);
         const buyerAvatarUrl = getInboxBuyerAvatarUrl(nextConversation);
-        setMessages(
-          [...nextMessages]
-            .reverse()
-            .map(message =>
-              mapInboxMessage(message, buyerDisplayName, buyerAvatarUrl),
-            ),
+        const mapped = [...nextMessages]
+          .reverse()
+          .map(message =>
+            mapInboxMessage(message, buyerDisplayName, buyerAvatarUrl),
+          );
+        setMessages(current =>
+          quiet ? mergeRailDetailMessages(mapped, current) : mapped,
         );
       } catch (error) {
+        if (generation !== refreshGenerationRef.current) {
+          return;
+        }
         setErrorMessage(
           error instanceof Error
             ? error.message
@@ -289,7 +309,7 @@ export function useKolamChatRailDetail({
           setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
         }
       } finally {
-        if (!quiet) {
+        if (!quiet && generation === refreshGenerationRef.current) {
           setLoading(false);
         }
       }
@@ -426,24 +446,20 @@ export function useKolamChatRailDetail({
             body,
             replyToMessageId: options?.replyToMessageId ?? undefined,
           });
-          setMessages(current => [
-            ...current,
-            mapTeamChatMessage(message, currentUserId),
-          ]);
+          const nextMessage = mapTeamChatMessage(message, currentUserId);
+          setMessages(current => upsertRailDetailMessage(current, nextMessage));
           return;
         }
 
         const message = await sendKolamChatTextMessage(selectedId, body, {
           replyToMessageId: options?.replyToMessageId ?? undefined,
         });
-        setMessages(current => [
-          ...current,
-          mapInboxMessage(
-            message,
-            getInboxBuyerDisplayName(conversation),
-            getInboxBuyerAvatarUrl(conversation),
-          ),
-        ]);
+        const nextMessage = mapInboxMessage(
+          message,
+          getInboxBuyerDisplayName(conversation),
+          getInboxBuyerAvatarUrl(conversation),
+        );
+        setMessages(current => upsertRailDetailMessage(current, nextMessage));
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Pesan gagal dikirim.',
@@ -519,14 +535,12 @@ export function useKolamChatRailDetail({
         const message = await sendKolamChatImageMessage(selectedId, uploaded, {
           replyToMessageId: options?.replyToMessageId ?? undefined,
         });
-        setMessages(current => [
-          ...current,
-          mapInboxMessage(
-            message,
-            getInboxBuyerDisplayName(conversation),
-            getInboxBuyerAvatarUrl(conversation),
-          ),
-        ]);
+        const nextMessage = mapInboxMessage(
+          message,
+          getInboxBuyerDisplayName(conversation),
+          getInboxBuyerAvatarUrl(conversation),
+        );
+        setMessages(current => upsertRailDetailMessage(current, nextMessage));
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Gambar gagal dikirim.',
@@ -1056,6 +1070,47 @@ function getCallParticipantUserId(participant: KolamTeamChatCallParticipant) {
   return typeof participant.user === 'string'
     ? participant.user
     : participant.user?._id;
+}
+
+function mergeRailDetailMessages(
+  fetched: KolamChatRailDetailMessage[],
+  previous: KolamChatRailDetailMessage[],
+): KolamChatRailDetailMessage[] {
+  const byId = new Map<string, KolamChatRailDetailMessage>();
+  for (const message of fetched) {
+    if (message.id) {
+      byId.set(message.id, message);
+    }
+  }
+  for (const message of previous) {
+    if (message.id && !byId.has(message.id)) {
+      byId.set(message.id, message);
+    }
+  }
+
+  return [...byId.values()].sort((left, right) => {
+    const leftAt = Date.parse(left.sentAt ?? '') || 0;
+    const rightAt = Date.parse(right.sentAt ?? '') || 0;
+    return leftAt - rightAt;
+  });
+}
+
+function upsertRailDetailMessage(
+  current: KolamChatRailDetailMessage[],
+  nextMessage: KolamChatRailDetailMessage,
+): KolamChatRailDetailMessage[] {
+  if (!nextMessage.id) {
+    return [...current, nextMessage];
+  }
+
+  const existingIndex = current.findIndex(item => item.id === nextMessage.id);
+  if (existingIndex === -1) {
+    return [...current, nextMessage];
+  }
+
+  return current.map(item =>
+    item.id === nextMessage.id ? { ...item, ...nextMessage } : item,
+  );
 }
 
 function mapInboxMessage(

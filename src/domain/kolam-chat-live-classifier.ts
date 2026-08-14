@@ -45,12 +45,21 @@ export function classifyKolamChatLiveEvent(
     targetId,
   });
 
+  // Open-thread message.created is applied via upsert; a concurrent full refetch
+  // can race and wipe the just-sent/upserted row (plugin keeps upsert-only).
+  const refreshDetail =
+    isForSelectedDetail &&
+    !(
+      event.contract.stream === 'inbox' &&
+      event.contract.eventName === 'message.created'
+    );
+
   return {
     eventId: event.eventId,
     eventName: event.contract.eventName,
     isForSelectedDetail,
     refreshCallState: refreshTargets.includes('call-state'),
-    refreshDetail: isForSelectedDetail,
+    refreshDetail,
     refreshList: refreshTargets.some(target =>
       ['inbox-list', 'team-room-list', 'unread-badge'].includes(target),
     ),

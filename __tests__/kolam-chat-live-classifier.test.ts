@@ -74,6 +74,41 @@ describe('kolam chat live classifier', () => {
     ).toBe('none');
   });
 
+  it('skips detail refetch for open-thread inbox message.created (upsert-only)', () => {
+    const classification = classifyKolamChatLiveEvent(
+      {
+        contract: contract('inbox', 'message.created'),
+        payload: {
+          conversationId: 'conv-1',
+          message: {direction: 'in'},
+        },
+      },
+      {selectedItemId: 'conv-1'},
+    );
+
+    expect(classification).toEqual(
+      expect.objectContaining({
+        isForSelectedDetail: true,
+        refreshDetail: false,
+        refreshList: true,
+        targetId: 'conv-1',
+      }),
+    );
+  });
+
+  it('does not refetch messages for inbox typing.update', () => {
+    const classification = classifyKolamChatLiveEvent(
+      {
+        contract: contract('inbox', 'typing.update'),
+        payload: {conversationId: 'conv-1'},
+      },
+      {selectedItemId: 'conv-1'},
+    );
+
+    expect(classification.refreshDetail).toBe(false);
+    expect(classification.refreshList).toBe(false);
+  });
+
   it('matches assigned staff ids as strings even when payload uses object ids', () => {
     const classification = classifyKolamChatLiveEvent(
       {

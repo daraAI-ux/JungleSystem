@@ -990,7 +990,7 @@ export function KolamGlobalChatRail({
       mode === 'team-chat' && daraHeaderMenuOpen ? daraWindowRoomId : null,
   });
   const { syncFromLiveClassification } = useKolamChatRailLiveSync({
-    refreshDetail: detail.refresh,
+    refreshDetail: () => detail.refresh({ quiet: true }),
     refreshList: data.refresh,
   });
   const { syncFromLiveClassification: syncDaraWindowFromLive } =

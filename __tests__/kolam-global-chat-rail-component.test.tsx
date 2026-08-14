@@ -5108,17 +5108,11 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(refreshList).toHaveBeenCalledTimes(1);
-    expect(refreshDetail).toHaveBeenCalledTimes(1);
+    expect(refreshDetail).not.toHaveBeenCalled();
     expect(upsertInboxMessageFromLive).toHaveBeenCalledWith(
       expect.objectContaining({_id: 'msg-rating'}),
     );
-    expect(mockSoundPlay).toHaveBeenCalledWith({
-      intent: 'none',
-      webSetting: {
-        notificationSound: 'media/audios/assigned.wav',
-        unassignedNotificationSound: 'media/audios/unassigned.wav',
-      },
-    });
+    expect(mockSoundPlay).not.toHaveBeenCalled();
     jest.useRealTimers();
   });
 
