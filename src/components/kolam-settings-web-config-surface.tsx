@@ -40,6 +40,7 @@ import { KolamTextFieldRow } from './kolam-text-field-row';
 import { KolamTextFieldRowCopy } from './kolam-text-field-row-copy';
 import { KolamSettingsPackageUpdateActions } from './kolam-settings-package-update-actions';
 import { KolamRupiahField } from './kolam-rupiah-field';
+import {KolamToggleCardGrid} from './kolam-toggle-card-grid';
 import { KolamToggleRow } from './kolam-toggle-row';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import {KolamUploadButton} from './kolam-upload-button';
@@ -2911,37 +2912,33 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <View style={styles.notificationToggleGrid}>
-              <View style={styles.notificationToggleBox}>
-                <KolamToggleRow
-                  variant="settingsForm"
-                  label="POS"
-                  description="Maintenance POS."
-                  active={draft.maintenancePos}
-                  onPress={() => {
-                    if (disabled) {
-                      return;
-                    }
-                    onSaveOperationalMaintenance('pos', !draft.maintenancePos);
-                  }}
-                />
-              </View>
-              <View style={styles.notificationToggleBox}>
-                <KolamToggleRow
-                  variant="settingsForm"
-                  label="Marketplace"
-                  description="Maintenance web toko."
-                  active={draft.maintenanceMarketplace}
-                  onPress={() =>
-                    !disabled &&
-                    onSaveOperationalMaintenance(
-                      'marketplace',
-                      !draft.maintenanceMarketplace,
-                    )
+            <KolamToggleCardGrid>
+              <KolamToggleRow
+                variant="settingsForm"
+                label="POS"
+                description="Maintenance POS."
+                active={draft.maintenancePos}
+                onPress={() => {
+                  if (disabled) {
+                    return;
                   }
-                />
-              </View>
-            </View>
+                  onSaveOperationalMaintenance('pos', !draft.maintenancePos);
+                }}
+              />
+              <KolamToggleRow
+                variant="settingsForm"
+                label="Marketplace"
+                description="Maintenance web toko."
+                active={draft.maintenanceMarketplace}
+                onPress={() =>
+                  !disabled &&
+                  onSaveOperationalMaintenance(
+                    'marketplace',
+                    !draft.maintenanceMarketplace,
+                  )
+                }
+              />
+            </KolamToggleCardGrid>
           </View>
           <View
             style={[
@@ -3810,38 +3807,34 @@ export function KolamSettingsWebConfigSurface({
                 onPress={onSave}
               />
             </View>
-            <View style={styles.notificationToggleGrid}>
-              <View style={styles.notificationToggleBox}>
-                <KolamToggleRow
-                  variant="settingsForm"
-                  label="Sitemap aktif"
-                  description="Jika mati, sitemap.xml hanya berisi URL beranda."
-                  active={sitemapDraft.enabled !== false}
-                  onPress={() =>
-                    !disabled &&
-                    setSitemapMasterField(
-                      'enabled',
-                      sitemapDraft.enabled === false,
-                    )
-                  }
-                />
-              </View>
-              <View style={styles.notificationToggleBox}>
-                <KolamToggleRow
-                  variant="settingsForm"
-                  label="Sertakan gambar"
-                  description="Kirim metadata gambar produk dan species ke sitemap."
-                  active={sitemapDraft.includeImages !== false}
-                  onPress={() =>
-                    !disabled &&
-                    setSitemapMasterField(
-                      'includeImages',
-                      sitemapDraft.includeImages === false,
-                    )
-                  }
-                />
-              </View>
-            </View>
+            <KolamToggleCardGrid>
+              <KolamToggleRow
+                variant="settingsForm"
+                label="Sitemap aktif"
+                description="Jika mati, sitemap.xml hanya berisi URL beranda."
+                active={sitemapDraft.enabled !== false}
+                onPress={() =>
+                  !disabled &&
+                  setSitemapMasterField(
+                    'enabled',
+                    sitemapDraft.enabled === false,
+                  )
+                }
+              />
+              <KolamToggleRow
+                variant="settingsForm"
+                label="Sertakan gambar"
+                description="Kirim metadata gambar produk dan species ke sitemap."
+                active={sitemapDraft.includeImages !== false}
+                onPress={() =>
+                  !disabled &&
+                  setSitemapMasterField(
+                    'includeImages',
+                    sitemapDraft.includeImages === false,
+                  )
+                }
+              />
+            </KolamToggleCardGrid>
           </View>
 
           <View style={styles.financialNestedCard}>
@@ -4481,22 +4474,21 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <View style={styles.notificationToggleGrid}>
+            <KolamToggleCardGrid>
               {aiInboxPlatformRows.map(row => (
-                <View key={row.id} style={styles.notificationToggleBox}>
-                  <KolamToggleRow
-                    variant="settingsForm"
-                    label={row.label}
-                    description={row.description}
-                    active={draft[row.field] === true}
-                    onPress={() =>
-                      !daraChatControlsDisabled &&
-                      setDraftField(row.field, !(draft[row.field] === true))
-                    }
-                  />
-                </View>
+                <KolamToggleRow
+                  key={row.id}
+                  variant="settingsForm"
+                  label={row.label}
+                  description={row.description}
+                  active={draft[row.field] === true}
+                  onPress={() =>
+                    !daraChatControlsDisabled &&
+                    setDraftField(row.field, !(draft[row.field] === true))
+                  }
+                />
               ))}
-            </View>
+            </KolamToggleCardGrid>
             <KolamCopyStack
               items={[
                 {
@@ -4529,38 +4521,35 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <View style={styles.notificationToggleGrid}>
-              <View style={styles.notificationToggleBox}>
+            <KolamToggleCardGrid>
+              <KolamToggleRow
+                variant="settingsForm"
+                label="Bisnis DARA"
+                description="Aktifkan fitur bisnis DARA."
+                active={draft.daraBusinessEnabled}
+                onPress={() =>
+                  !daraControlsDisabled &&
+                  setDraftField(
+                    'daraBusinessEnabled',
+                    !draft.daraBusinessEnabled,
+                  )
+                }
+              />
+              {aiModuleToggleRows.map(row => (
                 <KolamToggleRow
+                  key={row.id}
                   variant="settingsForm"
-                  label="Bisnis DARA"
-                  description="Aktifkan fitur bisnis DARA."
-                  active={draft.daraBusinessEnabled}
+                  label={row.label}
+                  description={row.description}
+                  active={draft[row.field] === true}
                   onPress={() =>
                     !daraControlsDisabled &&
-                    setDraftField(
-                      'daraBusinessEnabled',
-                      !draft.daraBusinessEnabled,
-                    )
+                    draft.daraBusinessEnabled &&
+                    setDraftField(row.field, !(draft[row.field] === true))
                   }
                 />
-              </View>
-              {aiModuleToggleRows.map(row => (
-                <View key={row.id} style={styles.notificationToggleBox}>
-                  <KolamToggleRow
-                    variant="settingsForm"
-                    label={row.label}
-                    description={row.description}
-                    active={draft[row.field] === true}
-                    onPress={() =>
-                      !daraControlsDisabled &&
-                      draft.daraBusinessEnabled &&
-                      setDraftField(row.field, !(draft[row.field] === true))
-                    }
-                  />
-                </View>
               ))}
-            </View>
+            </KolamToggleCardGrid>
             <KolamTextFieldRow
               variant="settingsForm"
               fieldWidth={settingsFieldWidth}
@@ -4622,23 +4611,22 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <View style={styles.notificationToggleGrid}>
+            <KolamToggleCardGrid>
               {daraTaxToggleRows.map(row => (
-                <View key={row.id} style={styles.notificationToggleBox}>
-                  <KolamToggleRow
-                    variant="settingsForm"
-                    label={row.label}
-                    description={row.description}
-                    active={draft[row.field] === true}
-                    onPress={() =>
-                      !daraControlsDisabled &&
-                      draft.daraBusinessEnabled &&
-                      setDraftField(row.field, !(draft[row.field] === true))
-                    }
-                  />
-                </View>
+                <KolamToggleRow
+                  key={row.id}
+                  variant="settingsForm"
+                  label={row.label}
+                  description={row.description}
+                  active={draft[row.field] === true}
+                  onPress={() =>
+                    !daraControlsDisabled &&
+                    draft.daraBusinessEnabled &&
+                    setDraftField(row.field, !(draft[row.field] === true))
+                  }
+                />
               ))}
-            </View>
+            </KolamToggleCardGrid>
           </View>
 
           <View
@@ -4657,44 +4645,42 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <View style={styles.notificationToggleGrid}>
+            <KolamToggleCardGrid>
               {daraFulfillmentToggleRows
                 .filter(row => row.id === 'auto' || row.id === 'webstore')
                 .map(row => (
-                  <View key={row.id} style={styles.notificationToggleBox}>
-                    <KolamToggleRow
-                      variant="settingsForm"
-                      label={row.label}
-                      description={row.description}
-                      active={draft[row.field] === true}
-                      onPress={() =>
-                        !daraControlsDisabled &&
-                        draft.daraBusinessEnabled &&
-                        setDraftField(row.field, !(draft[row.field] === true))
-                      }
-                    />
-                  </View>
+                  <KolamToggleRow
+                    key={row.id}
+                    variant="settingsForm"
+                    label={row.label}
+                    description={row.description}
+                    active={draft[row.field] === true}
+                    onPress={() =>
+                      !daraControlsDisabled &&
+                      draft.daraBusinessEnabled &&
+                      setDraftField(row.field, !(draft[row.field] === true))
+                    }
+                  />
                 ))}
-            </View>
-            <View style={styles.notificationToggleGrid}>
+            </KolamToggleCardGrid>
+            <KolamToggleCardGrid>
               {daraFulfillmentToggleRows
                 .filter(row => row.id === 'shopee' || row.id === 'tokopedia')
                 .map(row => (
-                  <View key={row.id} style={styles.notificationToggleBox}>
-                    <KolamToggleRow
-                      variant="settingsForm"
-                      label={row.label}
-                      description={row.description}
-                      active={draft[row.field] === true}
-                      onPress={() =>
-                        !daraControlsDisabled &&
-                        draft.daraBusinessEnabled &&
-                        setDraftField(row.field, !(draft[row.field] === true))
-                      }
-                    />
-                  </View>
+                  <KolamToggleRow
+                    key={row.id}
+                    variant="settingsForm"
+                    label={row.label}
+                    description={row.description}
+                    active={draft[row.field] === true}
+                    onPress={() =>
+                      !daraControlsDisabled &&
+                      draft.daraBusinessEnabled &&
+                      setDraftField(row.field, !(draft[row.field] === true))
+                    }
+                  />
                 ))}
-            </View>
+            </KolamToggleCardGrid>
             <View style={styles.notificationToggleGrid}>
               <View
                 style={[
@@ -4775,23 +4761,22 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <View style={styles.notificationToggleGrid}>
+            <KolamToggleCardGrid>
               {daraNightOpsToggleRows.map(row => (
-                <View key={row.id} style={styles.notificationToggleBox}>
-                  <KolamToggleRow
-                    variant="settingsForm"
-                    label={row.label}
-                    description={row.description}
-                    active={draft[row.field] === true}
-                    onPress={() =>
-                      !daraControlsDisabled &&
-                      draft.daraBusinessEnabled &&
-                      setDraftField(row.field, !(draft[row.field] === true))
-                    }
-                  />
-                </View>
+                <KolamToggleRow
+                  key={row.id}
+                  variant="settingsForm"
+                  label={row.label}
+                  description={row.description}
+                  active={draft[row.field] === true}
+                  onPress={() =>
+                    !daraControlsDisabled &&
+                    draft.daraBusinessEnabled &&
+                    setDraftField(row.field, !(draft[row.field] === true))
+                  }
+                />
               ))}
-            </View>
+            </KolamToggleCardGrid>
             <KolamRowFrame variant="settingsForm">
               <KolamTextFieldRowCopy
                 description="Room tujuan digest dan notifikasi penjualan Night Ops."
@@ -5575,35 +5560,30 @@ export function KolamSettingsWebConfigSurface({
                   onPress={onSaveNotificationOtpSmtp}
                 />
               </View>
-              <View style={styles.notificationToggleGrid}>
-                <View style={styles.notificationToggleBox}>
-                  <KolamToggleRow
-                    variant="settingsForm"
-                    label="SMTP aman"
-                    description="Gunakan koneksi SMTP aman."
-                    active={draft.smtpSecure}
-                    onPress={() =>
-                      !disabled &&
-                      setDraftField('smtpSecure', !draft.smtpSecure)
-                    }
-                  />
-                </View>
-                <View style={styles.notificationToggleBox}>
-                  <KolamToggleRow
-                    variant="settingsForm"
-                    label="OTP masuk staf"
-                    description="Aktifkan OTP untuk masuk staf produksi."
-                    active={draft.staffOtpLoginEnabled}
-                    onPress={() =>
-                      !disabled &&
-                      setDraftField(
-                        'staffOtpLoginEnabled',
-                        !draft.staffOtpLoginEnabled,
-                      )
-                    }
-                  />
-                </View>
-              </View>
+              <KolamToggleCardGrid>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="SMTP aman"
+                  description="Gunakan koneksi SMTP aman."
+                  active={draft.smtpSecure}
+                  onPress={() =>
+                    !disabled && setDraftField('smtpSecure', !draft.smtpSecure)
+                  }
+                />
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="OTP masuk staf"
+                  description="Aktifkan OTP untuk masuk staf produksi."
+                  active={draft.staffOtpLoginEnabled}
+                  onPress={() =>
+                    !disabled &&
+                    setDraftField(
+                      'staffOtpLoginEnabled',
+                      !draft.staffOtpLoginEnabled,
+                    )
+                  }
+                />
+              </KolamToggleCardGrid>
               <KolamTextFieldRow
                 variant="settingsForm"
                 fieldWidth={settingsFieldWidth}
@@ -10832,50 +10812,44 @@ function FinancialSettingsPanel({
                             },
                           ]}
                         />
-                        <View style={styles.notificationToggleGrid}>
-                          <View style={styles.notificationToggleBox}>
-                            <KolamToggleRow
-                              active={paymentMethodDraft.isActive}
-                              description="Metode aktif bisa dipakai transaksi."
-                              label="Metode aktif"
-                              onPress={() =>
-                                setPaymentMethodDraftField(
-                                  'isActive',
-                                  !paymentMethodDraft.isActive,
-                                )
-                              }
-                              variant="settingsForm"
-                            />
-                          </View>
-                          <View style={styles.notificationToggleBox}>
-                            <KolamToggleRow
-                              active={paymentMethodDraft.isAvailableOnWebstore}
-                              description="Tampilkan sebagai opsi pembayaran webstore."
-                              label="Tersedia di webstore"
-                              onPress={() =>
-                                setPaymentMethodDraftField(
-                                  'isAvailableOnWebstore',
-                                  !paymentMethodDraft.isAvailableOnWebstore,
-                                )
-                              }
-                              variant="settingsForm"
-                            />
-                          </View>
-                          <View style={styles.notificationToggleBox}>
-                            <KolamToggleRow
-                              active={paymentMethodDraft.requireSaleProof}
-                              description="Pembeli wajib melampirkan bukti transfer."
-                              label="Wajib bukti pembayaran"
-                              onPress={() =>
-                                setPaymentMethodDraftField(
-                                  'requireSaleProof',
-                                  !paymentMethodDraft.requireSaleProof,
-                                )
-                              }
-                              variant="settingsForm"
-                            />
-                          </View>
-                        </View>
+                        <KolamToggleCardGrid columns={3}>
+                          <KolamToggleRow
+                            active={paymentMethodDraft.isActive}
+                            description="Metode aktif bisa dipakai transaksi."
+                            label="Metode aktif"
+                            onPress={() =>
+                              setPaymentMethodDraftField(
+                                'isActive',
+                                !paymentMethodDraft.isActive,
+                              )
+                            }
+                            variant="settingsForm"
+                          />
+                          <KolamToggleRow
+                            active={paymentMethodDraft.isAvailableOnWebstore}
+                            description="Tampilkan sebagai opsi pembayaran webstore."
+                            label="Tersedia di webstore"
+                            onPress={() =>
+                              setPaymentMethodDraftField(
+                                'isAvailableOnWebstore',
+                                !paymentMethodDraft.isAvailableOnWebstore,
+                              )
+                            }
+                            variant="settingsForm"
+                          />
+                          <KolamToggleRow
+                            active={paymentMethodDraft.requireSaleProof}
+                            description="Pembeli wajib melampirkan bukti transfer."
+                            label="Wajib bukti pembayaran"
+                            onPress={() =>
+                              setPaymentMethodDraftField(
+                                'requireSaleProof',
+                                !paymentMethodDraft.requireSaleProof,
+                              )
+                            }
+                            variant="settingsForm"
+                          />
+                        </KolamToggleCardGrid>
                       </View>
                       <View style={styles.financialActions}>
                         <KolamSaveButton
@@ -11232,36 +11206,32 @@ function FinancialSettingsPanel({
             value={draft.overtimeMidnightCutoff}
             variant="settingsForm"
           />
-          <View style={styles.notificationToggleGrid}>
-            <View style={styles.notificationToggleBox}>
-              <KolamToggleRow
-                active={draft.overtimeUseSalaryDerivedRate}
-                description="Jika tarif tetap 0, pakai gaji dibagi 173 atau 25."
-                label="Tarif dari gaji"
-                onPress={() =>
-                  setDraftField(
-                    'overtimeUseSalaryDerivedRate',
-                    !draft.overtimeUseSalaryDerivedRate,
-                  )
-                }
-                variant="settingsForm"
-              />
-            </View>
-            <View style={styles.notificationToggleBox}>
-              <KolamToggleRow
-                active={draft.overtimeUseStoreCloseForPerDay}
-                description="Gunakan jam tutup toko sebagai awal lembur per hari."
-                label="Pakai jam tutup toko"
-                onPress={() =>
-                  setDraftField(
-                    'overtimeUseStoreCloseForPerDay',
-                    !draft.overtimeUseStoreCloseForPerDay,
-                  )
-                }
-                variant="settingsForm"
-              />
-            </View>
-          </View>
+          <KolamToggleCardGrid>
+            <KolamToggleRow
+              active={draft.overtimeUseSalaryDerivedRate}
+              description="Jika tarif tetap 0, pakai gaji dibagi 173 atau 25."
+              label="Tarif dari gaji"
+              onPress={() =>
+                setDraftField(
+                  'overtimeUseSalaryDerivedRate',
+                  !draft.overtimeUseSalaryDerivedRate,
+                )
+              }
+              variant="settingsForm"
+            />
+            <KolamToggleRow
+              active={draft.overtimeUseStoreCloseForPerDay}
+              description="Gunakan jam tutup toko sebagai awal lembur per hari."
+              label="Pakai jam tutup toko"
+              onPress={() =>
+                setDraftField(
+                  'overtimeUseStoreCloseForPerDay',
+                  !draft.overtimeUseStoreCloseForPerDay,
+                )
+              }
+              variant="settingsForm"
+            />
+          </KolamToggleCardGrid>
         </View>
       ) : null}
 
@@ -11330,50 +11300,44 @@ function FinancialSettingsPanel({
               />
             </>
           ) : null}
-          <View style={styles.notificationToggleGrid}>
-            <View style={styles.notificationToggleBox}>
-              <KolamToggleRow
-                active={draft.enclosureSaleCommissionEnabled}
-                description="Nonaktif berarti baris kandang tidak di-accrue."
-                label="Aktifkan komisi kandang"
-                onPress={() =>
-                  setDraftField(
-                    'enclosureSaleCommissionEnabled',
-                    !draft.enclosureSaleCommissionEnabled,
-                  )
-                }
-                variant="settingsForm"
-              />
-            </View>
-            <View style={styles.notificationToggleBox}>
-              <KolamToggleRow
-                active={draft.salePricesIncludeTax}
-                description="Default true jika field BE kosong."
-                label="Harga jual include PPN"
-                onPress={() =>
-                  onSaveFinancialTaxToggle(
-                    'salePricesIncludeTax',
-                    !draft.salePricesIncludeTax,
-                  )
-                }
-                variant="settingsForm"
-              />
-            </View>
-            <View style={styles.notificationToggleBox}>
-              <KolamToggleRow
-                active={draft.commissionPph21Enabled}
-                description="Aktifkan perhitungan PPh 21 untuk komisi."
-                label="PPh 21 komisi"
-                onPress={() =>
-                  onSaveFinancialTaxToggle(
-                    'commissionPph21Enabled',
-                    !draft.commissionPph21Enabled,
-                  )
-                }
-                variant="settingsForm"
-              />
-            </View>
-          </View>
+          <KolamToggleCardGrid columns={3}>
+            <KolamToggleRow
+              active={draft.enclosureSaleCommissionEnabled}
+              description="Nonaktif berarti baris kandang tidak di-accrue."
+              label="Aktifkan komisi kandang"
+              onPress={() =>
+                setDraftField(
+                  'enclosureSaleCommissionEnabled',
+                  !draft.enclosureSaleCommissionEnabled,
+                )
+              }
+              variant="settingsForm"
+            />
+            <KolamToggleRow
+              active={draft.salePricesIncludeTax}
+              description="Default true jika field BE kosong."
+              label="Harga jual include PPN"
+              onPress={() =>
+                onSaveFinancialTaxToggle(
+                  'salePricesIncludeTax',
+                  !draft.salePricesIncludeTax,
+                )
+              }
+              variant="settingsForm"
+            />
+            <KolamToggleRow
+              active={draft.commissionPph21Enabled}
+              description="Aktifkan perhitungan PPh 21 untuk komisi."
+              label="PPh 21 komisi"
+              onPress={() =>
+                onSaveFinancialTaxToggle(
+                  'commissionPph21Enabled',
+                  !draft.commissionPph21Enabled,
+                )
+              }
+              variant="settingsForm"
+            />
+          </KolamToggleCardGrid>
         </View>
       ) : null}
 
