@@ -2945,186 +2945,200 @@ function KolamUserEditSurface({
             </View>
           </View>
           {canToggleEmployee && form.isEmployee ? (
-            <>
-              <View style={styles.formFieldWide}>
+            <View style={styles.formFieldWide}>
+              <View style={styles.accessCard}>
                 <View style={styles.accessSectionHeader}>
                   <Text style={styles.detailPanelTitle}>Detail Karyawan</Text>
                   <Text style={styles.detailSubtitle}>
                     Informasi organisasi dan jadwal kerja.
                   </Text>
                 </View>
-              </View>
-              <UserFormField label="Nomor Karyawan">
-                <KolamFormTextField
-                  editable={!formDisabled}
-                  onChangeText={value =>
-                    setEmployeeField('employeeNumber', value)
-                  }
-                  style={styles.formInput}
-                  value={form.employee.employeeNumber}
-                />
-              </UserFormField>
-              <View style={styles.formField}>
-                <UserFormField label="Status Kepegawaian">
-                  <KolamDropdownSelect
-                    label="Status Kepegawaian"
-                    onChange={value => setEmployeeField('status', value)}
-                    options={[
-                      {label: 'Aktif', value: 'active'},
-                      {label: 'Nonaktif', value: 'inactive'},
-                      {label: 'Diberhentikan', value: 'terminated'},
-                    ]}
-                    value={form.employee.status}
-                  />
-                </UserFormField>
-              </View>
-              <UserFormField label="Jabatan">
-                <KolamFormTextField
-                  editable={!formDisabled}
-                  onChangeText={value => setEmployeeField('position', value)}
-                  style={styles.formInput}
-                  value={form.employee.position}
-                />
-              </UserFormField>
-              <UserFormField label="Departemen">
-                <KolamFormTextField
-                  editable={!formDisabled}
-                  onChangeText={value => setEmployeeField('department', value)}
-                  style={styles.formInput}
-                  value={form.employee.department}
-                />
-              </UserFormField>
-              <UserFormField label="Tanggal Mulai Bekerja">
-                <KolamDateField
-                  label="Tanggal Mulai Bekerja"
-                  onChange={value => setEmployeeField('hireDate', value)}
-                  showLabelInTrigger={false}
-                  value={form.employee.hireDate}
-                />
-              </UserFormField>
-              <UserFormField label="Tahun Masuk">
-                <KolamFormTextField
-                  editable={!formDisabled}
-                  mode="numeric"
-                  onChangeText={value => setEmployeeField('yearIn', value)}
-                  style={styles.formInput}
-                  value={form.employee.yearIn}
-                />
-              </UserFormField>
-              {canViewSalary ? (
-                <>
-                  <UserFormField label="Gaji Bulanan (IDR)">
+                <View style={styles.formGrid}>
+                  <UserFormField label="Nomor Karyawan">
                     <KolamFormTextField
                       editable={!formDisabled}
-                      mode="numeric"
-                      onChangeText={value => setEmployeeField('salary', value)}
-                      placeholder="mis. 5000000"
-                      style={styles.formInput}
-                      value={form.employee.salary}
-                    />
-                  </UserFormField>
-                  <UserFormField label="Tanggal Pembayaran Gaji">
-                    <KolamFormTextField
-                      editable={!formDisabled}
-                      mode="numeric"
                       onChangeText={value =>
-                        setEmployeeField('salaryDate', value)
+                        setEmployeeField('employeeNumber', value)
                       }
-                      placeholder="mis. 25"
                       style={styles.formInput}
-                      value={form.employee.salaryDate}
+                      value={form.employee.employeeNumber}
                     />
                   </UserFormField>
-                </>
-              ) : null}
-              <View style={styles.formFieldWide}>
-              <KolamToggleRow
-                  active={form.employee.firstTimeWorking}
-                  description="Ini adalah pekerjaan pertama mereka"
-                  disabled={formDisabled}
-                  label="Pekerjaan Pertama"
-                  onPress={() =>
-                    setEmployeeField(
-                      'firstTimeWorking',
-                      !form.employee.firstTimeWorking,
-                    )
-                  }
-                />
-              </View>
-              <View style={styles.formFieldWide}>
-                <KolamToggleRow
-                  active={form.employee.isPkp}
-                  description="Tandai jika karyawan memiliki PKP aktif"
-                  disabled={formDisabled}
-                  label="Status PKP Berlaku"
-                  onPress={() =>
-                    setEmployeeField('isPkp', !form.employee.isPkp)
-                  }
-                />
-              </View>
-              {form.employee.isPkp ? (
-                <KolamNotesField
-                  editable={!formDisabled}
-                  label="Catatan PKP"
-                  onChangeText={value => setEmployeeField('pkpNotes', value)}
-                  value={form.employee.pkpNotes}
-                />
-              ) : null}
-              <View style={styles.formField}>
-                <UserFormField label="Tipe Jadwal">
-                  <KolamDropdownSelect
-                    label="Tipe Jadwal"
-                    onChange={value => setEmployeeScheduleField('type', value)}
-                    options={[
-                      {label: 'Penuh Waktu', value: 'full_time'},
-                      {label: 'Paruh Waktu', value: 'part_time'},
-                      {label: 'Kontrak', value: 'contract'},
-                    ]}
-                    value={form.employee.schedule.type}
-                  />
-                </UserFormField>
-              </View>
-              <UserFormField label="Mulai Shift">
-                <KolamFormTextField
-                  editable={!formDisabled}
-                  onChangeText={value =>
-                    setEmployeeScheduleField('shiftStart', value)
-                  }
-                  style={styles.formInput}
-                  value={form.employee.schedule.shiftStart}
-                />
-              </UserFormField>
-              <UserFormField label="Selesai Shift">
-                <KolamFormTextField
-                  editable={!formDisabled}
-                  onChangeText={value =>
-                    setEmployeeScheduleField('shiftEnd', value)
-                  }
-                  style={styles.formInput}
-                  value={form.employee.schedule.shiftEnd}
-                />
-              </UserFormField>
-              <View style={styles.formFieldWide}>
-                <Text style={styles.formSubsectionTitle}>Hari Kerja</Text>
-                <View style={styles.workDayRow}>
-                  {EMPLOYEE_WORK_DAYS.map(day => {
-                    const selected =
-                      form.employee.schedule.workDays.includes(day.id);
-
-                    return (
-                      <KolamButton
-                        disabled={formDisabled}
-                        intent={selected ? 'primary' : 'secondary'}
-                        key={day.id}
-                        label={day.label}
-                        onPress={() => toggleEmployeeWorkDay(day.id)}
-                        style={styles.workDayButton}
+                  <View style={styles.formField}>
+                    <UserFormField label="Status Kepegawaian">
+                      <KolamDropdownSelect
+                        label="Status Kepegawaian"
+                        onChange={value => setEmployeeField('status', value)}
+                        options={[
+                          {label: 'Aktif', value: 'active'},
+                          {label: 'Nonaktif', value: 'inactive'},
+                          {label: 'Diberhentikan', value: 'terminated'},
+                        ]}
+                        value={form.employee.status}
                       />
-                    );
-                  })}
+                    </UserFormField>
+                  </View>
+                  <UserFormField label="Jabatan">
+                    <KolamFormTextField
+                      editable={!formDisabled}
+                      onChangeText={value => setEmployeeField('position', value)}
+                      style={styles.formInput}
+                      value={form.employee.position}
+                    />
+                  </UserFormField>
+                  <UserFormField label="Departemen">
+                    <KolamFormTextField
+                      editable={!formDisabled}
+                      onChangeText={value =>
+                        setEmployeeField('department', value)
+                      }
+                      style={styles.formInput}
+                      value={form.employee.department}
+                    />
+                  </UserFormField>
+                  <UserFormField label="Tanggal Mulai Bekerja">
+                    <KolamDateField
+                      label="Tanggal Mulai Bekerja"
+                      onChange={value => setEmployeeField('hireDate', value)}
+                      showLabelInTrigger={false}
+                      value={form.employee.hireDate}
+                    />
+                  </UserFormField>
+                  <UserFormField label="Tahun Masuk">
+                    <KolamFormTextField
+                      editable={!formDisabled}
+                      mode="numeric"
+                      onChangeText={value => setEmployeeField('yearIn', value)}
+                      style={styles.formInput}
+                      value={form.employee.yearIn}
+                    />
+                  </UserFormField>
+                  {canViewSalary ? (
+                    <>
+                      <UserFormField label="Gaji Bulanan (IDR)">
+                        <KolamFormTextField
+                          editable={!formDisabled}
+                          mode="numeric"
+                          onChangeText={value =>
+                            setEmployeeField('salary', value)
+                          }
+                          placeholder="mis. 5000000"
+                          style={styles.formInput}
+                          value={form.employee.salary}
+                        />
+                      </UserFormField>
+                      <UserFormField label="Tanggal Pembayaran Gaji">
+                        <KolamFormTextField
+                          editable={!formDisabled}
+                          mode="numeric"
+                          onChangeText={value =>
+                            setEmployeeField('salaryDate', value)
+                          }
+                          placeholder="mis. 25"
+                          style={styles.formInput}
+                          value={form.employee.salaryDate}
+                        />
+                      </UserFormField>
+                    </>
+                  ) : null}
+                  <View style={styles.formFieldWide}>
+                    <View style={styles.accessToggleRow}>
+                      <View style={styles.accessToggleCell}>
+                        <KolamToggleRow
+                          active={form.employee.firstTimeWorking}
+                          description="Ini adalah pekerjaan pertama mereka"
+                          disabled={formDisabled}
+                          label="Pekerjaan Pertama"
+                          onPress={() =>
+                            setEmployeeField(
+                              'firstTimeWorking',
+                              !form.employee.firstTimeWorking,
+                            )
+                          }
+                          variant="settingsForm"
+                        />
+                      </View>
+                      <View style={styles.accessToggleCell}>
+                        <KolamToggleRow
+                          active={form.employee.isPkp}
+                          description="Tandai jika karyawan memiliki PKP aktif"
+                          disabled={formDisabled}
+                          label="Status PKP Berlaku"
+                          onPress={() =>
+                            setEmployeeField('isPkp', !form.employee.isPkp)
+                          }
+                          variant="settingsForm"
+                        />
+                      </View>
+                    </View>
+                  </View>
+                  {form.employee.isPkp ? (
+                    <KolamNotesField
+                      editable={!formDisabled}
+                      label="Catatan PKP"
+                      onChangeText={value => setEmployeeField('pkpNotes', value)}
+                      value={form.employee.pkpNotes}
+                    />
+                  ) : null}
+                  <View style={styles.formField}>
+                    <UserFormField label="Tipe Jadwal">
+                      <KolamDropdownSelect
+                        label="Tipe Jadwal"
+                        onChange={value =>
+                          setEmployeeScheduleField('type', value)
+                        }
+                        options={[
+                          {label: 'Penuh Waktu', value: 'full_time'},
+                          {label: 'Paruh Waktu', value: 'part_time'},
+                          {label: 'Kontrak', value: 'contract'},
+                        ]}
+                        value={form.employee.schedule.type}
+                      />
+                    </UserFormField>
+                  </View>
+                  <UserFormField label="Mulai Shift">
+                    <KolamFormTextField
+                      editable={!formDisabled}
+                      onChangeText={value =>
+                        setEmployeeScheduleField('shiftStart', value)
+                      }
+                      style={styles.formInput}
+                      value={form.employee.schedule.shiftStart}
+                    />
+                  </UserFormField>
+                  <UserFormField label="Selesai Shift">
+                    <KolamFormTextField
+                      editable={!formDisabled}
+                      onChangeText={value =>
+                        setEmployeeScheduleField('shiftEnd', value)
+                      }
+                      style={styles.formInput}
+                      value={form.employee.schedule.shiftEnd}
+                    />
+                  </UserFormField>
+                  <View style={styles.formFieldWide}>
+                    <Text style={styles.formSubsectionTitle}>Hari Kerja</Text>
+                    <View style={styles.workDayRow}>
+                      {EMPLOYEE_WORK_DAYS.map(day => {
+                        const selected =
+                          form.employee.schedule.workDays.includes(day.id);
+
+                        return (
+                          <KolamButton
+                            disabled={formDisabled}
+                            intent={selected ? 'primary' : 'secondary'}
+                            key={day.id}
+                            label={day.label}
+                            onPress={() => toggleEmployeeWorkDay(day.id)}
+                            style={styles.workDayButton}
+                          />
+                        );
+                      })}
+                    </View>
+                  </View>
                 </View>
               </View>
-            </>
+            </View>
           ) : null}
           <View style={styles.formFieldWide}>
             <View style={styles.accessSectionHeader}>
