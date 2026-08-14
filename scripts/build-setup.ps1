@@ -58,12 +58,20 @@ if (-not (Test-Path -LiteralPath $CerPath)) {
   throw "Certificate not found: $CerPath. Set JUNGLESYSTEM_DEV_CER_PATH."
 }
 
+$desktopClientSecret = [string]$env:KOLAM_DESKTOP_CLIENT_SECRET
+if (-not $desktopClientSecret.Trim()) {
+  throw "KOLAM_DESKTOP_CLIENT_SECRET wajib di environment proses build (sama dengan BE Patch D) sebelum npm run build:setup."
+}
+
 New-Item -ItemType Directory -Force -Path $payloadDir | Out-Null
 New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 
 Copy-Item -LiteralPath $MsixPath -Destination (Join-Path $payloadDir "JungleSystem_${Version}_x64.msix") -Force
 Copy-Item -LiteralPath $CerPath -Destination (Join-Path $payloadDir "JungleSystem-dev.cer") -Force
 Copy-Item -LiteralPath $scriptSource -Destination (Join-Path $payloadDir "install-junglesystem.ps1") -Force
+
+$secretPath = Join-Path $payloadDir "kolam-desktop-client.secret"
+Set-Content -LiteralPath $secretPath -Value $desktopClientSecret.Trim() -NoNewline -Encoding ascii
 
 $iscc = Get-ISCCPath
 $payloadArg = $payloadDir

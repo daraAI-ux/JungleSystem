@@ -50,6 +50,7 @@ ClickFinish=Tutup.
 Source: "{#PayloadDir}\JungleSystem_{#AppVersion}_x64.msix"; DestDir: "{tmp}"; Flags: ignoreversion
 Source: "{#PayloadDir}\JungleSystem-dev.cer"; DestDir: "{tmp}"; Flags: ignoreversion
 Source: "{#PayloadDir}\install-junglesystem.ps1"; DestDir: "{tmp}"; Flags: ignoreversion
+Source: "{#PayloadDir}\kolam-desktop-client.secret"; DestDir: "{tmp}"; Flags: ignoreversion
 
 [Code]
 procedure InitializeWizard;
@@ -84,7 +85,7 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  ScriptPath, CerPath, MsixPath: String;
+  ScriptPath, CerPath, MsixPath, SecretPath: String;
 begin
   if CurStep <> ssPostInstall then
     Exit;
@@ -92,12 +93,19 @@ begin
   ScriptPath := ExpandConstant('{tmp}\install-junglesystem.ps1');
   CerPath := ExpandConstant('{tmp}\JungleSystem-dev.cer');
   MsixPath := ExpandConstant('{tmp}\JungleSystem_{#AppVersion}_x64.msix');
+  SecretPath := ExpandConstant('{tmp}\kolam-desktop-client.secret');
 
-  WizardForm.ProgressGauge.Position := (WizardForm.ProgressGauge.Max * 40) div 100;
+  WizardForm.ProgressGauge.Position := (WizardForm.ProgressGauge.Max * 25) div 100;
   RunStep(
     'Memasang sertifikat',
     '-NoProfile -ExecutionPolicy Bypass -File "' + ScriptPath +
     '" -Action cert -CerPath "' + CerPath + '"');
+
+  WizardForm.ProgressGauge.Position := (WizardForm.ProgressGauge.Max * 45) div 100;
+  RunStep(
+    'Mengatur akses perangkat',
+    '-NoProfile -ExecutionPolicy Bypass -File "' + ScriptPath +
+    '" -Action secret -SecretFile "' + SecretPath + '"');
 
   WizardForm.ProgressGauge.Position := (WizardForm.ProgressGauge.Max * 70) div 100;
   RunStep(

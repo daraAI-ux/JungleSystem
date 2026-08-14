@@ -1,11 +1,12 @@
 [CmdletBinding()]
 param(
-  [ValidateSet('cert', 'app', 'shortcut')]
+  [ValidateSet('cert', 'app', 'shortcut', 'secret')]
   [Parameter(Mandatory = $true)]
   [string]$Action,
 
   [string]$CerPath,
-  [string]$MsixPath
+  [string]$MsixPath,
+  [string]$SecretFile
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,6 +15,38 @@ function Get-JungleSystemPackage {
   return Get-AppxPackage -Name "JungleSystem" -ErrorAction SilentlyContinue |
     Sort-Object { [version]$_.Version } -Descending |
     Select-Object -First 1
+}
+
+function Broadcast-EnvironmentChange {
+  try {
+    Add-Type -Namespace JungleSystemInstall -Name NativeMethods -MemberDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class NativeMethods {
+  [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+  public static extern IntPtr SendMessageTimeout(
+    IntPtr hWnd,
+    uint Msg,
+    UIntPtr wParam,
+    string lParam,
+    uint fuFlags,
+    uint uTimeout,
+    out UIntPtr lpdwResult);
+}
+"@ -ErrorAction SilentlyContinue
+    $result = [UIntPtr]::Zero
+    [void][JungleSystemInstall.NativeMethods]::SendMessageTimeout(
+      [IntPtr]0xffff,
+      0x1A,
+      [UIntPtr]::Zero,
+      "Environment",
+      2,
+      5000,
+      [ref]$result
+    )
+  } catch {
+    # Best-effort; relaunch/sign-out still picks up Machine/User env.
+  }
 }
 
 switch ($Action) {
@@ -32,6 +65,28 @@ switch ($Action) {
       Remove-AppxPackage -Package $existing.PackageFullName
     }
     Add-AppxPackage -Path $MsixPath
+  }
+  'secret' {
+    if (-not $SecretFile -or -not (Test-Path -LiteralPath $SecretFile)) {
+      throw "Kolam desktop client secret file not found."
+    }
+    $secret = (Get-Content -LiteralPath $SecretFile -Raw -ErrorAction Stop).Trim()
+    if (-not $secret) {
+      throw "Kolam desktop client secret file is empty."
+    }
+    # Same secret BE uses for Patch D HMAC. Native bridge reads process/User/Machine env.
+    [Environment]::SetEnvironmentVariable(
+      'KOLAM_DESKTOP_CLIENT_SECRET',
+      $secret,
+      'Machine'
+    )
+    [Environment]::SetEnvironmentVariable(
+      'KOLAM_DESKTOP_CLIENT_SECRET',
+      $secret,
+      'User'
+    )
+    $env:KOLAM_DESKTOP_CLIENT_SECRET = $secret
+    Broadcast-EnvironmentChange
   }
   'shortcut' {
     $pkg = Get-JungleSystemPackage

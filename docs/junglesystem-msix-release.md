@@ -190,9 +190,9 @@ Catat:
 
 `JungleSystem_<version>_x64_Setup.exe` adalah wrapper Inno di atas MSIX yang
 sama. Wizard berbahasa Indonesia, progress, dan status langkah (menyalin paket,
-memasang sertifikat, memasang JungleSystem, pintasan Desktop, selesai). Tidak
-ada halaman lisensi/persetujuan. Gambar samping memakai logo JungleSystem
-(`installer/images/`, 164x314 dan 55x55).
+memasang sertifikat, mengatur akses perangkat, memasang JungleSystem, pintasan
+Desktop, selesai). Tidak ada halaman lisensi/persetujuan. Gambar samping memakai
+logo JungleSystem (`installer/images/`, 164x314 dan 55x55).
 
 Butuh Admin (UAC Windows). Silent:
 
@@ -200,15 +200,26 @@ Butuh Admin (UAC Windows). Silent:
 .\JungleSystem_3.1.4_x64_Setup.exe /VERYSILENT /NORESTART
 ```
 
-Bangun Setup setelah MSIX signed ada:
+Bangun Setup setelah MSIX signed ada. **Wajib** set secret yang sama dengan BE
+(`KOLAM_DESKTOP_CLIENT_SECRET`, Patch D MAC HMAC) di environment proses build —
+tanpa itu Setup tidak dibangun, dan PC klien tidak bisa login Kolam (MAC
+dianggap tidak terdeteksi):
 
 ```powershell
+$env:KOLAM_DESKTOP_CLIENT_SECRET="<sama dengan BE>"
 npm run build:setup
 ```
 
+Setup memasang secret ke Machine + User environment saat install (langkah
+“Mengatur akses perangkat”). File payload `kolam-desktop-client.secret` hanya
+hidup di `installer/payload/` (gitignored) dan `{tmp}` installer — jangan
+commit. Setelah install di PC lama yang sudah terpasang tanpa secret, pasang
+ulang Setup baru atau set env Machine secara manual lalu relaunch app.
+
 Cert `.cer` diambil dari luar repo (`JUNGLESYSTEM_DEV_CER_PATH` atau
-`E:\Data\Dunia-Anura\certs\JungleSystem-dev.cer`). Jangan commit `.pfx` atau
-password. Setup menyematkan `.cer` publik saja.
+`E:\Data\Dunia-Anura\certs\JungleSystem-dev.cer`). Jangan commit `.pfx`,
+password, atau `KOLAM_DESKTOP_CLIENT_SECRET`. Setup menyematkan `.cer` publik
+saja; secret client ikut di dalam Setup.exe seperti model embed Electron.
 
 Jangan memakai Squirrel, `.nupkg`, electron-updater, atau endpoint Electron
 lama `/desktop/kolam-da`.
