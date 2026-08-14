@@ -485,7 +485,8 @@ export function KolamAppStateProvider({
     },
     [handleNavigationDashboardRouteContext],
   );
-  const {unreadCounts: chatUnreadCounts} = useKolamChatNotificationHost({
+  const {refreshUnreadCounts, unreadCounts: chatUnreadCounts} =
+    useKolamChatNotificationHost({
     currentUserId:
       authUser?.id != null && String(authUser.id).trim()
         ? String(authUser.id)
@@ -494,6 +495,9 @@ export function KolamAppStateProvider({
     visibleRailMode: activeChatRail,
     visibleSelectedItemId: activeChatRail ? chatRailSelectedItemId : null,
   });
+  const handleChatUnreadInvalidate = React.useCallback(() => {
+    Promise.resolve(refreshUnreadCounts()).catch(() => undefined);
+  }, [refreshUnreadCounts]);
   const handleToastActivation = React.useCallback(
     (activation: {stream: 'inbox' | 'team-chat'; targetId: string}) => {
       const targetId = String(activation.targetId || '').trim();
@@ -732,6 +736,7 @@ export function KolamAppStateProvider({
         <KolamGlobalChatRail
           initialSelectedId={chatRailInitialSelectedId}
           mode={activeChatRail}
+          onChatUnreadInvalidate={handleChatUnreadInvalidate}
           onClose={handleChatRailClose}
           onSelectedItemIdChange={handleChatRailSelectedItemIdChange}
         />
@@ -741,6 +746,7 @@ export function KolamAppStateProvider({
       chatRailInitialSelectedId,
       handleChatRailClose,
       handleChatRailSelectedItemIdChange,
+      handleChatUnreadInvalidate,
     ],
   );
   const workspaceTabsNode = React.useMemo(

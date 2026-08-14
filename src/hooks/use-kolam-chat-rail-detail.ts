@@ -190,10 +190,12 @@ export interface KolamChatRailDetailState {
 export function useKolamChatRailDetail({
   currentUserId,
   mode,
+  onMarkedRead,
   selectedId,
 }: {
   currentUserId?: string;
   mode: KolamGlobalChatRailMode;
+  onMarkedRead?: (itemId: string) => void;
   selectedId: string | null;
 }): KolamChatRailDetailState {
   const [messages, setMessages] = useState<KolamChatRailDetailMessage[]>([]);
@@ -260,7 +262,14 @@ export function useKolamChatRailDetail({
           if (generation !== refreshGenerationRef.current) {
             return;
           }
-          await markKolamTeamChatRoomRead(selectedId).catch(() => undefined);
+          try {
+            await markKolamTeamChatRoomRead(selectedId);
+            if (!quiet && generation === refreshGenerationRef.current) {
+              onMarkedRead?.(selectedId);
+            }
+          } catch {
+            // Mark-read is best-effort; detail still loads.
+          }
           if (generation !== refreshGenerationRef.current) {
             return;
           }
@@ -281,7 +290,14 @@ export function useKolamChatRailDetail({
         if (generation !== refreshGenerationRef.current) {
           return;
         }
-        await markKolamChatConversationRead(selectedId).catch(() => undefined);
+        try {
+          await markKolamChatConversationRead(selectedId);
+          if (!quiet && generation === refreshGenerationRef.current) {
+            onMarkedRead?.(selectedId);
+          }
+        } catch {
+          // Mark-read is best-effort; detail still loads.
+        }
         if (generation !== refreshGenerationRef.current) {
           return;
         }
@@ -317,7 +333,7 @@ export function useKolamChatRailDetail({
         }
       }
     },
-    [currentUserId, mode, selectedId],
+    [currentUserId, mode, onMarkedRead, selectedId],
   );
 
   useEffect(() => {

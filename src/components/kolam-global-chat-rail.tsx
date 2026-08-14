@@ -888,11 +888,13 @@ function resolveKatakTerbangAvatarImageUrl(stored?: string | null) {
 export function KolamGlobalChatRail({
   initialSelectedId,
   mode,
+  onChatUnreadInvalidate,
   onClose,
   onSelectedItemIdChange,
 }: {
   initialSelectedId?: string | null;
   mode: KolamGlobalChatRailMode;
+  onChatUnreadInvalidate?: () => void;
   onClose: () => void;
   onSelectedItemIdChange?: (selectedItemId: string | null) => void;
 }) {
@@ -1030,14 +1032,23 @@ export function KolamGlobalChatRail({
   const inboxCanReply = canSignedInUserReplyCustomerChat(authUser);
   const canCreateRoom = canCreateTeamChatRoom(authUser);
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
+  const handleMarkedRead = React.useCallback(
+    (_itemId: string) => {
+      Promise.resolve(data.refresh()).catch(() => undefined);
+      onChatUnreadInvalidate?.();
+    },
+    [data.refresh, onChatUnreadInvalidate],
+  );
   const detail = useKolamChatRailDetail({
     currentUserId,
     mode,
+    onMarkedRead: handleMarkedRead,
     selectedId: selectedItemId,
   });
   const daraWindowDetail = useKolamChatRailDetail({
     currentUserId,
     mode: 'team-chat',
+    onMarkedRead: handleMarkedRead,
     selectedId:
       mode === 'team-chat' && daraHeaderMenuOpen ? daraWindowRoomId : null,
   });
