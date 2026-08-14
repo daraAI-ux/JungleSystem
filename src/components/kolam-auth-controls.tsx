@@ -64,7 +64,8 @@ export function KolamAuthControls({
   variant?: 'full' | 'login';
 }) {
   const compactLogin = variant === 'login';
-  const otpAvailable = authSource === 'kolam' && authOtpConfig?.enabled === true;
+  const otpAvailable =
+    (compactLogin || authSource === 'kolam') && authOtpConfig?.enabled === true;
   const effectiveLoginMode = otpAvailable ? authLoginMode : 'password';
 
   const handleModeChange = (mode: KolamAuthLoginMode) => {

@@ -118,6 +118,12 @@ export function useKolamAuthController() {
     }
   }, [authLoginMode, authSource]);
 
+  useEffect(() => {
+    if (!authUser && authSource !== 'kolam') {
+      setAuthSource('kolam');
+    }
+  }, [authSource, authUser]);
+
   const handleSignIn = async (): Promise<AuthSession | null> => {
     if (!authEmail || !authPassword) {
       setAuthMessage('Email dan password wajib diisi.');

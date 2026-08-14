@@ -101,4 +101,59 @@ describe('KolamLoginScreen', () => {
 
     expect(onLogin).toHaveBeenCalled();
   });
+
+  it('keeps the OTP tab visible on compact Kolam login when the server enables it', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamLoginScreen
+            auth={{
+              accessScope: {am: false, kolam: false, pos: false},
+              amApiBaseUrl: 'https://frogs.dunia-anura.com/api',
+              authEmail: '',
+              authLoginMode: 'password',
+              authMessage: 'Mode server existing siap.',
+              authOtpCode: '',
+              authOtpConfig: {
+                enabled: true,
+                otpExpireMinutes: 10,
+                resendCooldownSeconds: 60,
+              },
+              authOtpStep: 'email',
+              authPassword: '',
+              authSource: 'pos',
+              authSourceHint: 'POS access_pos.',
+              authSources,
+              displayName: 'Belum login',
+              isRequestingOtp: false,
+              isSigningIn: false,
+              onAmApiBaseUrlChange: () => undefined,
+              onAuthEmailChange: () => undefined,
+              onAuthLoginModeChange: () => undefined,
+              onAuthOtpCodeChange: () => undefined,
+              onAuthOtpStepChange: () => undefined,
+              onAuthPasswordChange: () => undefined,
+              onAuthSourceChange: () => undefined,
+              onLogin: () => undefined,
+              onLogout: () => undefined,
+              onRequestOtp: () => undefined,
+              onSync: () => undefined,
+              onVerifyOtp: () => undefined,
+            }}
+            deviceIdentityStatus="mac-only"
+            syncStatus={{
+              loading: false,
+              message: 'Sync: POS seed, Kolam seed, AM disabled.',
+            }}
+          />
+        </View>,
+      );
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Password', 'OTP Email']),
+    );
+  });
 });
