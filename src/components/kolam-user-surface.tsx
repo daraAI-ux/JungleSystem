@@ -89,6 +89,7 @@ import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 import type {KolamSurfacePanelTab} from './kolam-surface-panel-types';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
+import {KolamToggleCardGrid} from './kolam-toggle-card-grid';
 import {KolamToggleRow} from './kolam-toggle-row';
 import {KolamUploadButton} from './kolam-upload-button';
 
@@ -2844,104 +2845,90 @@ function KolamUserEditSurface({
                   </View>
                 ) : null}
               </View>
-              <View style={styles.accessToggleRow}>
-                <View style={styles.accessToggleCell}>
-                  <KolamToggleRow
-                    active={!form.account_restricted}
-                    description={
-                      form.account_restricted ? 'Akun dibatasi' : 'Akun aktif'
-                    }
-                    disabled={formDisabled}
-                    label="Status Akun"
-                    onPress={() =>
-                      setBooleanField(
-                        'account_restricted',
-                        !form.account_restricted,
-                      )
-                    }
-                    variant="settingsForm"
-                  />
-                </View>
+              <KolamToggleCardGrid>
+                <KolamToggleRow
+                  active={!form.account_restricted}
+                  description={
+                    form.account_restricted ? 'Akun dibatasi' : 'Akun aktif'
+                  }
+                  disabled={formDisabled}
+                  label="Status Akun"
+                  onPress={() =>
+                    setBooleanField(
+                      'account_restricted',
+                      !form.account_restricted,
+                    )
+                  }
+                  variant="settingsForm"
+                />
                 {canToggleEmployee ? (
-                  <View style={styles.accessToggleCell}>
-                    <KolamToggleRow
-                      active={form.isEmployee}
-                      description="Tandai pengguna ini sebagai karyawan perusahaan"
-                      disabled={formDisabled}
-                      label="Status Karyawan"
-                      onPress={() =>
-                        setBooleanField('isEmployee', !form.isEmployee)
-                      }
-                      variant="settingsForm"
-                    />
-                  </View>
-                ) : null}
-              </View>
-              <View style={styles.accessToggleRow}>
-                <View style={styles.accessToggleCell}>
                   <KolamToggleRow
-                    active={form.csActive}
-                    description="Izinkan pengguna membalas chat pelanggan di Inbox"
+                    active={form.isEmployee}
+                    description="Tandai pengguna ini sebagai karyawan perusahaan"
                     disabled={formDisabled}
-                    label="CS Aktif"
-                    onPress={() => setBooleanField('csActive', !form.csActive)}
+                    label="Status Karyawan"
+                    onPress={() =>
+                      setBooleanField('isEmployee', !form.isEmployee)
+                    }
                     variant="settingsForm"
                   />
-                </View>
+                ) : null}
+              </KolamToggleCardGrid>
+              <KolamToggleCardGrid>
+                <KolamToggleRow
+                  active={form.csActive}
+                  description="Izinkan pengguna membalas chat pelanggan di Inbox"
+                  disabled={formDisabled}
+                  label="CS Aktif"
+                  onPress={() => setBooleanField('csActive', !form.csActive)}
+                  variant="settingsForm"
+                />
                 {canToggleOwner ? (
-                  <View style={styles.accessToggleCell}>
-                    <KolamToggleRow
-                      active={form.isOwner}
-                      description="Tandai pengguna ini sebagai pemilik perusahaan"
-                      disabled={formDisabled}
-                      label="Status Pemilik"
-                      onPress={() => setBooleanField('isOwner', !form.isOwner)}
-                      variant="settingsForm"
-                    />
-                  </View>
+                  <KolamToggleRow
+                    active={form.isOwner}
+                    description="Tandai pengguna ini sebagai pemilik perusahaan"
+                    disabled={formDisabled}
+                    label="Status Pemilik"
+                    onPress={() => setBooleanField('isOwner', !form.isOwner)}
+                    variant="settingsForm"
+                  />
                 ) : null}
-              </View>
-              <View style={styles.accessToggleRow}>
-                <View style={styles.accessToggleCell}>
-                  <KolamToggleRow
-                    active={form.access_inventory}
-                    description="Izinkan pengguna mengakses Manajemen Inventori"
-                    disabled={formDisabled}
-                    label="Akses Inventori"
-                    onPress={() =>
-                      setBooleanField(
-                        'access_inventory',
-                        !form.access_inventory,
-                      )
-                    }
-                    variant="settingsForm"
-                  />
-                </View>
-                <View style={styles.accessToggleCell}>
-                  <KolamToggleRow
-                    active={form.access_am}
-                    description="Izinkan pengguna mengakses Automation Management"
-                    disabled={formDisabled}
-                    label="Akses AM"
-                    onPress={() =>
-                      setBooleanField('access_am', !form.access_am)
-                    }
-                    variant="settingsForm"
-                  />
-                </View>
-                <View style={styles.accessToggleCell}>
-                  <KolamToggleRow
-                    active={form.access_pos}
-                    description="Izinkan pengguna mengakses sistem Point of Sale"
-                    disabled={formDisabled}
-                    label="Akses POS"
-                    onPress={() =>
-                      setBooleanField('access_pos', !form.access_pos)
-                    }
-                    variant="settingsForm"
-                  />
-                </View>
-              </View>
+              </KolamToggleCardGrid>
+              <KolamToggleCardGrid columns={3}>
+                <KolamToggleRow
+                  active={form.access_inventory}
+                  description="Izinkan pengguna mengakses Manajemen Inventori"
+                  disabled={formDisabled}
+                  label="Akses Inventori"
+                  onPress={() =>
+                    setBooleanField(
+                      'access_inventory',
+                      !form.access_inventory,
+                    )
+                  }
+                  variant="settingsForm"
+                />
+                <KolamToggleRow
+                  active={form.access_am}
+                  description="Izinkan pengguna mengakses Automation Management"
+                  disabled={formDisabled}
+                  label="Akses AM"
+                  onPress={() =>
+                    setBooleanField('access_am', !form.access_am)
+                  }
+                  variant="settingsForm"
+                />
+                <KolamToggleRow
+                  active={form.access_pos}
+                  description="Izinkan pengguna mengakses sistem Point of Sale"
+                  disabled={formDisabled}
+                  label="Akses POS"
+                  onPress={() =>
+                    setBooleanField('access_pos', !form.access_pos)
+                  }
+                  variant="settingsForm"
+                />
+              </KolamToggleCardGrid>
             </View>
           </View>
           {canToggleEmployee && form.isEmployee ? (
@@ -3042,35 +3029,31 @@ function KolamUserEditSurface({
                     </>
                   ) : null}
                   <View style={styles.formFieldWide}>
-                    <View style={styles.accessToggleRow}>
-                      <View style={styles.accessToggleCell}>
-                        <KolamToggleRow
-                          active={form.employee.firstTimeWorking}
-                          description="Ini adalah pekerjaan pertama mereka"
-                          disabled={formDisabled}
-                          label="Pekerjaan Pertama"
-                          onPress={() =>
-                            setEmployeeField(
-                              'firstTimeWorking',
-                              !form.employee.firstTimeWorking,
-                            )
-                          }
-                          variant="settingsForm"
-                        />
-                      </View>
-                      <View style={styles.accessToggleCell}>
-                        <KolamToggleRow
-                          active={form.employee.isPkp}
-                          description="Tandai jika karyawan memiliki PKP aktif"
-                          disabled={formDisabled}
-                          label="Status PKP Berlaku"
-                          onPress={() =>
-                            setEmployeeField('isPkp', !form.employee.isPkp)
-                          }
-                          variant="settingsForm"
-                        />
-                      </View>
-                    </View>
+                    <KolamToggleCardGrid>
+                      <KolamToggleRow
+                        active={form.employee.firstTimeWorking}
+                        description="Ini adalah pekerjaan pertama mereka"
+                        disabled={formDisabled}
+                        label="Pekerjaan Pertama"
+                        onPress={() =>
+                          setEmployeeField(
+                            'firstTimeWorking',
+                            !form.employee.firstTimeWorking,
+                          )
+                        }
+                        variant="settingsForm"
+                      />
+                      <KolamToggleRow
+                        active={form.employee.isPkp}
+                        description="Tandai jika karyawan memiliki PKP aktif"
+                        disabled={formDisabled}
+                        label="Status PKP Berlaku"
+                        onPress={() =>
+                          setEmployeeField('isPkp', !form.employee.isPkp)
+                        }
+                        variant="settingsForm"
+                      />
+                    </KolamToggleCardGrid>
                   </View>
                   {form.employee.isPkp ? (
                     <KolamNotesField
@@ -4654,15 +4637,6 @@ const styles = StyleSheet.create({
   accessResignCell: {
     flex: 1,
     minWidth: 300,
-  },
-  accessToggleRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  accessToggleCell: {
-    flex: 1,
-    minWidth: 240,
   },
   resignStatusCard: {
     backgroundColor: V.colors.dangerSoft,
