@@ -1077,8 +1077,21 @@ export function useKolamChatRailDetail({
       return;
     }
 
-    await runCallAction(() => startKolamTeamChatCall(selectedId));
-  }, [runCallAction, selectedId]);
+    // Starter is already `joined` on BE — connect LiveKit the same as Gabung.
+    await runCallAction(
+      async () => {
+        const call = await startKolamTeamChatCall(selectedId);
+        return (
+          withKolamTeamChatCallMyParticipantStatus(
+            call,
+            currentUserId,
+            'joined',
+          ) ?? call
+        );
+      },
+      {startMediaAfterJoin: true},
+    );
+  }, [currentUserId, runCallAction, selectedId]);
 
   const joinCall = useCallback(async () => {
     if (!activeCall) {
