@@ -131,6 +131,7 @@ import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
+import {KolamDetailButton} from './kolam-detail-button';
 import {KolamModuleIcon} from './kolam-module-icon';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
@@ -5164,13 +5165,21 @@ function AmTransfersPage({
         } : undefined}
         renderActions={transfer => (
           <View style={styles.inlineActions}>
-            <KolamButton
-              accessibilityLabel={`AM Transfer Detail ${transfer._id}`}
-              label={selectedTransferId === transfer._id ? 'Tutup' : 'Detail'}
-              intent="outline"
-              size="sm"
-              onPress={() => selectTransfer(transfer)}
-            />
+            {selectedTransferId === transfer._id ? (
+              <KolamButton
+                accessibilityLabel={`AM Transfer Tutup ${transfer._id}`}
+                label="Tutup"
+                intent="outline"
+                size="sm"
+                onPress={() => selectTransfer(transfer)}
+              />
+            ) : (
+              <KolamDetailButton
+                accessibilityLabel={`AM Transfer Detail ${transfer._id}`}
+                size="sm"
+                onPress={() => selectTransfer(transfer)}
+              />
+            )}
             <AmTransferActions
               disabled={actingTransferId === transfer._id}
               transfer={transfer}
@@ -7345,10 +7354,8 @@ function AmActivityLogPage() {
               size="sm"
               onPress={() => toggleSelectedLogId(log._id)}
             />
-            <KolamButton
+            <KolamDetailButton
               accessibilityLabel={`AM Activity Log Detail ${log._id}`}
-              label="Detail"
-              intent="outline"
               size="sm"
               onPress={() => setSelectedLog(current => current?._id === log._id ? null : log)}
             />

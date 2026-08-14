@@ -35,6 +35,7 @@ import {
   type KolamLayananVoucherController,
 } from '../hooks/use-kolam-layanan-voucher-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDetailButton} from './kolam-detail-button';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
@@ -355,16 +356,15 @@ function VoucherInitiatedTaskPanels({
               <Text style={styles.metaText}>
                 PIC: {execution.assignedToName || '—'}
               </Text>
-              <Pressable
-                accessibilityRole="link"
+              <KolamDetailButton
+                label="Buka detail eksekusi"
                 onPress={() =>
                   onRouteChange?.(
                     `${KOLAM_LAYANAN_ROOT}/voucher/${voucherId}/execution/${execution.id}`,
                   )
                 }
-              >
-                <Text style={styles.linkText}>Buka detail eksekusi</Text>
-              </Pressable>
+                size="sm"
+              />
             </View>
           ))
         )}
@@ -485,16 +485,14 @@ function VoucherExecutionHistorySection({
               <Text style={styles.metaText}>
                 Selesai: {formatDateTime(execution.executionTime)}
               </Text>
-              <Pressable
-                accessibilityRole="link"
+              <KolamDetailButton
                 onPress={() =>
                   onRouteChange?.(
                     `${KOLAM_LAYANAN_ROOT}/voucher/${voucherId}/execution/${execution.id}`,
                   )
                 }
-              >
-                <Text style={styles.linkText}>Detail</Text>
-              </Pressable>
+                size="sm"
+              />
               {canReview ? (
                 <View style={styles.actionRow}>
                   <KolamButton

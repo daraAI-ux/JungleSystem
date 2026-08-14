@@ -10,8 +10,13 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
+import {SvgXml} from 'react-native-svg';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
+import {
+  KOLAM_ACTION_BUTTON_BG,
+  KOLAM_DETAIL_BUTTON_ICON_XML,
+} from './kolam-detail-button';
 import { useKolamListTableRowLayer } from './kolam-list-table-row-layer-context';
 import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -437,24 +442,43 @@ export function KolamOverflowMenuButton({
     <View
       style={menuStyle}
     >
-      {actions.map(action => (
-        <KolamButton
-          disabled={action.disabled}
-          intent={action.tone === 'danger' ? 'danger' : 'plain'}
-          key={action.label}
-          label={action.label}
-          onPress={() => {
-            if (action.disabled) {
-              return;
-            }
+      {actions.map(action => {
+        const detailAction = isKolamDetailActionLabel(action.label);
 
-            setMenuOpen(false);
-            action.onPress();
-          }}
-          style={styles.overflowOption}
-          textStyle={styles.overflowOptionText}
-        />
-      ))}
+        return (
+          <KolamButton
+            disabled={action.disabled}
+            icon={
+              detailAction ? (
+                <SvgXml
+                  height="100%"
+                  width="100%"
+                  xml={KOLAM_DETAIL_BUTTON_ICON_XML}
+                />
+              ) : undefined
+            }
+            intent={action.tone === 'danger' ? 'danger' : 'plain'}
+            key={action.label}
+            label={action.label}
+            onPress={() => {
+              if (action.disabled) {
+                return;
+              }
+
+              setMenuOpen(false);
+              action.onPress();
+            }}
+            style={[
+              styles.overflowOption,
+              detailAction && styles.overflowDetailOption,
+            ]}
+            textStyle={[
+              styles.overflowOptionText,
+              detailAction && styles.overflowDetailOptionText,
+            ]}
+          />
+        );
+      })}
     </View>
   );
   const menu = renderOverflowMenu([
@@ -538,6 +562,10 @@ export function KolamTableRowActionMenu({
       />
     </View>
   );
+}
+
+function isKolamDetailActionLabel(label: string) {
+  return /\bdetail\b/i.test(label.trim());
 }
 
 const styles = StyleSheet.create({
@@ -661,6 +689,13 @@ const styles = StyleSheet.create({
   },
   menuContent: {
     gap: 4,
+  },
+  overflowDetailOption: {
+    backgroundColor: KOLAM_ACTION_BUTTON_BG,
+    borderColor: KOLAM_ACTION_BUTTON_BG,
+  },
+  overflowDetailOptionText: {
+    color: V.colors.primaryFg,
   },
   emptySearchText: {
     paddingHorizontal: 10,

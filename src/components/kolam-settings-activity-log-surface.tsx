@@ -1,6 +1,7 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import Svg, {Circle, Path} from 'react-native-svg';
+import Svg, {Path, SvgXml} from 'react-native-svg';
+import {KOLAM_DETAIL_BUTTON_ICON_SVG} from '../assets/icons/detail-button-icon-svg';
 import type {
   SettingsActivityLogDetailField,
   SettingsActivityLogFilterControl,
@@ -260,7 +261,7 @@ export function KolamSettingsActivityLogSurface({
             <ActivityLogIconButton
               accessibilityLabel="Lihat detail"
               active={selectedActivityLogId === row.id}
-              icon="eye"
+              icon="detail"
               onPress={() => onSelectActivityLog(row.id)}
             />
           </View>
@@ -396,7 +397,7 @@ function ActivityLogIconButton({
 }: {
   accessibilityLabel: string;
   active?: boolean;
-  icon: 'eye' | 'shield' | 'trash';
+  icon: 'detail' | 'shield' | 'trash';
   onPress: () => void;
   tone?: 'default' | 'danger';
 }) {
@@ -418,7 +419,7 @@ function ActivityLogIconButton({
       ) : icon === 'trash' ? (
         <ActivityLogTrashIcon color={color} />
       ) : (
-        <ActivityLogEyeIcon color={color} />
+        <ActivityLogDetailIcon color={color} />
       )}
     </KolamInteractionFrame>
   );
@@ -447,26 +448,13 @@ function ActivityLogShieldIcon({color}: {color: string}) {
   );
 }
 
-function ActivityLogEyeIcon({color}: {color: string}) {
+function ActivityLogDetailIcon({color}: {color: string}) {
   return (
-    <Svg height={17} viewBox="0 0 24 24" width={17}>
-      <Path
-        d="M2.6 12s3.4-6 9.4-6 9.4 6 9.4 6-3.4 6-9.4 6-9.4-6-9.4-6Z"
-        fill="none"
-        stroke={color}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-      />
-      <Circle
-        cx={12}
-        cy={12}
-        fill="none"
-        r={2.6}
-        stroke={color}
-        strokeWidth={2}
-      />
-    </Svg>
+    <SvgXml
+      height={17}
+      width={17}
+      xml={KOLAM_DETAIL_BUTTON_ICON_SVG.replace(/#000000/g, color)}
+    />
   );
 }
 

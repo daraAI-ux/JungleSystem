@@ -31,6 +31,7 @@ import { KolamButton } from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
+import {KolamDetailButton} from './kolam-detail-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -473,9 +474,7 @@ function KolamLayananServiceDetail({
                       {formatDetailDate(item.purchasedAt)}
                     </Text>
                     <View style={[styles.colAction, styles.actionCell]}>
-                      <KolamButton
-                        intent="outline"
-                        label="Detail"
+                      <KolamDetailButton
                         onPress={() =>
                           onRouteChange?.(
                             `${KOLAM_LAYANAN_ROOT}/voucher/${item.id}`,

@@ -36,6 +36,7 @@ import {
 import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
+import {KolamDetailButton} from './kolam-detail-button';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamModalDialog } from './kolam-modal-dialog';
 import {
@@ -300,12 +301,9 @@ function KpiPortalCard({
               value="level"
             />
           ) : null}
-          <KolamButton
-            intent="plain"
-            label="Detail"
+          <KolamDetailButton
             onPress={() => onRouteChange?.('/portal/kpi')}
             style={styles.kpiDetailButton}
-            textStyle={styles.kpiDetailButtonText}
           />
         </View>
       }

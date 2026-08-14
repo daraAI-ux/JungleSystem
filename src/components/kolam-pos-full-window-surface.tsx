@@ -25,6 +25,7 @@ import {KolamShellChromeContext} from '../context/kolam-app-contexts';
 import {KolamButton} from './kolam-button';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
+import {KolamDetailButton} from './kolam-detail-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDashboardHeader} from './kolam-dashboard-header';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
@@ -761,11 +762,11 @@ function PosCatalogCard({
               {minimumOrderQty > 1 ? `Min. order ${minimumOrderQty}` : ' '}
             </Text>
           </View>
-          <KolamInteractionFrame
+          <KolamDetailButton
             onPress={() => onOpenQuickView(item)}
-            style={styles.quickViewButton}>
-            <Text style={styles.quickViewButtonText}>Detail</Text>
-          </KolamInteractionFrame>
+            size="sm"
+            style={styles.quickViewButton}
+          />
           <KolamInteractionFrame
             disabled={isOutOfStock}
             onPress={() => onAddToCart(item)}
@@ -2535,17 +2536,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   quickViewButton: {
-    minHeight: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignSelf: 'stretch',
     marginTop: 'auto',
-    borderRadius: 5,
-    backgroundColor: V.colors.muted,
-  },
-  quickViewButtonText: {
-    color: V.colors.fg,
-    fontSize: 10,
-    fontWeight: '800',
   },
   addButton: {
     minHeight: 30,

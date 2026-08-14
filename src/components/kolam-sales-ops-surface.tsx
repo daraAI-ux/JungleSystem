@@ -44,6 +44,7 @@ import {
   type KolamSalesController,
 } from '../hooks/use-kolam-sales-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDetailButton} from './kolam-detail-button';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
@@ -1885,8 +1886,7 @@ function buildSalesOpsApprovalColumns({
                     label="Setujui"
                     onPress={() => onRequestAction(sale, 'sent')}
                   />
-                  <KolamButton
-                    intent="outline"
+                  <KolamDetailButton
                     label="Buka detail"
                     onPress={() => onOpenDetail(sale)}
                   />
@@ -1915,14 +1915,21 @@ function buildSalesOpsApprovalColumns({
       id: 'status',
       label: 'Detail',
       render: sale => (
-        <Pressable
-          onPress={() => onToggleExpanded(sale)}
-          style={styles.approvalExpandButton}
-        >
-          <Text style={styles.expandHint}>
-            {expandedId === sale.id ? 'Sembunyikan' : 'Lihat detail'}
-          </Text>
-        </Pressable>
+        <View style={styles.approvalExpandButton}>
+          {expandedId === sale.id ? (
+            <KolamButton
+              label="Sembunyikan"
+              onPress={() => onToggleExpanded(sale)}
+              size="sm"
+            />
+          ) : (
+            <KolamDetailButton
+              label="Lihat detail"
+              onPress={() => onToggleExpanded(sale)}
+              size="sm"
+            />
+          )}
+        </View>
       ),
     },
   ];

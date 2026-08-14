@@ -64,6 +64,7 @@ import {pickNativeImageFile} from '../services/native-file-picker';
 import {KolamButton} from './kolam-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
+import {KolamDetailButton} from './kolam-detail-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
@@ -2674,9 +2675,8 @@ function KolamUserEditSurface({
           onPress={() => onRouteChange?.('/list-of-users')}
           style={styles.toolbarButton}
         />
-        <KolamButton
+        <KolamDetailButton
           disabled={saving}
-          label="Detail"
           onPress={() =>
             onRouteChange?.(`/list-of-users/users/${encodedUserId}`)
           }
