@@ -338,22 +338,19 @@ function normalizeComposerText(value: string) {
   return value.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
 
-/** True when native echoed the pre-newline text and dropped the just-inserted \n. */
+/** True when native echoed text with fewer newlines than we just committed. */
 function isStaleComposerNewlineEcho(pending: string, incoming: string) {
-  if (incoming.includes('\n') || pending.length !== incoming.length + 1) {
+  if (incoming.length >= pending.length) {
     return false;
   }
 
-  for (let index = 0; index < pending.length; index += 1) {
-    if (
-      pending[index] === '\n' &&
-      `${pending.slice(0, index)}${pending.slice(index + 1)}` === incoming
-    ) {
-      return true;
-    }
+  if (pending.replace(/\n/g, '') !== incoming.replace(/\n/g, '')) {
+    return false;
   }
 
-  return false;
+  const pendingNewlines = (pending.match(/\n/g) || []).length;
+  const incomingNewlines = (incoming.match(/\n/g) || []).length;
+  return pendingNewlines > incomingNewlines;
 }
 
 function useKolamComposerEnterKey(
@@ -366,10 +363,8 @@ function useKolamComposerEnterKey(
   const skipSubmitRef = React.useRef(false);
   const valueRef = React.useRef(value);
   const pendingNewlineRef = React.useRef<string | null>(null);
-  const lastNewlineAtRef = React.useRef(0);
-  const [selection, setSelection] = React.useState<
-    KolamComposerSelection | undefined
-  >(undefined);
+  // Dedupes onKeyPress + onSubmitEditing for the same physical key only.
+  const newlineGestureRef = React.useRef(false);
 
   valueRef.current = value;
 
@@ -383,17 +378,17 @@ function useKolamComposerEnterKey(
   );
 
   const applyNewline = React.useCallback(() => {
-    const now =
-      typeof performance !== 'undefined' && performance.now
-        ? performance.now()
-        : Date.now();
-    // onKeyPress + onSubmitEditing can both see Shift+Enter; insert once.
-    if (now - lastNewlineAtRef.current < 80) {
-      skipSubmitRef.current = true;
+    skipSubmitRef.current = true;
+    if (newlineGestureRef.current) {
       return;
     }
-    lastNewlineAtRef.current = now;
-    skipSubmitRef.current = true;
+    newlineGestureRef.current = true;
+    // Clear after this turn so the same Enter's submitEditing is ignored,
+    // but the next physical Shift+Enter can insert another line.
+    queueMicrotask(() => {
+      newlineGestureRef.current = false;
+    });
+
     const next = insertComposerNewline(
       valueRef.current,
       hasSelectionRef.current ? selectionRef.current : null,
@@ -401,22 +396,13 @@ function useKolamComposerEnterKey(
     hasSelectionRef.current = true;
     selectionRef.current = next.selection;
     pendingNewlineRef.current = next.text;
-    setSelection(next.selection);
+    // Do not drive controlled `selection` — that causes caret up/down jitter on RNW.
     commitText(next.text);
-    // Release controlled selection after paint so native caret can settle.
-    const releaseSelection = () => {
-      setSelection(undefined);
-      setTimeout(() => {
-        if (pendingNewlineRef.current === next.text) {
-          pendingNewlineRef.current = null;
-        }
-      }, 64);
-    };
-    if (typeof requestAnimationFrame === 'function') {
-      requestAnimationFrame(releaseSelection);
-    } else {
-      releaseSelection();
-    }
+    setTimeout(() => {
+      if (pendingNewlineRef.current === next.text) {
+        pendingNewlineRef.current = null;
+      }
+    }, 100);
   }, [commitText]);
 
   const handleChangeText = React.useCallback(
@@ -428,7 +414,24 @@ function useKolamComposerEnterKey(
           commitText(pending);
           return;
         }
-        pendingNewlineRef.current = null;
+        // Native caught up with at least as many newlines — keep its text.
+        if (
+          (normalized.match(/\n/g) || []).length >=
+          (pending.match(/\n/g) || []).length
+        ) {
+          pendingNewlineRef.current = null;
+          selectionRef.current = {
+            end: normalized.length,
+            start: normalized.length,
+          };
+          hasSelectionRef.current = true;
+        } else if (normalized.replace(/\n/g, '') !== pending.replace(/\n/g, '')) {
+          // Real edit (not an echo) — drop the guard.
+          pendingNewlineRef.current = null;
+        } else {
+          commitText(pending);
+          return;
+        }
       }
       commitText(normalized);
     },
@@ -439,7 +442,6 @@ function useKolamComposerEnterKey(
     (event: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
       hasSelectionRef.current = true;
       selectionRef.current = event.nativeEvent.selection;
-      setSelection(current => (current ? undefined : current));
     },
     [],
   );
@@ -517,7 +519,6 @@ function useKolamComposerEnterKey(
     handleKeyPress,
     handleSelectionChange,
     insertNewlineIfShiftHeld,
-    selection,
   };
 }
 
@@ -3350,9 +3351,6 @@ function KolamTeamChatDaraWindow({
               composerDisabled ? 'Chat DARA sedang dimuat' : 'Tulis pesan...'
             }
             placeholderTextColor={V.colors.mutedFg}
-            {...(composerEnter.selection
-              ? {selection: composerEnter.selection}
-              : null)}
             style={[styles.composerInput, styles.teamDaraComposerInput]}
             submitBehavior="submit"
             value={composerText}
@@ -5257,9 +5255,6 @@ function KolamChatRailDetailPanel({
                   : 'Tulis pesan...'
               }
               placeholderTextColor={V.colors.mutedFg}
-              {...(composerEnter.selection
-                ? {selection: composerEnter.selection}
-                : null)}
               style={styles.composerInput}
               submitBehavior="submit"
               value={composerText}
