@@ -50,7 +50,8 @@ export function classifyKolamChatLiveEvent(
   const refreshDetail =
     isForSelectedDetail &&
     !(
-      event.contract.stream === 'inbox' &&
+      (event.contract.stream === 'inbox' ||
+        event.contract.stream === 'team-chat') &&
       event.contract.eventName === 'message.created'
     );
 
@@ -154,7 +155,7 @@ function getIsForSelectedDetail({
     return true;
   }
 
-  return !targetId || targetId === selectedItemId;
+  return !targetId || targetId.trim() === selectedItemId.trim();
 }
 
 function resolveKolamChatLiveSoundIntent(
@@ -197,7 +198,7 @@ function resolveInboxIncomingSoundIntent(
   },
   options: {directionSource: 'message' | 'lastMessageDirection'},
 ): KolamChatLiveResolvedSoundIntent {
-  if (context.selectedItemId && context.selectedItemId === context.targetId) {
+  if (context.selectedItemId && context.selectedItemId.trim() === context.targetId?.trim()) {
     return 'none';
   }
 

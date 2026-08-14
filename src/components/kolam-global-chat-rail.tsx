@@ -236,6 +236,21 @@ const CHAT_ADMIN_ROLE_KEYS = new Set([
 ]);
 const CHAT_LIVE_STALE_MS = 15_000;
 const CHAT_LIVE_FALLBACK_INTERVAL_MS = 5_000;
+/** Live frames that prove transcript/list content may have changed. */
+const CHAT_LIVE_CONTENT_EVENT_NAMES = new Set([
+  'message.created',
+  'message.updated',
+  'message.deleted',
+  'conversation.updated',
+  'conversation.assigned',
+  'conversation.closed',
+  'conversation.deleted',
+  'conversation.ai_handoff',
+  'room.updated',
+  'sync.required',
+  'dara.processing.done',
+  'rating.created',
+]);
 interface KolamChatRailAnalyticsState {
   data: KolamChatAnalytics | null;
   errorMessage?: string;
@@ -1103,20 +1118,31 @@ export function KolamGlobalChatRail({
   const deleteRoomDialogTitle = 'Hapus room team chat?';
   const handleLiveStatusChange = React.useCallback(
     (status: KolamChatLiveStreamStatus) => {
-      setLiveStatus(status);
-      if (status === 'open') {
-        setLiveLastEventAt(Date.now());
-      }
+      setLiveStatus(prev => {
+        // Heartbeats call onactivity → status 'open' repeatedly. Only seed
+        // content-freshness on the first transition to open; otherwise the
+        // open-thread fallback poll never runs while typing/keepalive fire.
+        if (status === 'open' && prev !== 'open') {
+          setLiveLastEventAt(Date.now());
+        }
+        return status;
+      });
     },
     [],
   );
   const handleLiveEvent = React.useCallback(
     (event: KolamChatLiveEvent) => {
-      setLiveLastEventAt(Date.now());
       const classification = classifyKolamChatLiveEvent(event, {
         currentUserId,
         selectedItemId,
       });
+      if (
+        classification.refreshList ||
+        classification.refreshDetail ||
+        CHAT_LIVE_CONTENT_EVENT_NAMES.has(classification.eventName)
+      ) {
+        setLiveLastEventAt(Date.now());
+      }
       const daraThinkingPatch = getDaraThinkingLivePatch(event, selectedItemId);
       const daraWindowThinkingPatch = getDaraThinkingLivePatch(
         event,
@@ -1130,7 +1156,7 @@ export function KolamGlobalChatRail({
         daraHeaderMenuOpen &&
         Boolean(daraWindowRoomId) &&
         classification.stream === 'team-chat' &&
-        classification.targetId === daraWindowRoomId &&
+        liveIdsEqual(classification.targetId, daraWindowRoomId) &&
         !isDaraThinkingEvent &&
         classification.eventName !== 'message.created' &&
         classification.refreshTargets.some(target =>
@@ -1163,25 +1189,40 @@ export function KolamGlobalChatRail({
 
       const teamMessageCreated = getTeamChatMessageCreatedFromLiveEvent(event);
       const teamLiveRoomId = getTeamChatLiveRoomId(event, teamMessageCreated);
-      if (teamMessageCreated && mode === 'team-chat') {
-        if (teamLiveRoomId && teamLiveRoomId === selectedItemId) {
+      if (
+        mode === 'team-chat' &&
+        event.contract.stream === 'team-chat' &&
+        event.contract.eventName === 'message.created' &&
+        liveIdsEqual(teamLiveRoomId, selectedItemId)
+      ) {
+        if (teamMessageCreated) {
           detail.upsertTeamChatMessageFromLive(teamMessageCreated);
+        } else {
+          Promise.resolve(detail.refresh({quiet: true})).catch(() => undefined);
         }
-        if (
-          daraHeaderMenuOpen &&
-          daraWindowRoomId &&
-          teamLiveRoomId === daraWindowRoomId
-        ) {
+      }
+      if (
+        mode === 'team-chat' &&
+        event.contract.stream === 'team-chat' &&
+        event.contract.eventName === 'message.created' &&
+        daraHeaderMenuOpen &&
+        liveIdsEqual(teamLiveRoomId, daraWindowRoomId)
+      ) {
+        if (teamMessageCreated) {
           daraWindowDetail.upsertTeamChatMessageFromLive(teamMessageCreated);
           if (isLiveTeamChatAiMessage(teamMessageCreated)) {
             setDaraWindowThinkingLiveSignal(null);
           }
+        } else {
+          Promise.resolve(daraWindowDetail.refresh({quiet: true})).catch(
+            () => undefined,
+          );
         }
       }
 
       if (
         classification.refreshPresence &&
-        classification.targetId === selectedItemId
+        liveIdsEqual(classification.targetId, selectedItemId)
       ) {
         const presence = getTeamChatPresenceFromLiveEvent(event);
         if (presence) {
@@ -1191,7 +1232,7 @@ export function KolamGlobalChatRail({
       if (
         isForDaraWindowDetail &&
         classification.refreshPresence &&
-        classification.targetId === daraWindowRoomId
+        liveIdsEqual(classification.targetId, daraWindowRoomId)
       ) {
         const presence = getTeamChatPresenceFromLiveEvent(event);
         if (presence) {
@@ -1200,19 +1241,29 @@ export function KolamGlobalChatRail({
       }
 
       const inboxMessageCreated = getInboxMessageCreatedFromLiveEvent(event);
+      const inboxLiveConversationId = getInboxLiveConversationId(
+        event,
+        inboxMessageCreated,
+      );
       if (
-        inboxMessageCreated &&
         mode === 'inbox' &&
-        classification.targetId === selectedItemId
+        event.contract.stream === 'inbox' &&
+        event.contract.eventName === 'message.created' &&
+        liveIdsEqual(inboxLiveConversationId, selectedItemId)
       ) {
-        detail.upsertInboxMessageFromLive(inboxMessageCreated);
+        if (inboxMessageCreated) {
+          detail.upsertInboxMessageFromLive(inboxMessageCreated);
+        } else {
+          Promise.resolve(detail.refresh({quiet: true})).catch(() => undefined);
+        }
       }
 
       const inboxMessagePatch = getInboxMessagePatchFromLiveEvent(event);
       if (
         inboxMessagePatch &&
         mode === 'inbox' &&
-        (!classification.targetId || classification.targetId === selectedItemId)
+        (!classification.targetId ||
+          liveIdsEqual(classification.targetId, selectedItemId))
       ) {
         detail.patchInboxMessageFromLive(
           inboxMessagePatch.messageId,
@@ -1222,14 +1273,14 @@ export function KolamGlobalChatRail({
 
       if (
         classification.refreshCallState &&
-        classification.targetId === selectedItemId
+        liveIdsEqual(classification.targetId, selectedItemId)
       ) {
         void detail.refreshCall();
       }
       if (
         isForDaraWindowDetail &&
         classification.refreshCallState &&
-        classification.targetId === daraWindowRoomId
+        liveIdsEqual(classification.targetId, daraWindowRoomId)
       ) {
         void daraWindowDetail.refreshCall();
       }
@@ -1271,23 +1322,22 @@ export function KolamGlobalChatRail({
   );
 
   React.useEffect(() => {
-    const runFallbackRefresh = () => {
-      Promise.resolve(data.refresh()).catch(() => undefined);
-      if (selectedItemId) {
-        Promise.resolve(detail.refresh({ quiet: true })).catch(() => undefined);
-      }
-    };
     const isLiveStale = () =>
       liveStatus !== 'open' ||
       liveLastEventAt === null ||
       Date.now() - liveLastEventAt > CHAT_LIVE_STALE_MS;
 
     const timer = setInterval(() => {
-      if (isLiveStale()) {
-        runFallbackRefresh();
+      if (!isLiveStale()) {
+        return;
+      }
+
+      Promise.resolve(data.refresh()).catch(() => undefined);
+      if (selectedItemId) {
+        Promise.resolve(detail.refresh({quiet: true})).catch(() => undefined);
       }
     }, CHAT_LIVE_FALLBACK_INTERVAL_MS);
-    (timer as { unref?: () => void }).unref?.();
+    (timer as {unref?: () => void}).unref?.();
 
     return () => {
       clearInterval(timer);
@@ -8544,6 +8594,17 @@ function getInboxMessagePatchFromLiveEvent(event: KolamChatLiveEvent) {
   return Object.keys(patch).length ? { messageId, patch } : null;
 }
 
+function liveIdsEqual(
+  left?: string | null,
+  right?: string | null,
+): boolean {
+  if (left == null || right == null) {
+    return false;
+  }
+
+  return String(left).trim() === String(right).trim();
+}
+
 function getInboxMessageCreatedFromLiveEvent(event: KolamChatLiveEvent) {
   if (
     event.contract.stream !== 'inbox' ||
@@ -8552,16 +8613,80 @@ function getInboxMessageCreatedFromLiveEvent(event: KolamChatLiveEvent) {
     return null;
   }
 
-  const payload =
-    event.payload && typeof event.payload === 'object'
-      ? (event.payload as Record<string, unknown>)
-      : {};
+  const payload = unwrapInboxLivePayload(event.payload);
   const message =
     payload.message && typeof payload.message === 'object'
       ? (payload.message as KolamChatMessage)
       : null;
+  if (!message) {
+    return null;
+  }
 
-  return message?._id ? message : null;
+  const messageId =
+    readLiveString(message._id) ||
+    readLiveString((message as {id?: unknown}).id);
+  if (!messageId) {
+    return null;
+  }
+
+  return {
+    ...message,
+    _id: messageId,
+  };
+}
+
+function unwrapInboxLivePayload(payload: unknown): Record<string, unknown> {
+  if (!payload || typeof payload !== 'object') {
+    return {};
+  }
+
+  const record = payload as Record<string, unknown>;
+  const nested = record.data;
+  if (
+    nested &&
+    typeof nested === 'object' &&
+    !record.conversationId &&
+    !record.message &&
+    ((nested as Record<string, unknown>).conversationId ||
+      (nested as Record<string, unknown>).message)
+  ) {
+    return nested as Record<string, unknown>;
+  }
+
+  return record;
+}
+
+function getInboxLiveConversationId(
+  event: KolamChatLiveEvent,
+  message?: KolamChatMessage | null,
+) {
+  const payload = unwrapInboxLivePayload(event.payload);
+  const conversationFromMessage =
+    readLiveString(
+      (message as {conversationId?: unknown} | null | undefined)
+        ?.conversationId,
+    ) ||
+    readLiveString(
+      (message as {conversation?: unknown} | null | undefined)?.conversation,
+    ) ||
+    readLiveString(
+      message &&
+        typeof (message as {conversation?: unknown}).conversation ===
+          'object'
+        ? (
+            (message as {conversation?: {_id?: unknown}}).conversation as {
+              _id?: unknown;
+            }
+          )._id
+        : undefined,
+    );
+
+  return (
+    readLiveString(payload.conversationId) ||
+    readLiveString(payload.conversation) ||
+    conversationFromMessage ||
+    readLiveString(getKolamChatLiveEventTargetId(event))
+  );
 }
 
 function unwrapTeamChatLivePayload(payload: unknown): Record<string, unknown> {

@@ -147,6 +147,25 @@ describe('kolam chat live classifier', () => {
     ).toBe('none');
   });
 
+  it('skips detail refetch for open-thread team message.created (upsert-only)', () => {
+    const classification = classifyKolamChatLiveEvent(
+      {
+        contract: contract('team-chat', 'message.created'),
+        payload: {roomId: 'room-1', message: {_id: 'msg-1'}},
+      },
+      {selectedItemId: 'room-1'},
+    );
+
+    expect(classification).toEqual(
+      expect.objectContaining({
+        isForSelectedDetail: true,
+        refreshDetail: false,
+        refreshList: true,
+        targetId: 'room-1',
+      }),
+    );
+  });
+
   it('matches active team room detail by room id', () => {
     const classification = classifyKolamChatLiveEvent(
       {
@@ -158,7 +177,7 @@ describe('kolam chat live classifier', () => {
 
     expect(classification).toEqual(
       expect.objectContaining({
-        refreshDetail: true,
+        refreshDetail: false,
         refreshList: true,
         soundIntent: 'assigned',
         targetId: 'room-1',

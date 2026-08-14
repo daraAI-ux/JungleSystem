@@ -489,6 +489,7 @@ function parseKolamSseText(
 
   blocks.forEach(block => {
     if (block.trim()) {
+      // Includes comment heartbeats — keeps the XHR connection watchdog alive.
       onActivity?.();
     }
     const event = parseKolamSseEventBlock(block);
