@@ -108,5 +108,6 @@ describe('KolamSettingsPackageUpdateActions', () => {
       node => node.props?.accessibilityLabel === 'Pasang' && node.props?.onPress,
     );
     expect(pasang.props.disabled).toBe(false);
+    expect(texts(renderer!)).toEqual(expect.arrayContaining(['3.1.5']));
   });
 });

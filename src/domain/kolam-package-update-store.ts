@@ -118,6 +118,17 @@ async function runCheck(silent: boolean) {
     errorMessage: silent ? state.errorMessage : '',
   });
 
+  if (!info.packaged) {
+    patchState({
+      ...packageInfoPatch(info),
+      phase: silent ? 'idle' : 'error',
+      release: null,
+      percent: 0,
+      errorMessage: silent ? '' : 'Paket tidak terdeteksi',
+    });
+    return;
+  }
+
   try {
     const release = await fetchKolamPackageLatestRelease();
     const available = isKolamPackageUpdateNewer(info.publicVersion, release.version);
@@ -126,7 +137,7 @@ async function runCheck(silent: boolean) {
       phase: available ? 'available' : 'idle',
       release: available ? release : null,
       percent: 0,
-      errorMessage: '',
+      errorMessage: available || silent ? '' : 'Terbaru',
     });
   } catch (error) {
     if (silent) {
@@ -170,7 +181,15 @@ async function runInstall(release: KolamPackageReleaseManifest) {
       phase: 'installing',
       percent: 0,
     });
-    await installKolamWindowsMsix(downloaded.path);
+    const installed = await installKolamWindowsMsix(downloaded.path);
+    if (installed.fallback) {
+      patchState({
+        phase: 'idle',
+        percent: 0,
+        errorMessage: 'Lanjut di App Installer',
+      });
+      return;
+    }
     await restartKolamWindowsApp();
   } catch (error) {
     patchState({

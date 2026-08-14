@@ -24,9 +24,16 @@ resmi dan rilis berikutnya akan memakai publisher itu terus. Publisher yang
 berubah membuat Windows menganggap paket sebagai aplikasi berbeda.
 
 Identity di `Package.appxmanifest` mengikuti **last release** (saat ini
-`3.1.4.0`). Deploy Debug (`npx react-native run-windows`) memakai identity yang
+`3.1.5.0`). Deploy Debug (`npx react-native run-windows`) memakai identity yang
 sama — jangan menurunkan ke `1.0.0.0` hanya untuk QA. Bump versi hanya lewat
 `npm run build:msix -- -Version <next>` saat merilis.
+
+Capability rilis yang relevan untuk in-app update:
+
+- `internetClient`
+- `rescap:runFullTrust`
+- `rescap:packageManagement` (wajib agar `PackageManager` bisa memasang MSIX
+  dari dalam app; tanpa ini Pasang biasanya gagal)
 
 ## Artifact
 

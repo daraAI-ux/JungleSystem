@@ -104,8 +104,48 @@ describe('kolam package update store', () => {
       expect.objectContaining({
         phase: 'available',
         release: expect.objectContaining({version: '3.1.5'}),
+        errorMessage: '',
       }),
     );
+  });
+
+  it('reports Terbaru when manual check finds the same version', async () => {
+    mockedFetch.mockResolvedValue({
+      ...RELEASE,
+      version: '3.1.4',
+    });
+
+    await checkKolamPackageUpdate({silent: false});
+
+    expect(getKolamPackageUpdateState()).toEqual(
+      expect.objectContaining({
+        phase: 'idle',
+        release: null,
+        errorMessage: 'Terbaru',
+      }),
+    );
+  });
+
+  it('reports Paket tidak terdeteksi when unpackaged', async () => {
+    mockedInfo.mockReturnValue({
+      familyName: '',
+      name: 'JungleSystem',
+      packaged: false,
+      publicVersion: '',
+      publisher: '',
+      version: '',
+    });
+
+    await checkKolamPackageUpdate({silent: false});
+
+    expect(getKolamPackageUpdateState()).toEqual(
+      expect.objectContaining({
+        phase: 'error',
+        release: null,
+        errorMessage: 'Paket tidak terdeteksi',
+      }),
+    );
+    expect(mockedFetch).not.toHaveBeenCalled();
   });
 
   it('does not install until Pasang is invoked', async () => {
@@ -119,7 +159,7 @@ describe('kolam package update store', () => {
   it('downloads, installs, then restarts only from Pasang', async () => {
     mockedFetch.mockResolvedValue(RELEASE);
     mockedDownload.mockResolvedValue({path: 'C:\\cache\\update.msix'});
-    mockedInstall.mockResolvedValue(undefined);
+    mockedInstall.mockResolvedValue({});
     mockedRestart.mockResolvedValue(undefined);
 
     await checkKolamPackageUpdate({silent: false});
@@ -133,6 +173,23 @@ describe('kolam package update store', () => {
     );
     expect(mockedInstall).toHaveBeenCalledWith('C:\\cache\\update.msix');
     expect(mockedRestart).toHaveBeenCalled();
+  });
+
+  it('skips restart when install falls back to App Installer', async () => {
+    mockedFetch.mockResolvedValue(RELEASE);
+    mockedDownload.mockResolvedValue({path: 'C:\\cache\\update.msix'});
+    mockedInstall.mockResolvedValue({fallback: true});
+
+    await checkKolamPackageUpdate({silent: false});
+    await installKolamPackageUpdate();
+
+    expect(mockedRestart).not.toHaveBeenCalled();
+    expect(getKolamPackageUpdateState()).toEqual(
+      expect.objectContaining({
+        phase: 'idle',
+        errorMessage: 'Lanjut di App Installer',
+      }),
+    );
   });
 
   it('does not install when the app is unpackaged', async () => {

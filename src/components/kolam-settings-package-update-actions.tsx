@@ -19,6 +19,11 @@ export function KolamSettingsPackageUpdateActions({
   const showProgress =
     update.phase === 'downloading' || update.phase === 'installing';
   const emptyRelease = isKolamPackageUpdateEmptyRelease(update.errorMessage);
+  const availableVersion =
+    update.phase === 'available' && update.release?.version
+      ? update.release.version
+      : '';
+  const statusMessage = availableVersion || update.errorMessage;
 
   return (
     <View style={[styles.column, {width: fieldWidth}]}>
@@ -58,9 +63,12 @@ export function KolamSettingsPackageUpdateActions({
           <Text style={styles.percent}>{`${update.percent}%`}</Text>
         </View>
       ) : null}
-      {update.errorMessage ? (
-        <Text style={emptyRelease ? styles.status : styles.error}>
-          {update.errorMessage}
+      {statusMessage ? (
+        <Text
+          style={
+            availableVersion || emptyRelease ? styles.status : styles.error
+          }>
+          {statusMessage}
         </Text>
       ) : null}
     </View>

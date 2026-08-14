@@ -1,5 +1,6 @@
 import {
   compareKolamPublicVersion,
+  isKolamPackageUpdateEmptyRelease,
   isKolamPackageUpdateNewer,
   kolamPackageUpdateErrorMessage,
   parseKolamPackageReleaseManifest,
@@ -92,5 +93,14 @@ describe('kolam package update domain', () => {
     expect(
       kolamPackageUpdateErrorMessage(new Error('Update manifest error')),
     ).toBe('Gagal cek');
+  });
+
+  it('maps empty-release style status copy', () => {
+    expect(isKolamPackageUpdateEmptyRelease('Tidak ada rilis')).toBe(true);
+    expect(isKolamPackageUpdateEmptyRelease('Terbaru')).toBe(true);
+    expect(isKolamPackageUpdateEmptyRelease('Lanjut di App Installer')).toBe(
+      true,
+    );
+    expect(isKolamPackageUpdateEmptyRelease('Gagal pasang')).toBe(false);
   });
 });

@@ -26,7 +26,9 @@ type KolamWindowsPackageUpdateNativeBridge = {
     url: string;
   }) => Promise<{path?: string; sha256?: string; sha512?: string; size?: number}>;
   getPackageInfo?: () => KolamPackageInfo;
-  installMsix?: (options?: {path?: string}) => Promise<{ok?: boolean}>;
+  installMsix?: (options?: {
+    path?: string;
+  }) => Promise<{fallback?: boolean; ok?: boolean}>;
   removeListeners?: (count: number) => void;
   restartApp?: () => Promise<{ok?: boolean; restarted?: boolean}>;
 };
@@ -113,13 +115,18 @@ export async function downloadKolamWindowsMsix(options: {
   return {path};
 }
 
-export async function installKolamWindowsMsix(path?: string): Promise<void> {
+export async function installKolamWindowsMsix(
+  path?: string,
+): Promise<{fallback?: boolean}> {
   const bridge = getKolamWindowsPackageUpdateBridge();
   if (!bridge?.installMsix) {
     throw new Error('Gagal pasang');
   }
 
-  await bridge.installMsix(path ? {path} : {});
+  const result = await bridge.installMsix(path ? {path} : {});
+  return {
+    fallback: Boolean(result && typeof result === 'object' && result.fallback),
+  };
 }
 
 export async function restartKolamWindowsApp(): Promise<void> {

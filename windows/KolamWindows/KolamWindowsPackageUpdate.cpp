@@ -460,12 +460,36 @@ winrt::fire_and_forget InstallMsixAsync(
     auto deployment = co_await operation;
     auto errorText = WideToUtf8(deployment.ErrorText().c_str());
     if (!errorText.empty() && deployment.ExtendedErrorCode() != winrt::hresult{0}) {
+      // Fallback: open the MSIX with the system App Installer UI.
+      auto launched = ShellExecuteW(
+          nullptr, L"open", path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+      if (reinterpret_cast<INT_PTR>(launched) > 32) {
+        result.Resolve(::React::JSValueObject{{"ok", true}, {"fallback", true}});
+        co_return;
+      }
       result.Reject(errorText.c_str());
       co_return;
     }
 
     result.Resolve(::React::JSValueObject{{"ok", true}});
   } catch (winrt::hresult_error const &error) {
+    std::wstring path;
+    auto requested = ReadString(options, "path");
+    if (runtime.mutex && runtime.lastDownloadPath) {
+      std::lock_guard<std::mutex> lock(*runtime.mutex);
+      path = *runtime.lastDownloadPath;
+    }
+    if (!requested.empty()) {
+      path = Utf8ToWide(requested);
+    }
+    if (!path.empty()) {
+      auto launched = ShellExecuteW(
+          nullptr, L"open", path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+      if (reinterpret_cast<INT_PTR>(launched) > 32) {
+        result.Resolve(::React::JSValueObject{{"ok", true}, {"fallback", true}});
+        co_return;
+      }
+    }
     result.Reject(winrt::to_string(error.message()).c_str());
   } catch (...) {
     result.Reject("Gagal pasang.");
