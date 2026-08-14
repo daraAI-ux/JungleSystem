@@ -12262,32 +12262,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
   },
-  messageMention: {
-    alignItems: 'center',
-    backgroundColor: V.colors.primarySoft,
-    borderRadius: 999,
-    justifyContent: 'center',
-    marginHorizontal: 2,
-    overflow: 'hidden',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  messageMentionText: {
-    color: V.colors.primary,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: '900',
-  },
   messageMentionTextInline: {
     borderRadius: 999,
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '900',
     lineHeight: 17,
-  },
-  messageMentionAi: {
-    backgroundColor: V.colors.infoSoft,
   },
   messageMentionTextAi: {
     color: V.colors.info,
