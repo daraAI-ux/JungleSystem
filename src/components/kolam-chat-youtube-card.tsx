@@ -1,12 +1,5 @@
-import React, {useEffect, useMemo, useState} from 'react';
-import {
-  Linking,
-  Platform,
-  StyleSheet,
-  Text,
-  View,
-  type LayoutChangeEvent,
-} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {Linking, Platform, StyleSheet, Text, View} from 'react-native';
 import WebView from 'react-native-webview';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamChatYoutubePayload} from '../domain/kolam-chat-youtube';
@@ -15,7 +8,14 @@ import {KolamRemoteImage} from './kolam-remote-image';
 
 const KolamWebView = WebView as unknown as React.ComponentType<any>;
 
-/** One WebView2 YouTube player at a time across inbox + team chat. */
+/**
+ * YouTube requires a valid HTTP Referer for embeds (Error 153).
+ * react-native-webview on Windows WebView2 navigates with Source(uri) only —
+ * JS `headers` / HTML `baseUrl` are ignored — so in-app embed fails for all videos.
+ * Windows: open system browser. Other platforms: WebView + Referer header.
+ */
+const YOUTUBE_EMBED_REFERER = 'https://dunia-anura.com/';
+
 let activePlayKey: string | null = null;
 const playListeners = new Set<() => void>();
 
@@ -24,65 +24,18 @@ function setActiveYoutubePlayKey(next: string | null) {
   playListeners.forEach(listener => listener());
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
 function buildYoutubeEmbedUri(videoId: string) {
   const safeId = encodeURIComponent(videoId);
-  // autoplay=1: user already tapped our play control (native gesture).
   return `https://www.youtube.com/embed/${safeId}?rel=0&playsinline=1&autoplay=1&modestbranding=1`;
 }
 
-/**
- * HTML shell with referrer policy (Error 153) + autoplay after thumbnail tap.
- * baseUrl must be https://www.youtube.com/ so Referer is valid.
- */
-function createYoutubeEmbedHtml(videoId: string, title?: string) {
-  const safeId = encodeURIComponent(videoId);
-  const safeTitle = escapeHtml(title || 'YouTube video');
-  const src = `https://www.youtube.com/embed/${safeId}?rel=0&playsinline=1&autoplay=1&modestbranding=1`;
-
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/><meta name="referrer" content="strict-origin-when-cross-origin"/><style>html,body{margin:0;padding:0;width:100%;height:100%;background:#111;overflow:hidden}iframe{border:0;position:absolute;inset:0;width:100%;height:100%}</style></head><body><iframe src="${src}" title="${safeTitle}" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></body></html>`;
+function openExternalYoutube(url: string) {
+  Linking.openURL(url).catch(() => undefined);
 }
 
-const TRY_PLAY_JS = `
-(function () {
-  function clickPlay() {
-    var selectors = [
-      '.ytp-large-play-button',
-      'button.ytp-play-button',
-      'button[aria-label*="Play"]',
-      'button[aria-label*="Putar"]',
-      '.ytp-cued-thumbnail-overlay'
-    ];
-    for (var i = 0; i < selectors.length; i++) {
-      var el = document.querySelector(selectors[i]);
-      if (el) {
-        el.click();
-        break;
-      }
-    }
-    var video = document.querySelector('video');
-    if (video) {
-      var p = video.play();
-      if (p && p.catch) p.catch(function () {});
-    }
-  }
-  clickPlay();
-  setTimeout(clickPlay, 600);
-  setTimeout(clickPlay, 1600);
-  true;
-})();
-`;
-
 /**
- * SoT FE `YoutubeEmbed` — thumbnail until play (exclusive WebView2 on Windows).
+ * SoT FE `YoutubeEmbed` card chrome — Windows plays via external browser
+ * until native WebView2 can inject Referer.
  */
 export function KolamChatYoutubeCard({
   playKey,
@@ -92,28 +45,19 @@ export function KolamChatYoutubeCard({
   youtube: KolamChatYoutubePayload;
 }) {
   const [playing, setPlaying] = useState(false);
-  const [useHtmlShell, setUseHtmlShell] = useState(false);
-  const [frameSize, setFrameSize] = useState({width: 288, height: 162});
   const thumbnailUri = youtube.videoId
     ? `https://i.ytimg.com/vi/${youtube.videoId}/hqdefault.jpg`
     : null;
   const watchUrl =
     youtube.url?.trim() ||
     `https://www.youtube.com/watch?v=${youtube.videoId}`;
-  const embedUri = useMemo(
-    () => buildYoutubeEmbedUri(youtube.videoId),
-    [youtube.videoId],
-  );
-  const htmlShell = useMemo(
-    () => createYoutubeEmbedHtml(youtube.videoId, youtube.title),
-    [youtube.title, youtube.videoId],
-  );
+  const embedUri = buildYoutubeEmbedUri(youtube.videoId);
+  const useInAppWebView = Platform.OS !== 'windows';
 
   useEffect(() => {
     const sync = () => {
       if (activePlayKey !== playKey) {
         setPlaying(false);
-        setUseHtmlShell(false);
       }
     };
     playListeners.add(sync);
@@ -125,80 +69,43 @@ export function KolamChatYoutubeCard({
     };
   }, [playKey]);
 
-  const openWatchUrl = () => {
-    Linking.openURL(watchUrl).catch(() => undefined);
-  };
-
-  const onFrameLayout = (event: LayoutChangeEvent) => {
-    const {width, height} = event.nativeEvent.layout;
-    if (width > 0 && height > 0) {
-      setFrameSize({width, height});
+  const startPlayback = () => {
+    if (!useInAppWebView) {
+      openExternalYoutube(watchUrl);
+      return;
     }
+    setActiveYoutubePlayKey(playKey);
+    setPlaying(true);
   };
 
-  if (playing) {
+  if (playing && useInAppWebView) {
     return (
       <View style={styles.card}>
-        <View onLayout={onFrameLayout} style={styles.playerFrame}>
+        <View style={styles.playerFrame}>
           <KolamWebView
             allowsFullscreenVideo
-            containerStyle={[
-              styles.webViewContainer,
-              {height: frameSize.height, width: frameSize.width},
-            ]}
-            injectedJavaScript={TRY_PLAY_JS}
+            containerStyle={styles.webViewContainer}
             javaScriptEnabled
             mediaPlaybackRequiresUserAction={false}
-            onError={() => {
-              if (!useHtmlShell) {
-                setUseHtmlShell(true);
-              }
-            }}
-            onHttpError={() => {
-              if (!useHtmlShell) {
-                setUseHtmlShell(true);
-              }
-            }}
-            onLoadEnd={() => {
-              // Second nudge after document load (Windows WebView2).
-            }}
             originWhitelist={['https://*', 'http://*']}
-            source={
-              useHtmlShell
-                ? {
-                    html: htmlShell,
-                    baseUrl: 'https://www.youtube.com/',
-                  }
-                : {uri: embedUri}
-            }
-            style={{
-              backgroundColor: '#111',
-              height: frameSize.height,
-              width: frameSize.width,
+            source={{
+              headers: {
+                Referer: YOUTUBE_EMBED_REFERER,
+              },
+              uri: embedUri,
             }}
-            useWebView2={Platform.OS === 'windows'}
+            style={styles.webView}
           />
         </View>
-        <View style={styles.footerRow}>
-          <KolamPressable
-            accessibilityLabel="Buka di YouTube"
-            onPress={openWatchUrl}
-            style={styles.footerLink}
-          >
-            <Text numberOfLines={1} style={styles.footerLinkText}>
-              {youtube.title || 'Buka di YouTube'}
-            </Text>
-          </KolamPressable>
-          {!useHtmlShell ? (
-            <KolamPressable
-              accessibilityLabel="Coba mode embed alternatif"
-              onPress={() => setUseHtmlShell(true)}
-              style={styles.footerLink}
-            >
-              <Text style={styles.footerAltText}>Retry</Text>
-            </KolamPressable>
-          ) : null}
-        </View>
+        <KolamPressable
+          accessibilityLabel="Buka di YouTube"
+          onPress={() => openExternalYoutube(watchUrl)}
+          style={styles.footerLink}
+        >
+          <Text numberOfLines={1} style={styles.footerLinkText}>
+            {youtube.title || 'Buka di YouTube'}
+          </Text>
+        </KolamPressable>
       </View>
     );
   }
@@ -206,12 +113,10 @@ export function KolamChatYoutubeCard({
   return (
     <View style={styles.card}>
       <KolamPressable
-        accessibilityLabel="Putar YouTube"
-        onPress={() => {
-          setUseHtmlShell(false);
-          setActiveYoutubePlayKey(playKey);
-          setPlaying(true);
-        }}
+        accessibilityLabel={
+          useInAppWebView ? 'Putar YouTube' : 'Putar di browser'
+        }
+        onPress={startPlayback}
         style={styles.previewPressable}
       >
         {thumbnailUri ? (
@@ -233,11 +138,13 @@ export function KolamChatYoutubeCard({
       </KolamPressable>
       <KolamPressable
         accessibilityLabel="Buka di YouTube"
-        onPress={openWatchUrl}
+        onPress={() => openExternalYoutube(watchUrl)}
         style={styles.footerLink}
       >
         <Text numberOfLines={1} style={styles.footerLinkText}>
-          {youtube.title || 'Buka di YouTube'}
+          {useInAppWebView
+            ? youtube.title || 'Buka di YouTube'
+            : youtube.title || 'Putar di browser'}
         </Text>
       </KolamPressable>
     </View>
@@ -301,14 +208,13 @@ const styles = StyleSheet.create({
   },
   webViewContainer: {
     backgroundColor: '#111',
+    flex: 1,
   },
-  footerRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  webView: {
+    backgroundColor: '#111',
+    flex: 1,
   },
   footerLink: {
-    flexShrink: 1,
     paddingHorizontal: 8,
     paddingVertical: 6,
   },
@@ -316,11 +222,5 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 11,
-  },
-  footerAltText: {
-    color: V.colors.primary,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '600',
   },
 });
