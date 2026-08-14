@@ -32,16 +32,28 @@ function escapeHtml(value: string) {
     .replace(/'/g, '&#39;');
 }
 
+function buildYoutubeEmbedUri(videoId: string) {
+  const safeId = encodeURIComponent(videoId);
+  // Direct youtube.com embed (not nocookie nested in local HTML) so WebView2
+  // has a real https origin/referer — avoids Error 153.
+  return `https://www.youtube.com/embed/${safeId}?rel=0&playsinline=1`;
+}
+
+/**
+ * Fallback HTML if URI navigation is blocked. Sends referrer so YouTube
+ * accepts the embed (Error 153 = missing/suppressed Referer).
+ */
 function createYoutubeEmbedHtml(videoId: string, title?: string) {
   const safeId = encodeURIComponent(videoId);
   const safeTitle = escapeHtml(title || 'YouTube video');
-  const src = `https://www.youtube-nocookie.com/embed/${safeId}?rel=0`;
+  const src = `https://www.youtube.com/embed/${safeId}?rel=0&playsinline=1`;
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/><style>html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}</style></head><body><iframe src="${src}" title="${safeTitle}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/><meta name="referrer" content="strict-origin-when-cross-origin"/><style>html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}</style></head><body><iframe src="${src}" title="${safeTitle}" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></body></html>`;
 }
 
 /**
  * SoT FE `YoutubeEmbed` — thumbnail until play (exclusive WebView2 on Windows).
+ * Loads embed as top-level URI to satisfy YouTube Referer checks (Error 153).
  */
 export function KolamChatYoutubeCard({
   playKey,
@@ -51,13 +63,18 @@ export function KolamChatYoutubeCard({
   youtube: KolamChatYoutubePayload;
 }) {
   const [playing, setPlaying] = useState(false);
+  const [useHtmlFallback, setUseHtmlFallback] = useState(false);
   const thumbnailUri = youtube.videoId
     ? `https://i.ytimg.com/vi/${youtube.videoId}/hqdefault.jpg`
     : null;
   const watchUrl =
     youtube.url?.trim() ||
     `https://www.youtube.com/watch?v=${youtube.videoId}`;
-  const html = useMemo(
+  const embedUri = useMemo(
+    () => buildYoutubeEmbedUri(youtube.videoId),
+    [youtube.videoId],
+  );
+  const htmlFallback = useMemo(
     () => createYoutubeEmbedHtml(youtube.videoId, youtube.title),
     [youtube.title, youtube.videoId],
   );
@@ -66,6 +83,7 @@ export function KolamChatYoutubeCard({
     const sync = () => {
       if (activePlayKey !== playKey) {
         setPlaying(false);
+        setUseHtmlFallback(false);
       }
     };
     playListeners.add(sync);
@@ -90,11 +108,25 @@ export function KolamChatYoutubeCard({
             containerStyle={styles.webViewContainer}
             javaScriptEnabled
             mediaPlaybackRequiresUserAction={false}
-            originWhitelist={['*']}
-            source={{
-              html,
-              baseUrl: 'https://www.youtube-nocookie.com/',
+            onError={() => {
+              if (!useHtmlFallback) {
+                setUseHtmlFallback(true);
+              }
             }}
+            onHttpError={() => {
+              if (!useHtmlFallback) {
+                setUseHtmlFallback(true);
+              }
+            }}
+            originWhitelist={['*']}
+            source={
+              useHtmlFallback
+                ? {
+                    html: htmlFallback,
+                    baseUrl: 'https://www.youtube.com/',
+                  }
+                : {uri: embedUri}
+            }
             style={styles.webView}
             useWebView2={Platform.OS === 'windows'}
           />
@@ -117,6 +149,7 @@ export function KolamChatYoutubeCard({
       <KolamPressable
         accessibilityLabel="Putar YouTube"
         onPress={() => {
+          setUseHtmlFallback(false);
           setActiveYoutubePlayKey(playKey);
           setPlaying(true);
         }}
