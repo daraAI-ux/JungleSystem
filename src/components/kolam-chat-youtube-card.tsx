@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type LayoutChangeEvent,
 } from 'react-native';
 import WebView from 'react-native-webview';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
@@ -34,26 +35,54 @@ function escapeHtml(value: string) {
 
 function buildYoutubeEmbedUri(videoId: string) {
   const safeId = encodeURIComponent(videoId);
-  // Direct youtube.com embed (not nocookie nested in local HTML) so WebView2
-  // has a real https origin/referer — avoids Error 153.
-  return `https://www.youtube.com/embed/${safeId}?rel=0&playsinline=1`;
+  // autoplay=1: user already tapped our play control (native gesture).
+  return `https://www.youtube.com/embed/${safeId}?rel=0&playsinline=1&autoplay=1&modestbranding=1`;
 }
 
 /**
- * Fallback HTML if URI navigation is blocked. Sends referrer so YouTube
- * accepts the embed (Error 153 = missing/suppressed Referer).
+ * HTML shell with referrer policy (Error 153) + autoplay after thumbnail tap.
+ * baseUrl must be https://www.youtube.com/ so Referer is valid.
  */
 function createYoutubeEmbedHtml(videoId: string, title?: string) {
   const safeId = encodeURIComponent(videoId);
   const safeTitle = escapeHtml(title || 'YouTube video');
-  const src = `https://www.youtube.com/embed/${safeId}?rel=0&playsinline=1`;
+  const src = `https://www.youtube.com/embed/${safeId}?rel=0&playsinline=1&autoplay=1&modestbranding=1`;
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/><meta name="referrer" content="strict-origin-when-cross-origin"/><style>html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}</style></head><body><iframe src="${src}" title="${safeTitle}" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/><meta name="referrer" content="strict-origin-when-cross-origin"/><style>html,body{margin:0;padding:0;width:100%;height:100%;background:#111;overflow:hidden}iframe{border:0;position:absolute;inset:0;width:100%;height:100%}</style></head><body><iframe src="${src}" title="${safeTitle}" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></body></html>`;
 }
+
+const TRY_PLAY_JS = `
+(function () {
+  function clickPlay() {
+    var selectors = [
+      '.ytp-large-play-button',
+      'button.ytp-play-button',
+      'button[aria-label*="Play"]',
+      'button[aria-label*="Putar"]',
+      '.ytp-cued-thumbnail-overlay'
+    ];
+    for (var i = 0; i < selectors.length; i++) {
+      var el = document.querySelector(selectors[i]);
+      if (el) {
+        el.click();
+        break;
+      }
+    }
+    var video = document.querySelector('video');
+    if (video) {
+      var p = video.play();
+      if (p && p.catch) p.catch(function () {});
+    }
+  }
+  clickPlay();
+  setTimeout(clickPlay, 600);
+  setTimeout(clickPlay, 1600);
+  true;
+})();
+`;
 
 /**
  * SoT FE `YoutubeEmbed` — thumbnail until play (exclusive WebView2 on Windows).
- * Loads embed as top-level URI to satisfy YouTube Referer checks (Error 153).
  */
 export function KolamChatYoutubeCard({
   playKey,
@@ -63,7 +92,8 @@ export function KolamChatYoutubeCard({
   youtube: KolamChatYoutubePayload;
 }) {
   const [playing, setPlaying] = useState(false);
-  const [useHtmlFallback, setUseHtmlFallback] = useState(false);
+  const [useHtmlShell, setUseHtmlShell] = useState(false);
+  const [frameSize, setFrameSize] = useState({width: 288, height: 162});
   const thumbnailUri = youtube.videoId
     ? `https://i.ytimg.com/vi/${youtube.videoId}/hqdefault.jpg`
     : null;
@@ -74,7 +104,7 @@ export function KolamChatYoutubeCard({
     () => buildYoutubeEmbedUri(youtube.videoId),
     [youtube.videoId],
   );
-  const htmlFallback = useMemo(
+  const htmlShell = useMemo(
     () => createYoutubeEmbedHtml(youtube.videoId, youtube.title),
     [youtube.title, youtube.videoId],
   );
@@ -83,7 +113,7 @@ export function KolamChatYoutubeCard({
     const sync = () => {
       if (activePlayKey !== playKey) {
         setPlaying(false);
-        setUseHtmlFallback(false);
+        setUseHtmlShell(false);
       }
     };
     playListeners.add(sync);
@@ -99,47 +129,76 @@ export function KolamChatYoutubeCard({
     Linking.openURL(watchUrl).catch(() => undefined);
   };
 
+  const onFrameLayout = (event: LayoutChangeEvent) => {
+    const {width, height} = event.nativeEvent.layout;
+    if (width > 0 && height > 0) {
+      setFrameSize({width, height});
+    }
+  };
+
   if (playing) {
     return (
       <View style={styles.card}>
-        <View style={styles.playerFrame}>
+        <View onLayout={onFrameLayout} style={styles.playerFrame}>
           <KolamWebView
             allowsFullscreenVideo
-            containerStyle={styles.webViewContainer}
+            containerStyle={[
+              styles.webViewContainer,
+              {height: frameSize.height, width: frameSize.width},
+            ]}
+            injectedJavaScript={TRY_PLAY_JS}
             javaScriptEnabled
             mediaPlaybackRequiresUserAction={false}
             onError={() => {
-              if (!useHtmlFallback) {
-                setUseHtmlFallback(true);
+              if (!useHtmlShell) {
+                setUseHtmlShell(true);
               }
             }}
             onHttpError={() => {
-              if (!useHtmlFallback) {
-                setUseHtmlFallback(true);
+              if (!useHtmlShell) {
+                setUseHtmlShell(true);
               }
             }}
-            originWhitelist={['*']}
+            onLoadEnd={() => {
+              // Second nudge after document load (Windows WebView2).
+            }}
+            originWhitelist={['https://*', 'http://*']}
             source={
-              useHtmlFallback
+              useHtmlShell
                 ? {
-                    html: htmlFallback,
+                    html: htmlShell,
                     baseUrl: 'https://www.youtube.com/',
                   }
                 : {uri: embedUri}
             }
-            style={styles.webView}
+            style={{
+              backgroundColor: '#111',
+              height: frameSize.height,
+              width: frameSize.width,
+            }}
             useWebView2={Platform.OS === 'windows'}
           />
         </View>
-        <KolamPressable
-          accessibilityLabel="Buka di YouTube"
-          onPress={openWatchUrl}
-          style={styles.footerLink}
-        >
-          <Text numberOfLines={1} style={styles.footerLinkText}>
-            {youtube.title || 'Buka di YouTube'}
-          </Text>
-        </KolamPressable>
+        <View style={styles.footerRow}>
+          <KolamPressable
+            accessibilityLabel="Buka di YouTube"
+            onPress={openWatchUrl}
+            style={styles.footerLink}
+          >
+            <Text numberOfLines={1} style={styles.footerLinkText}>
+              {youtube.title || 'Buka di YouTube'}
+            </Text>
+          </KolamPressable>
+          {!useHtmlShell ? (
+            <KolamPressable
+              accessibilityLabel="Coba mode embed alternatif"
+              onPress={() => setUseHtmlShell(true)}
+              style={styles.footerLink}
+            >
+              <Text style={styles.footerAltText}>Retry</Text>
+            </KolamPressable>
+          ) : null}
+        </View>
       </View>
     );
   }
@@ -149,7 +208,7 @@ export function KolamChatYoutubeCard({
       <KolamPressable
         accessibilityLabel="Putar YouTube"
         onPress={() => {
-          setUseHtmlFallback(false);
+          setUseHtmlShell(false);
           setActiveYoutubePlayKey(playKey);
           setPlaying(true);
         }}
@@ -236,18 +295,20 @@ const styles = StyleSheet.create({
   },
   playerFrame: {
     aspectRatio: 16 / 9,
-    backgroundColor: '#000',
+    backgroundColor: '#111',
+    overflow: 'hidden',
     width: '100%',
   },
   webViewContainer: {
-    backgroundColor: '#000',
-    flex: 1,
+    backgroundColor: '#111',
   },
-  webView: {
-    backgroundColor: '#000',
-    flex: 1,
+  footerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   footerLink: {
+    flexShrink: 1,
     paddingHorizontal: 8,
     paddingVertical: 6,
   },
@@ -255,5 +316,11 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 11,
+  },
+  footerAltText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
   },
 });
