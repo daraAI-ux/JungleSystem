@@ -4081,6 +4081,24 @@ describe('KolamGlobalChatRail', () => {
         .props.value,
     ).toBe('Baris satu\n\n');
     expect(sendMessage).not.toHaveBeenCalled();
+
+    const blankLineInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat');
+
+    // Native may ack the blank line then echo without the trailing empty line.
+    await ReactTestRenderer.act(async () => {
+      await blankLineInput!.props.onChangeText('Baris satu\n\n');
+      await blankLineInput!.props.onChangeText('Baris satu\n');
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(TextInput)
+        .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat')!
+        .props.value,
+    ).toBe('Baris satu\n\n');
+    expect(sendMessage).not.toHaveBeenCalled();
   });
 
   it('shows a DARA thinking bubble after sending a team message that mentions DARA', async () => {

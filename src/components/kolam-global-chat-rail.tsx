@@ -338,19 +338,8 @@ function normalizeComposerText(value: string) {
   return value.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
 
-/** True when native echoed text with fewer newlines than we just committed. */
-function isStaleComposerNewlineEcho(pending: string, incoming: string) {
-  if (incoming.length >= pending.length) {
-    return false;
-  }
-
-  if (pending.replace(/\n/g, '') !== incoming.replace(/\n/g, '')) {
-    return false;
-  }
-
-  const pendingNewlines = (pending.match(/\n/g) || []).length;
-  const incomingNewlines = (incoming.match(/\n/g) || []).length;
-  return pendingNewlines > incomingNewlines;
+function countComposerNewlines(value: string) {
+  return (value.match(/\n/g) || []).length;
 }
 
 function useKolamComposerEnterKey(
@@ -402,7 +391,7 @@ function useKolamComposerEnterKey(
       if (pendingNewlineRef.current === next.text) {
         pendingNewlineRef.current = null;
       }
-    }, 100);
+    }, 300);
   }, [commitText]);
 
   const handleChangeText = React.useCallback(
@@ -410,29 +399,42 @@ function useKolamComposerEnterKey(
       const normalized = normalizeComposerText(text);
       const pending = pendingNewlineRef.current;
       if (pending != null) {
-        if (isStaleComposerNewlineEcho(pending, normalized)) {
-          commitText(pending);
-          return;
-        }
-        // Native caught up with at least as many newlines — keep its text.
+        const pendingBody = pending.replace(/\n/g, '');
+        const incomingBody = normalized.replace(/\n/g, '');
+        const pendingNewlines = countComposerNewlines(pending);
+        const incomingNewlines = countComposerNewlines(normalized);
+
+        // Keep blank lines: native often echoes with fewer trailing \n.
         if (
-          (normalized.match(/\n/g) || []).length >=
-          (pending.match(/\n/g) || []).length
+          incomingBody === pendingBody &&
+          incomingNewlines < pendingNewlines
         ) {
-          pendingNewlineRef.current = null;
-          selectionRef.current = {
-            end: normalized.length,
-            start: normalized.length,
-          };
-          hasSelectionRef.current = true;
-        } else if (normalized.replace(/\n/g, '') !== pending.replace(/\n/g, '')) {
-          // Real edit (not an echo) — drop the guard.
-          pendingNewlineRef.current = null;
-        } else {
           commitText(pending);
           return;
         }
+
+        if (incomingBody !== pendingBody) {
+          pendingNewlineRef.current = null;
+          commitText(normalized);
+          return;
+        }
+
+        // Same body with equal/more newlines — raise the floor, keep guard until timeout
+        // so a later echo cannot drop a blank line.
+        if (incomingNewlines > pendingNewlines) {
+          pendingNewlineRef.current = normalized;
+        }
+        selectionRef.current = {
+          end: normalized.length,
+          start: normalized.length,
+        };
+        hasSelectionRef.current = true;
+        commitText(
+          incomingNewlines >= pendingNewlines ? normalized : pending,
+        );
+        return;
       }
+
       commitText(normalized);
     },
     [commitText],
