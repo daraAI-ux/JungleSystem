@@ -21,6 +21,10 @@ import {
   stopSharedKolamGroupCallRingtone,
 } from '../services/kolam-group-call-ringtone';
 import {
+  getSharedKolamTeamChatCallMediaSession,
+  stopSharedKolamTeamChatCallMediaSession,
+} from '../services/kolam-team-chat-call-media-session';
+import {
   type KolamChatLiveEvent,
   useKolamChatLiveStream,
 } from './use-kolam-chat-live-stream';
@@ -76,6 +80,7 @@ export function useKolamTeamChatGroupCallGate({
   const [, setTick] = useState(0);
   const liveCallRef = useRef<KolamTeamChatCall | null>(null);
   const ringtone = getSharedKolamGroupCallRingtoneController();
+  const mediaSession = getSharedKolamTeamChatCallMediaSession();
   const soundSettings = useKolamNotificationSoundSettings({
     enabled: Boolean(enabled && userId),
   });
@@ -94,14 +99,19 @@ export function useKolamTeamChatGroupCallGate({
     ringtone.setRingtonePath(groupCallRingtone);
   }, [groupCallRingtone, ringtone]);
 
-  const mergeCall = useCallback((call: KolamTeamChatCall | null | undefined) => {
-    if (!call || call.status === 'ended') {
-      setLiveCall(null);
-      stopSharedKolamGroupCallRingtone();
-      return;
-    }
-    setLiveCall(call);
-  }, []);
+  const mergeCall = useCallback(
+    (call: KolamTeamChatCall | null | undefined) => {
+      if (!call || call.status === 'ended') {
+        setLiveCall(null);
+        stopSharedKolamGroupCallRingtone();
+        void stopSharedKolamTeamChatCallMediaSession();
+        return;
+      }
+      setLiveCall(call);
+      void mediaSession.onCallUpdated({call, userId});
+    },
+    [mediaSession, userId],
+  );
 
   const refreshMyCalls = useCallback(async () => {
     if (!enabled || !userId) {
@@ -109,6 +119,7 @@ export function useKolamTeamChatGroupCallGate({
       setCallConfig({enabled: false});
       setLiveCall(null);
       stopSharedKolamGroupCallRingtone();
+      void stopSharedKolamTeamChatCallMediaSession();
       return;
     }
 
@@ -209,6 +220,7 @@ export function useKolamTeamChatGroupCallGate({
   useEffect(() => {
     return () => {
       stopSharedKolamGroupCallRingtone();
+      void stopSharedKolamTeamChatCallMediaSession();
     };
   }, []);
 
@@ -235,6 +247,13 @@ export function useKolamTeamChatGroupCallGate({
         }
         stopSharedKolamGroupCallRingtone();
         mergeCall(call.status === 'ended' ? null : call);
+        if (options?.forceMyStatus === 'joined' && call.status !== 'ended') {
+          void mediaSession.startAfterJoin({
+            call,
+            config: callConfig,
+            userId,
+          });
+        }
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Aksi call gagal.',
@@ -243,7 +262,7 @@ export function useKolamTeamChatGroupCallGate({
         setBusy(false);
       }
     },
-    [busy, mergeCall, userId],
+    [busy, callConfig, mediaSession, mergeCall, userId],
   );
 
   const joinCall = useCallback(async () => {

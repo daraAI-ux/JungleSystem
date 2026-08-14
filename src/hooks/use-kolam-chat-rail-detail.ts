@@ -71,6 +71,10 @@ import {
 } from '../domain/kolam-team-chat-call';
 import { copyTextToClipboard } from '../lib/native-clipboard';
 import { stopSharedKolamGroupCallRingtone } from '../services/kolam-group-call-ringtone';
+import {
+  getSharedKolamTeamChatCallMediaSession,
+  stopSharedKolamTeamChatCallMediaSession,
+} from '../services/kolam-team-chat-call-media-session';
 
 const EMPTY_TEAM_CHAT_PRESENCE: KolamTeamChatPresence = {
   onlineCount: 0,
@@ -366,6 +370,7 @@ export function useKolamChatRailDetail({
       setCallConfig({ enabled: false });
       setCallErrorMessage(undefined);
       setCallNoticeMessage(undefined);
+      void stopSharedKolamTeamChatCallMediaSession();
       return;
     }
 
@@ -377,11 +382,21 @@ export function useKolamChatRailDetail({
       if (!config.enabled) {
         setActiveCall(null);
         setCallNoticeMessage(undefined);
+        void stopSharedKolamTeamChatCallMediaSession();
         return;
       }
 
       const call = await getKolamRoomActiveTeamChatCall(selectedId);
-      setActiveCall(call && call.status !== 'ended' ? call : null);
+      const next = call && call.status !== 'ended' ? call : null;
+      setActiveCall(next);
+      if (!next) {
+        void stopSharedKolamTeamChatCallMediaSession();
+      } else {
+        void getSharedKolamTeamChatCallMediaSession().onCallUpdated({
+          call: next,
+          userId: currentUserId,
+        });
+      }
     } catch (error) {
       setCallErrorMessage(
         error instanceof Error
@@ -389,7 +404,7 @@ export function useKolamChatRailDetail({
           : 'Status call belum bisa dibaca.',
       );
     }
-  }, [mode, selectedId]);
+  }, [currentUserId, mode, selectedId]);
 
   useEffect(() => {
     void refreshCall();
@@ -1012,7 +1027,10 @@ export function useKolamChatRailDetail({
   );
 
   const runCallAction = useCallback(
-    async (action: () => Promise<KolamTeamChatCall>) => {
+    async (
+      action: () => Promise<KolamTeamChatCall>,
+      options?: {startMediaAfterJoin?: boolean},
+    ) => {
       if (mode !== 'team-chat' || !selectedId || callBusy) {
         return;
       }
@@ -1023,7 +1041,26 @@ export function useKolamChatRailDetail({
 
       try {
         const call = await action();
-        setActiveCall(call.status === 'ended' ? null : call);
+        if (call.status === 'ended') {
+          setActiveCall(null);
+          void stopSharedKolamTeamChatCallMediaSession();
+          return;
+        }
+
+        setActiveCall(call);
+        const mediaSession = getSharedKolamTeamChatCallMediaSession();
+        if (options?.startMediaAfterJoin) {
+          void mediaSession.startAfterJoin({
+            call,
+            config: callConfig,
+            userId: currentUserId,
+          });
+        } else {
+          void mediaSession.onCallUpdated({
+            call,
+            userId: currentUserId,
+          });
+        }
       } catch (error) {
         setCallErrorMessage(
           error instanceof Error ? error.message : 'Aksi call gagal diproses.',
@@ -1032,7 +1069,7 @@ export function useKolamChatRailDetail({
         setCallBusy(false);
       }
     },
-    [callBusy, mode, selectedId],
+    [callBusy, callConfig, currentUserId, mode, selectedId],
   );
 
   const startCall = useCallback(async () => {
@@ -1049,17 +1086,20 @@ export function useKolamChatRailDetail({
     }
 
     stopSharedKolamGroupCallRingtone();
-    await runCallAction(async () => {
-      const call = await joinKolamTeamChatCall(activeCall._id);
-      stopSharedKolamGroupCallRingtone();
-      return (
-        withKolamTeamChatCallMyParticipantStatus(
-          call,
-          currentUserId,
-          'joined',
-        ) ?? call
-      );
-    });
+    await runCallAction(
+      async () => {
+        const call = await joinKolamTeamChatCall(activeCall._id);
+        stopSharedKolamGroupCallRingtone();
+        return (
+          withKolamTeamChatCallMyParticipantStatus(
+            call,
+            currentUserId,
+            'joined',
+          ) ?? call
+        );
+      },
+      {startMediaAfterJoin: true},
+    );
   }, [activeCall, currentUserId, runCallAction]);
 
   const declineCall = useCallback(async () => {
