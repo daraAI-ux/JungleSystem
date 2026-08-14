@@ -5,6 +5,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import {kolamVisualTokens as V} from '../domain/kolam-visual';
 
 interface KolamToggleCardGridProps {
   children: React.ReactNode;
@@ -48,6 +49,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   item: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
     flexGrow: 1,
+    overflow: 'hidden',
   },
 });
