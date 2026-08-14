@@ -5790,6 +5790,107 @@ describe('KolamGlobalChatRail', () => {
     });
   });
 
+  it('plays sound for another conversation while viewing a different thread', async () => {
+    let liveOptions:
+      | Parameters<typeof useKolamChatLiveStream>[0]
+      | undefined;
+
+    useLiveStreamMock.mockImplementation(options => {
+      liveOptions = options;
+    });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-a',
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer A'},
+          lastMessagePreview: 'Thread A',
+          unreadCount: 0,
+        },
+        {
+          _id: 'conv-b',
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer B'},
+          lastMessagePreview: 'Thread B',
+          unreadCount: 1,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 1,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      loading: false,
+      messages: [],
+      sending: false,
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectA = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer A');
+    await ReactTestRenderer.act(async () => {
+      selectA!.props.onPress();
+    });
+
+    mockSoundPlay.mockClear();
+
+    await ReactTestRenderer.act(async () => {
+      liveOptions!.onEvent({
+        contract: {
+          eventName: 'message.created',
+          legacySources: [],
+          note: '',
+          refreshTargets: ['inbox-list', 'inbox-detail', 'unread-badge'],
+          route: '/chat/stream',
+          soundIntent: 'incoming-assigned-or-unassigned',
+          stream: 'inbox',
+        },
+        payload: {
+          assignedStaffId: 'staff-1',
+          conversationId: 'conv-b',
+          message: {direction: 'in'},
+        },
+      });
+    });
+
+    expect(mockSoundPlay).toHaveBeenCalledWith({
+      intent: 'assigned',
+      webSetting: expect.any(Object),
+    });
+
+    mockSoundPlay.mockClear();
+
+    await ReactTestRenderer.act(async () => {
+      liveOptions!.onEvent({
+        contract: {
+          eventName: 'message.created',
+          legacySources: [],
+          note: '',
+          refreshTargets: ['inbox-list', 'inbox-detail', 'unread-badge'],
+          route: '/chat/stream',
+          soundIntent: 'incoming-assigned-or-unassigned',
+          stream: 'inbox',
+        },
+        payload: {
+          assignedStaffId: 'staff-1',
+          conversationId: 'conv-a',
+          message: {direction: 'in'},
+        },
+      });
+    });
+
+    expect(mockSoundPlay).not.toHaveBeenCalled();
+  });
+
   it('suppresses headless sound for inbox messages assigned to another staff', async () => {
     let liveOptions:
       | Parameters<typeof useKolamChatLiveStream>[0]
@@ -5824,12 +5925,6 @@ describe('KolamGlobalChatRail', () => {
       });
     });
 
-    expect(mockSoundPlay).toHaveBeenCalledWith({
-      intent: 'none',
-      webSetting: {
-        notificationSound: 'media/audios/assigned.wav',
-        unassignedNotificationSound: 'media/audios/unassigned.wav',
-      },
-    });
+    expect(mockSoundPlay).not.toHaveBeenCalled();
   });
 });

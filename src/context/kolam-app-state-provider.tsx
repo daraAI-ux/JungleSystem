@@ -62,6 +62,8 @@ export function KolamAppStateProvider({
     React.useState<KolamGlobalChatRailMode | null>(null);
   const [chatRailInitialSelectedId, setChatRailInitialSelectedId] =
     React.useState<string | null>(null);
+  const [chatRailSelectedItemId, setChatRailSelectedItemId] =
+    React.useState<string | null>(null);
   const [activeSettingsTab, setActiveSettingsTab] =
     React.useState<SettingsTabItem | null>(
       getSettingsTabItemById(DEFAULT_SETTINGS_TAB_ID),
@@ -444,6 +446,7 @@ export function KolamAppStateProvider({
       }
 
       setChatRailInitialSelectedId(null);
+      setChatRailSelectedItemId(null);
       setActiveChatRail(currentMode =>
         currentMode === nextMode ? null : nextMode,
       );
@@ -452,11 +455,19 @@ export function KolamAppStateProvider({
   );
   const handleChatRailClose = React.useCallback(() => {
     setChatRailInitialSelectedId(null);
+    setChatRailSelectedItemId(null);
     setActiveChatRail(null);
   }, []);
+  const handleChatRailSelectedItemIdChange = React.useCallback(
+    (selectedItemId: string | null) => {
+      setChatRailSelectedItemId(selectedItemId);
+    },
+    [],
+  );
   const openInboxChatRail = React.useCallback((conversationId?: string) => {
     const id = String(conversationId || '').trim();
     setChatRailInitialSelectedId(id || null);
+    setChatRailSelectedItemId(id || null);
     setActiveChatRail('inbox');
   }, []);
   const handleDashboardRouteContext = React.useCallback(
@@ -465,6 +476,7 @@ export function KolamAppStateProvider({
 
       if (teamChatRoomId !== undefined) {
         setChatRailInitialSelectedId(teamChatRoomId);
+        setChatRailSelectedItemId(teamChatRoomId);
         setActiveChatRail('team-chat');
         return;
       }
@@ -480,6 +492,7 @@ export function KolamAppStateProvider({
         : null,
     enabled: Boolean(authUser),
     visibleRailMode: activeChatRail,
+    visibleSelectedItemId: activeChatRail ? chatRailSelectedItemId : null,
   });
   const handleToastActivation = React.useCallback(
     (activation: {stream: 'inbox' | 'team-chat'; targetId: string}) => {
@@ -491,6 +504,7 @@ export function KolamAppStateProvider({
 
       if (activation.stream === 'team-chat') {
         setChatRailInitialSelectedId(hasThread ? targetId : null);
+        setChatRailSelectedItemId(hasThread ? targetId : null);
         setActiveChatRail('team-chat');
         return;
       }
@@ -719,9 +733,15 @@ export function KolamAppStateProvider({
           initialSelectedId={chatRailInitialSelectedId}
           mode={activeChatRail}
           onClose={handleChatRailClose}
+          onSelectedItemIdChange={handleChatRailSelectedItemIdChange}
         />
       ) : null,
-    [activeChatRail, chatRailInitialSelectedId, handleChatRailClose],
+    [
+      activeChatRail,
+      chatRailInitialSelectedId,
+      handleChatRailClose,
+      handleChatRailSelectedItemIdChange,
+    ],
   );
   const workspaceTabsNode = React.useMemo(
     () => (

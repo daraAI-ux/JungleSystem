@@ -889,10 +889,12 @@ export function KolamGlobalChatRail({
   initialSelectedId,
   mode,
   onClose,
+  onSelectedItemIdChange,
 }: {
   initialSelectedId?: string | null;
   mode: KolamGlobalChatRailMode;
   onClose: () => void;
+  onSelectedItemIdChange?: (selectedItemId: string | null) => void;
 }) {
   const { authUser } = useKolamAuthContext();
   const content = getChatRailContent(mode);
@@ -1333,12 +1335,12 @@ export function KolamGlobalChatRail({
               webSetting: soundSettings.webSetting,
             }),
           ).catch(() => undefined);
+          showKolamChatDesktopToastFromLive({
+            classification,
+            currentUserId,
+            payload: event.payload,
+          });
         }
-        showKolamChatDesktopToastFromLive({
-          classification,
-          currentUserId,
-          payload: event.payload,
-        });
       }
     },
     [
@@ -1631,6 +1633,13 @@ export function KolamGlobalChatRail({
   React.useEffect(() => {
     setReplyTarget(null);
   }, [selectedItemId]);
+
+  React.useEffect(() => {
+    onSelectedItemIdChange?.(selectedItemId);
+    return () => {
+      onSelectedItemIdChange?.(null);
+    };
+  }, [onSelectedItemIdChange, selectedItemId]);
 
   const handleChooseAttachment = React.useCallback(async () => {
     if (detail.sending) {

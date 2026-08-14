@@ -45,14 +45,14 @@ describe('resolveKolamChatUnreadRiseSoundIntents', () => {
     ).toEqual(['assigned']);
   });
 
-  it('skips the open rail stream and still dings the other', () => {
+  it('dings the open rail stream so thread B is not silent while viewing A', () => {
     expect(
       resolveKolamChatUnreadRiseSoundIntents({
         previous: {inbox: 1, team: 0},
         next: {inbox: 4, team: 2},
         visibleRailMode: 'inbox',
       }),
-    ).toEqual(['assigned']);
+    ).toEqual(['assigned', 'assigned']);
   });
 
   it('stays silent when unread does not rise', () => {

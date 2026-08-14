@@ -33,12 +33,12 @@ export function resolveKolamChatUnreadRiseSoundIntents({
   next,
   nowMs,
   previous,
-  visibleRailMode,
 }: {
   lastSoundAtMs?: number | null;
   next: KolamChatUnreadCounts;
   nowMs?: number;
   previous: KolamChatUnreadCounts | null;
+  /** @deprecated Stream-wide mute removed; kept optional for call-site compat. */
   visibleRailMode?: KolamChatLiveStreamKind | null;
 }): KolamNotificationSoundType[] {
   if (!previous) {
@@ -56,11 +56,13 @@ export function resolveKolamChatUnreadRiseSoundIntents({
 
   const intents: KolamNotificationSoundType[] = [];
 
-  if (next.inbox > previous.inbox && visibleRailMode !== 'inbox') {
+  // Per-thread mute lives on the live path (selectedItemId). Unread-rise is
+  // aggregate — still ding while a rail is open so thread B is not silent.
+  if (next.inbox > previous.inbox) {
     intents.push('assigned');
   }
 
-  if (next.team > previous.team && visibleRailMode !== 'team-chat') {
+  if (next.team > previous.team) {
     intents.push('assigned');
   }
 
@@ -71,10 +73,12 @@ export function useKolamChatNotificationHost({
   currentUserId,
   enabled,
   visibleRailMode,
+  visibleSelectedItemId,
 }: {
   currentUserId?: string | null;
   enabled: boolean;
   visibleRailMode?: KolamChatLiveStreamKind | null;
+  visibleSelectedItemId?: string | null;
 }) {
   const [unreadCounts, setUnreadCounts] = useState<KolamChatUnreadCounts>({
     inbox: 0,
@@ -83,6 +87,7 @@ export function useKolamChatNotificationHost({
   const unreadCountsRef = useRef(unreadCounts);
   const previousUnreadRef = useRef<KolamChatUnreadCounts | null>(null);
   const visibleRailModeRef = useRef(visibleRailMode);
+  const visibleSelectedItemIdRef = useRef(visibleSelectedItemId);
   const lastSoundAtRef = useRef(0);
   const soundSettings = useKolamNotificationSoundSettings({enabled});
   const webSettingRef = useRef(soundSettings.webSetting);
@@ -96,6 +101,7 @@ export function useKolamChatNotificationHost({
 
   unreadCountsRef.current = unreadCounts;
   visibleRailModeRef.current = visibleRailMode;
+  visibleSelectedItemIdRef.current = visibleSelectedItemId;
   webSettingRef.current = soundSettings.webSetting;
 
   const playSoundIntent = useCallback(
@@ -147,7 +153,6 @@ export function useKolamChatNotificationHost({
       lastSoundAtMs: lastSoundAtRef.current || null,
       next,
       previous,
-      visibleRailMode,
     });
     previousUnreadRef.current = next;
     unreadCountsRef.current = next;
@@ -160,6 +165,8 @@ export function useKolamChatNotificationHost({
       playSoundIntent(intent);
     });
     if (previous) {
+      // Unread toast stays stream-muted while that rail is open (rail/live
+      // already surfaces thread toasts). Sound above still dings for thread B.
       if (next.inbox > previous.inbox && visibleRailMode !== 'inbox') {
         showKolamChatDesktopToastForUnread('inbox');
       }
@@ -190,13 +197,10 @@ export function useKolamChatNotificationHost({
     (event: KolamChatLiveEvent) => {
       const classification = classifyKolamChatLiveEvent(event, {
         currentUserId,
-        selectedItemId: null,
+        selectedItemId: visibleSelectedItemIdRef.current ?? null,
       });
 
-      if (
-        visibleRailMode !== event.contract.stream &&
-        classification.soundIntent !== 'none'
-      ) {
+      if (classification.soundIntent !== 'none') {
         if (
           tryClaimKolamChatLiveAlert({
             stream: classification.stream,
@@ -204,19 +208,19 @@ export function useKolamChatNotificationHost({
           })
         ) {
           playSoundIntent(classification.soundIntent);
+          showKolamChatDesktopToastFromLive({
+            classification,
+            currentUserId,
+            payload: event.payload,
+          });
         }
-        showKolamChatDesktopToastFromLive({
-          classification,
-          currentUserId,
-          payload: event.payload,
-        });
       }
 
       if (classification.refreshTargets.includes('unread-badge')) {
         Promise.resolve(refreshUnreadCounts()).catch(() => undefined);
       }
     },
-    [currentUserId, playSoundIntent, refreshUnreadCounts, visibleRailMode],
+    [currentUserId, playSoundIntent, refreshUnreadCounts],
   );
 
   useKolamChatLiveStream({
