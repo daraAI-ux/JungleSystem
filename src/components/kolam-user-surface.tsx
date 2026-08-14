@@ -3311,26 +3311,26 @@ function KolamUserEditSurface({
             </View>
           ) : null}
           {canResetPassword ? (
-            <>
-              <View style={styles.formFieldWide}>
+            <View style={styles.formFieldWide}>
+              <View style={styles.accessCard}>
                 <View style={styles.accessSectionHeader}>
                   <Text style={styles.detailPanelTitle}>Reset Kata Sandi</Text>
                   <Text style={styles.detailSubtitle}>
                     Hanya Super Admin yang dapat mereset kata sandi pengguna.
                   </Text>
                 </View>
+                <UserFormField label="Kata Sandi Baru" style={styles.formFieldWide}>
+                  <KolamFormTextField
+                    editable={!formDisabled}
+                    mode="password"
+                    onChangeText={value => setField('password', value)}
+                    placeholder="Kosongkan untuk mempertahankan kata sandi saat ini"
+                    style={styles.formInput}
+                    value={form.password}
+                  />
+                </UserFormField>
               </View>
-              <UserFormField label="Kata Sandi Baru">
-                <KolamFormTextField
-                  editable={!formDisabled}
-                  mode="password"
-                  onChangeText={value => setField('password', value)}
-                  placeholder="Kosongkan untuk mempertahankan kata sandi saat ini"
-                  style={styles.formInput}
-                  value={form.password}
-                />
-              </UserFormField>
-            </>
+            </View>
           ) : null}
         </View>
       </KolamContentFrame>
