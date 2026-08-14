@@ -180,6 +180,8 @@ export function useKolamTeamChatGroupCallGate({
   }, [liveCall?._id, liveCall?.status]);
 
   const ringingMe = isKolamTeamChatCallRingingForMe(liveCall, userId);
+  const ringingMeRef = useRef(ringingMe);
+  ringingMeRef.current = ringingMe;
 
   useEffect(() => {
     if (!enabled || !featureEnabled || !ringingMe) {
@@ -189,7 +191,11 @@ export function useKolamTeamChatGroupCallGate({
 
     ringtone.start();
     return () => {
-      stopSharedKolamGroupCallRingtone();
+      // Only halt playback when we are truly leaving the ringing state.
+      // Cleanup during re-render/remount must not kill a still-valid invite ring.
+      if (!ringingMeRef.current) {
+        stopSharedKolamGroupCallRingtone();
+      }
     };
   }, [enabled, featureEnabled, ringingMe, ringtone]);
 

@@ -63,7 +63,8 @@ export function createKolamGroupCallRingtoneController(
       soundService.play({
         bypassCooldown: true,
         intent: 'group-call',
-        preferInstantLocal: true,
+        // Prefer configured ringtone file (Settings); fallback beep if missing/unreachable.
+        preferInstantLocal: false,
         webSetting: {
           groupCallRingtone: ringtonePath || webSetting?.groupCallRingtone,
           handoffNotificationSound: undefined,
@@ -84,12 +85,17 @@ export function createKolamGroupCallRingtoneController(
       webSetting = next;
     },
     start() {
+      // Always (re)start a fresh loop so a prior stop cannot leave us silent.
       if (timer) {
-        return;
+        clearInterval(timer);
+        timer = null;
       }
       const playGeneration = generation;
       playOnce(playGeneration);
-      timer = setInterval(() => playOnce(playGeneration), options.intervalMs ?? RING_INTERVAL_MS);
+      timer = setInterval(
+        () => playOnce(playGeneration),
+        options.intervalMs ?? RING_INTERVAL_MS,
+      );
     },
     stop() {
       generation += 1;

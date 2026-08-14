@@ -33,7 +33,7 @@ describe('kolam group call ringtone controller', () => {
       expect.objectContaining({
         bypassCooldown: true,
         intent: 'group-call',
-        preferInstantLocal: true,
+        preferInstantLocal: false,
       }),
     );
 
