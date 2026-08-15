@@ -80,6 +80,7 @@ export function useKolamTeamChatGroupCallGate({
   >();
   const [, setTick] = useState(0);
   const liveCallRef = useRef<KolamTeamChatCall | null>(null);
+  const callConfigRef = useRef(callConfig);
   const ringtone = getSharedKolamGroupCallRingtoneController();
   const mediaSession = getSharedKolamTeamChatCallMediaSession();
   const [mediaConnection, setMediaConnection] = useState(() =>
@@ -90,6 +91,7 @@ export function useKolamTeamChatGroupCallGate({
   });
 
   liveCallRef.current = liveCall;
+  callConfigRef.current = callConfig;
 
   useEffect(() => mediaSession.subscribe(setMediaConnection), [mediaSession]);
 
@@ -114,9 +116,15 @@ export function useKolamTeamChatGroupCallGate({
         return;
       }
       setLiveCall(call);
-      void mediaSession.onCallUpdated({call, config: callConfig, userId});
+      // Read config from ref so mergeCall identity stays stable — otherwise
+      // refreshMyCalls → setCallConfig → new mergeCall → effect loop.
+      void mediaSession.onCallUpdated({
+        call,
+        config: callConfigRef.current,
+        userId,
+      });
     },
-    [callConfig, mediaSession, userId],
+    [mediaSession, userId],
   );
 
   const refreshMyCalls = useCallback(async () => {
