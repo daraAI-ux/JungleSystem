@@ -5,7 +5,9 @@
   posWebUrl: 'https://pos.dunia-anura.com',
   amWebUrl: 'https://frogs.dunia-anura.com',
   apiBaseUrl: 'https://amfibi.dunia-anura.com/api',
-  kolamApiBaseUrl: 'https://kolam.dunia-anura.com/api',
+  // Direct kolam-be (amfibi). Avoid kolam.dunia-anura.com/api until that host
+  // proxies past Next CSRF middleware for native clients.
+  kolamApiBaseUrl: 'https://amfibi.dunia-anura.com/api',
   amApiBaseUrl: 'https://frogs.dunia-anura.com/api',
   fileBaseUrl: 'https://amfibi.dunia-anura.com',
   nativeClientId: 'kolam-windows',

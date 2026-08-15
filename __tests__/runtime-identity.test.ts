@@ -19,7 +19,7 @@ describe('runtime identity surface', () => {
         }),
         expect.objectContaining({
           id: 'kolam-api',
-          value: 'kolam.dunia-anura.com/api',
+          value: 'amfibi.dunia-anura.com/api',
           status: 'ready',
         }),
         expect.objectContaining({
