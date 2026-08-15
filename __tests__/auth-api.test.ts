@@ -234,6 +234,10 @@ describe('unified auth source contracts', () => {
   it('restores a stored Kolam session through the direct BE profile route', async () => {
     saveAuthToken('stored-kolam-token');
     saveAuthSource('kolam');
+    setNativeDeviceIdentity({
+      macAddresses: ['AA:BB:CC:DD:EE:FF'],
+      macSignature: 'sig',
+    });
     fetchMock.mockResolvedValueOnce(jsonResponse({
       id: 'user-restored',
       email: 'restored@example.test',

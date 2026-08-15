@@ -16,6 +16,7 @@ import {
   saveAuthSource,
   saveAuthToken,
 } from './token-store';
+import {bootstrapNativeDeviceIdentity} from './native-device-identity';
 
 export interface SignInBody {
   email: string;
@@ -576,6 +577,12 @@ export async function restoreAuthSessionFromStore(): Promise<AuthSession | null>
   const source = getStoredAuthSource() ?? activeAuthSource;
   activeAuthSource = source;
   saveAuthSource(source);
+
+  // detail-user enforces MAC; without identity headers BE reports "MAC tidak terdeteksi"
+  // even when the device is allowlisted. Wait for native bootstrap before restore.
+  if (source === 'kolam') {
+    await bootstrapNativeDeviceIdentity();
+  }
 
   try {
     return {
