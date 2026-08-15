@@ -8,6 +8,7 @@ import {
 import {
   getActiveAuthSource,
   getCurrentUser,
+  normalizeLoginIdentifier,
   refreshAuthSession,
   restoreAuthSessionFromStore,
   signIn,
@@ -56,6 +57,48 @@ describe('unified auth source contracts', () => {
     expect(getAuthSource('am')).toMatchObject({
       bodySource: 'am',
       headerSource: appConfig.amSourceHeader,
+    });
+  });
+
+  it('normalizes login identifiers like OTP and FE Electron', () => {
+    expect(normalizeLoginIdentifier('  Staff@Example.TEST  ')).toBe(
+      'staff@example.test',
+    );
+    expect(normalizeLoginIdentifier('  AdminUser  ')).toBe('AdminUser');
+  });
+
+  it('trims and lowercases email before Kolam password sign-in', async () => {
+    setNativeDeviceIdentity({
+      macAddresses: ['AA:BB:CC:DD:EE:FF'],
+    });
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          accessToken: 'kolam-token',
+          id: 'user-1',
+          email: 'staff@example.test',
+          role: {key: 'staff'},
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: 'user-1',
+          email: 'staff@example.test',
+          access_inventory: true,
+          role: {key: 'staff'},
+        }),
+      );
+
+    await signIn({
+      email: '  Staff@Example.TEST  ',
+      password: 'secret',
+      source: 'kolam',
+    });
+
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1].body))).toMatchObject({
+      email: 'staff@example.test',
+      password: 'secret',
+      source: 'inventory',
     });
   });
 

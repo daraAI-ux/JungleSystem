@@ -135,7 +135,8 @@ export function useKolamAuthController() {
   }, [authSource, authUser]);
 
   const handleSignIn = async (): Promise<AuthSession | null> => {
-    if (!authEmail || !authPassword) {
+    const email = authEmail.trim();
+    if (!email || !authPassword) {
       setAuthMessage('Email dan password wajib diisi.');
       return null;
     }
@@ -143,7 +144,7 @@ export function useKolamAuthController() {
     setIsSigningIn(true);
     try {
       const session = await signIn({
-        email: authEmail,
+        email,
         password: authPassword,
         source: authSource,
       });

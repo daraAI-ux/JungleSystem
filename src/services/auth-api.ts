@@ -149,12 +149,22 @@ export interface AuthSession {
 
 let activeAuthSource: AuthSource = getStoredAuthSource() ?? 'kolam';
 
+/** Selaras OTP + FE Electron: trim; email di-lower-case. Username tetap case-sensitive. */
+export function normalizeLoginIdentifier(value: string): string {
+  const trimmed = String(value ?? '').trim();
+  return trimmed.includes('@') ? trimmed.toLowerCase() : trimmed;
+}
+
 export async function signIn(body: SignInBody): Promise<AuthSession> {
   const authSource = getAuthSource(body.source ?? 'kolam');
+  const normalizedBody: SignInBody = {
+    ...body,
+    email: normalizeLoginIdentifier(body.email),
+  };
   const response =
     authSource.id === 'kolam'
-      ? await signInKolamDirect(body, authSource)
-      : await signInDirect(body, authSource);
+      ? await signInKolamDirect(normalizedBody, authSource)
+      : await signInDirect(normalizedBody, authSource);
 
   saveAuthToken(response.accessToken);
   saveAuthSource(authSource.id);
