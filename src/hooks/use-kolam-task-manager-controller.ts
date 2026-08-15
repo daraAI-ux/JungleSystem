@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { KolamAuthContext } from '../context/kolam-app-contexts';
 import {
   buildKolamTaskManagerKpi,
@@ -8,6 +8,7 @@ import {
   getKolamTaskManagerIdFromRoute,
   getKolamTaskManagerRouteMode,
   splitKolamTaskDueDateTime,
+  KOLAM_TASK_MANAGER_CREATE_ROUTE,
   KOLAM_TASK_MANAGER_RECURRING_ROUTE,
   KOLAM_TASK_MANAGER_ROOT,
   type KolamTaskCategoryBucket,
@@ -444,6 +445,7 @@ export function useKolamTaskManagerController({
   const [projectFilter, setProjectFilter] = useState('all');
   const [mineOnly, setMineOnly] = useState(false);
   const [recurringEnclosureOnly, setRecurringEnclosureOnly] = useState(false);
+  const createFormInitializedRef = useRef(false);
 
   useEffect(() => {
     if (
@@ -523,7 +525,8 @@ export function useKolamTaskManagerController({
       mode !== 'task-types' &&
       mode !== 'recurring' &&
       mode !== 'list' &&
-      mode !== 'detail'
+      mode !== 'detail' &&
+      mode !== 'create'
     ) {
       return;
     }
@@ -762,6 +765,28 @@ export function useKolamTaskManagerController({
   useEffect(() => {
     void loadTaskTypes();
   }, [loadTaskTypes]);
+
+  useEffect(() => {
+    if (mode !== 'create') {
+      createFormInitializedRef.current = false;
+      return;
+    }
+    if (createFormInitializedRef.current) return;
+    createFormInitializedRef.current = true;
+    setFormMode('new');
+    setEditingTaskId('');
+    setForm(
+      getDefaultTaskForm(
+        currentUserId || staffOptions[0]?.id || '',
+        categories[0]?.id ?? '',
+        projectFilter === 'all' ? '' : projectFilter,
+      ),
+    );
+    setFormError(null);
+    setError(null);
+    setStatusMessage(null);
+    setFormOpen(false);
+  }, [categories, currentUserId, mode, projectFilter, staffOptions]);
 
   const setFilterAndFirstPage = useCallback(
     <TValue,>(setter: (value: TValue) => void) =>
@@ -1056,8 +1081,16 @@ export function useKolamTaskManagerController({
     setFormError(null);
     setError(null);
     setStatusMessage(null);
-    setFormOpen(true);
-  }, [categories, currentUserId, isTaskAdmin, projectFilter, staffOptions]);
+    setFormOpen(false);
+    onRouteChange?.(KOLAM_TASK_MANAGER_CREATE_ROUTE);
+  }, [
+    categories,
+    currentUserId,
+    isTaskAdmin,
+    onRouteChange,
+    projectFilter,
+    staffOptions,
+  ]);
 
   const onEditTask = useCallback((task: KolamTaskManagerTask) => {
     if (!isTaskAdmin) return;
@@ -1170,7 +1203,10 @@ export function useKolamTaskManagerController({
   const onCloseForm = useCallback(() => {
     setFormOpen(false);
     setFormError(null);
-  }, []);
+    if (mode === 'create') {
+      onRouteChange?.(KOLAM_TASK_MANAGER_ROOT);
+    }
+  }, [mode, onRouteChange]);
 
   const onChangeForm = useCallback(
     (patch: Partial<KolamTaskManagerFormState>) => {
@@ -1239,7 +1275,11 @@ export function useKolamTaskManagerController({
       } else {
         await createKolamTaskManagerTask(payload);
         setStatusMessage('Tugas dibuat');
-        await refreshList();
+        if (mode === 'create') {
+          onRouteChange?.(KOLAM_TASK_MANAGER_ROOT);
+        } else {
+          await refreshList();
+        }
       }
       setFormOpen(false);
       return true;
@@ -1249,7 +1289,15 @@ export function useKolamTaskManagerController({
     } finally {
       setMutatingTaskId(null);
     }
-  }, [editingTaskId, form, formMode, mode, refreshDetail, refreshList]);
+  }, [
+    editingTaskId,
+    form,
+    formMode,
+    mode,
+    onRouteChange,
+    refreshDetail,
+    refreshList,
+  ]);
 
   const persistChecklist = useCallback(
     async (nextChecklist: KolamTaskManagerTask['checklist']) => {
@@ -1824,6 +1872,7 @@ export function useKolamTaskManagerController({
       mineOnly,
       canAccess,
       isTaskAdmin,
+      loadTaskTypes,
       mode,
       mutatingTaskId,
       onAddChecklistItem,

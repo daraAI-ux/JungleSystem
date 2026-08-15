@@ -173,6 +173,8 @@ export function KolamTaskManagerSurface({
           controller={controller}
           onRouteChange={onRouteChange}
         />
+      ) : controller.mode === 'create' ? (
+        <KolamTaskCreatePage controller={controller} />
       ) : controller.mode === 'detail' ? (
         <KolamTaskManagerDetail
           controller={controller}
@@ -2439,7 +2441,47 @@ function getTaskFormCategoryBucket(
   return null;
 }
 
-function KolamTaskFormModal({
+function KolamTaskCreatePage({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const saving = getTaskFormSaving(controller);
+
+  return (
+    <View style={styles.detailCard}>
+      <View style={styles.modalHeader}>
+        <Text numberOfLines={1} style={styles.modalTitle}>
+          Tugas baru
+        </Text>
+        <View style={styles.modalActions}>
+          <KolamCancelButton disabled={saving} onPress={controller.onCloseForm} />
+          <KolamSaveButton
+            disabled={saving}
+            label={saving ? 'Menyimpan...' : 'Simpan'}
+            onPress={() => {
+              void controller.onSaveForm();
+            }}
+          />
+        </View>
+      </View>
+
+      {controller.formError ? (
+        <KolamStatusBadge
+          intent="danger"
+          label={controller.formError}
+          numberOfLines={3}
+        />
+      ) : null}
+
+      <View style={styles.modalContent}>
+        <KolamTaskFormFields controller={controller} />
+      </View>
+    </View>
+  );
+}
+
+function KolamTaskFormFields({
   controller,
 }: {
   controller: KolamTaskManagerController;
@@ -2503,11 +2545,211 @@ function KolamTaskFormModal({
     })),
   ];
   const showCustomerField = taskFormShowsCustomerField(controller.form);
-  const saving =
+
+  return (
+    <>
+      <KolamTaskField label="Judul" required>
+        <KolamFormTextField
+          onChangeText={title => controller.onChangeForm({ title })}
+          placeholder="Judul"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={controller.form.title}
+        />
+      </KolamTaskField>
+
+      <KolamTaskField label="Deskripsi">
+        <KolamTipTapRichTextEditor
+          mentionOptions={mentionOptions}
+          onChangeText={description =>
+            controller.onChangeForm({ description })
+          }
+          placeholder="Spesifikasi tugas (bukan catatan aktivitas)... Ketik @ untuk tag user."
+          value={controller.form.description}
+        />
+      </KolamTaskField>
+
+      <View style={styles.formGrid}>
+        <KolamDropdownSelect
+          label="PIC"
+          onChange={assignedToId =>
+            controller.onChangeForm({ assignedToId })
+          }
+          options={staffOptions}
+          searchable
+          value={controller.form.assignedToId}
+        />
+        <KolamDropdownSelect
+          label="Dibantu"
+          onChange={assistedById =>
+            controller.onChangeForm({ assistedById })
+          }
+          options={assistedOptions}
+          searchable
+          value={controller.form.assistedById}
+        />
+        <KolamDropdownSelect
+          label="Kategori"
+          onChange={categoryId =>
+            controller.onChangeForm({ categoryId, taskTypeId: '' })
+          }
+          options={categoryOptions}
+          searchable
+          value={controller.form.categoryId}
+        />
+        <KolamDropdownSelect
+          label="Tipe task"
+          onChange={taskTypeId => controller.onChangeForm({ taskTypeId })}
+          options={taskTypeOptions}
+          searchable
+          value={controller.form.taskTypeId}
+        />
+        <KolamDropdownSelect
+          label="Proyek"
+          onChange={projectId =>
+            controller.onChangeForm({
+              customerId: taskFormShowsCustomerField({
+                ...controller.form,
+                projectId,
+              })
+                ? controller.form.customerId
+                : '',
+              projectId,
+              taskTypeId: '',
+            })
+          }
+          options={projectOptions}
+          searchable
+          value={controller.form.projectId}
+        />
+        {showCustomerField ? (
+          <KolamDropdownSelect
+            label="Customer"
+            onChange={customerId => controller.onChangeForm({ customerId })}
+            options={customerOptions}
+            searchable
+            value={controller.form.customerId}
+          />
+        ) : null}
+        <KolamTaskField label="Sale ID">
+          <KolamFormTextField
+            onChangeText={saleId =>
+              controller.onChangeForm({
+                customerId: taskFormShowsCustomerField({
+                  ...controller.form,
+                  saleId,
+                })
+                  ? controller.form.customerId
+                  : '',
+                saleId,
+                taskTypeId: '',
+              })
+            }
+            style={settingsWebFormStyles.settingsWebFormFieldValue}
+            value={controller.form.saleId}
+          />
+        </KolamTaskField>
+        <KolamTaskField label="Complaint ID">
+          <KolamFormTextField
+            onChangeText={complaintId =>
+              controller.onChangeForm({ complaintId })
+            }
+            style={settingsWebFormStyles.settingsWebFormFieldValue}
+            value={controller.form.complaintId}
+          />
+        </KolamTaskField>
+        <KolamTaskField label="Conversation ID">
+          <KolamFormTextField
+            onChangeText={conversationId =>
+              controller.onChangeForm({
+                customerId: taskFormShowsCustomerField({
+                  ...controller.form,
+                  conversationId,
+                })
+                  ? controller.form.customerId
+                  : '',
+                conversationId,
+                taskTypeId: '',
+              })
+            }
+            style={settingsWebFormStyles.settingsWebFormFieldValue}
+            value={controller.form.conversationId}
+          />
+        </KolamTaskField>
+        <KolamDropdownSelect
+          label="Status"
+          onChange={status =>
+            controller.onChangeForm({
+              status: status as typeof controller.form.status,
+            })
+          }
+          options={KOLAM_TASK_STATUS_OPTIONS.filter(
+            option => option.id !== 'all',
+          ).map(option => ({
+            label: option.label,
+            value: option.id,
+          }))}
+          value={controller.form.status}
+        />
+        <KolamDropdownSelect
+          label="Prioritas"
+          onChange={priority =>
+            controller.onChangeForm({
+              priority: priority as typeof controller.form.priority,
+            })
+          }
+          options={KOLAM_TASK_PRIORITY_OPTIONS.filter(
+            option => option.id !== 'all',
+          ).map(option => ({
+            label: option.label,
+            value: option.id,
+          }))}
+          value={controller.form.priority}
+        />
+        <KolamDateField
+          label="Due"
+          onChange={dueDate => controller.onChangeForm({ dueDate })}
+          value={controller.form.dueDate}
+        />
+        <KolamTaskField label="Jam batas">
+          <KolamFormTextField
+            onChangeText={dueTime => controller.onChangeForm({ dueTime })}
+            placeholder="23:59"
+            style={settingsWebFormStyles.settingsWebFormFieldValue}
+            value={controller.form.dueTime}
+          />
+        </KolamTaskField>
+        <View style={styles.formSwitchRow}>
+          <Text style={styles.cellText}>Urgent</Text>
+          <KolamSwitch
+            active={controller.form.urgent}
+            onPress={() =>
+              controller.onChangeForm({
+                urgent: !controller.form.urgent,
+              })
+            }
+          />
+        </View>
+      </View>
+    </>
+  );
+}
+
+function getTaskFormSaving(controller: KolamTaskManagerController) {
+  return (
     controller.mutatingTaskId === 'new' ||
     (controller.formMode === 'edit' &&
       controller.mutatingTaskId != null &&
-      controller.mutatingTaskId !== 'recurring');
+      controller.mutatingTaskId !== 'recurring')
+  );
+}
+
+function KolamTaskFormModal({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const saving =
+    controller.mode === 'create' ? false : getTaskFormSaving(controller);
 
   return (
     <Modal
@@ -2550,190 +2792,7 @@ function KolamTaskFormModal({
             contentContainerStyle={styles.modalContent}
             keyboardShouldPersistTaps="handled"
           >
-            <KolamTaskField label="Judul" required>
-              <KolamFormTextField
-                onChangeText={title => controller.onChangeForm({ title })}
-                placeholder="Judul"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={controller.form.title}
-              />
-            </KolamTaskField>
-
-            <KolamTaskField label="Deskripsi">
-              <KolamTipTapRichTextEditor
-                mentionOptions={mentionOptions}
-                onChangeText={description =>
-                  controller.onChangeForm({ description })
-                }
-                placeholder="Spesifikasi tugas (bukan catatan aktivitas)... Ketik @ untuk tag user."
-                value={controller.form.description}
-              />
-            </KolamTaskField>
-
-            <View style={styles.formGrid}>
-              <KolamDropdownSelect
-                label="PIC"
-                onChange={assignedToId =>
-                  controller.onChangeForm({ assignedToId })
-                }
-                options={staffOptions}
-                searchable
-                value={controller.form.assignedToId}
-              />
-              <KolamDropdownSelect
-                label="Dibantu"
-                onChange={assistedById =>
-                  controller.onChangeForm({ assistedById })
-                }
-                options={assistedOptions}
-                searchable
-                value={controller.form.assistedById}
-              />
-              <KolamDropdownSelect
-                label="Kategori"
-                onChange={categoryId =>
-                  controller.onChangeForm({ categoryId, taskTypeId: '' })
-                }
-                options={categoryOptions}
-                searchable
-                value={controller.form.categoryId}
-              />
-              <KolamDropdownSelect
-                label="Tipe task"
-                onChange={taskTypeId => controller.onChangeForm({ taskTypeId })}
-                options={taskTypeOptions}
-                searchable
-                value={controller.form.taskTypeId}
-              />
-              <KolamDropdownSelect
-                label="Proyek"
-                onChange={projectId =>
-                  controller.onChangeForm({
-                    customerId: taskFormShowsCustomerField({
-                      ...controller.form,
-                      projectId,
-                    })
-                      ? controller.form.customerId
-                      : '',
-                    projectId,
-                    taskTypeId: '',
-                  })
-                }
-                options={projectOptions}
-                searchable
-                value={controller.form.projectId}
-              />
-              {showCustomerField ? (
-                <KolamDropdownSelect
-                  label="Customer"
-                  onChange={customerId =>
-                    controller.onChangeForm({ customerId })
-                  }
-                  options={customerOptions}
-                  searchable
-                  value={controller.form.customerId}
-                />
-              ) : null}
-              <KolamTaskField label="Sale ID">
-                <KolamFormTextField
-                  onChangeText={saleId =>
-                    controller.onChangeForm({
-                      customerId: taskFormShowsCustomerField({
-                        ...controller.form,
-                        saleId,
-                      })
-                        ? controller.form.customerId
-                        : '',
-                      saleId,
-                      taskTypeId: '',
-                    })
-                  }
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={controller.form.saleId}
-                />
-              </KolamTaskField>
-              <KolamTaskField label="Complaint ID">
-                <KolamFormTextField
-                  onChangeText={complaintId =>
-                    controller.onChangeForm({ complaintId })
-                  }
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={controller.form.complaintId}
-                />
-              </KolamTaskField>
-              <KolamTaskField label="Conversation ID">
-                <KolamFormTextField
-                  onChangeText={conversationId =>
-                    controller.onChangeForm({
-                      customerId: taskFormShowsCustomerField({
-                        ...controller.form,
-                        conversationId,
-                      })
-                        ? controller.form.customerId
-                        : '',
-                      conversationId,
-                      taskTypeId: '',
-                    })
-                  }
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={controller.form.conversationId}
-                />
-              </KolamTaskField>
-              <KolamDropdownSelect
-                label="Status"
-                onChange={status =>
-                  controller.onChangeForm({
-                    status: status as typeof controller.form.status,
-                  })
-                }
-                options={KOLAM_TASK_STATUS_OPTIONS.filter(
-                  option => option.id !== 'all',
-                ).map(option => ({
-                  label: option.label,
-                  value: option.id,
-                }))}
-                value={controller.form.status}
-              />
-              <KolamDropdownSelect
-                label="Prioritas"
-                onChange={priority =>
-                  controller.onChangeForm({
-                    priority: priority as typeof controller.form.priority,
-                  })
-                }
-                options={KOLAM_TASK_PRIORITY_OPTIONS.filter(
-                  option => option.id !== 'all',
-                ).map(option => ({
-                  label: option.label,
-                  value: option.id,
-                }))}
-                value={controller.form.priority}
-              />
-              <KolamDateField
-                label="Due"
-                onChange={dueDate => controller.onChangeForm({ dueDate })}
-                value={controller.form.dueDate}
-              />
-              <KolamTaskField label="Jam batas">
-                <KolamFormTextField
-                  onChangeText={dueTime => controller.onChangeForm({ dueTime })}
-                  placeholder="23:59"
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={controller.form.dueTime}
-                />
-              </KolamTaskField>
-              <View style={styles.formSwitchRow}>
-                <Text style={styles.cellText}>Urgent</Text>
-                <KolamSwitch
-                  active={controller.form.urgent}
-                  onPress={() =>
-                    controller.onChangeForm({
-                      urgent: !controller.form.urgent,
-                    })
-                  }
-                />
-              </View>
-            </View>
+            <KolamTaskFormFields controller={controller} />
           </ScrollView>
         </View>
       </View>

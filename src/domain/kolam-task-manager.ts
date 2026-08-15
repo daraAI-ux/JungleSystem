@@ -1,6 +1,7 @@
 import type { KolamStatusBadgeIntent } from '../components/kolam-status-badge';
 
 export const KOLAM_TASK_MANAGER_ROOT = '/task-manager';
+export const KOLAM_TASK_MANAGER_CREATE_ROUTE = '/task-manager/create';
 export const KOLAM_TASK_MANAGER_RECURRING_ROUTE =
   '/task-manager/tugas-terjadwal';
 export const KOLAM_TASK_MANAGER_CATEGORY_SETTINGS_ROUTE =
@@ -10,6 +11,7 @@ export const KOLAM_TASK_MANAGER_TASK_TYPES_ROUTE =
 
 export type KolamTaskManagerSurfaceMode =
   | 'categories'
+  | 'create'
   | 'detail'
   | 'list'
   | 'recurring'
@@ -485,6 +487,7 @@ export function getKolamTaskManagerRouteMode(
   route: string,
 ): KolamTaskManagerSurfaceMode {
   const path = normalizeTaskManagerRoutePath(route);
+  if (path === KOLAM_TASK_MANAGER_CREATE_ROUTE) return 'create';
   if (path === KOLAM_TASK_MANAGER_RECURRING_ROUTE) return 'recurring';
   if (path === KOLAM_TASK_MANAGER_CATEGORY_SETTINGS_ROUTE) return 'categories';
   if (path === KOLAM_TASK_MANAGER_TASK_TYPES_ROUTE) return 'task-types';
