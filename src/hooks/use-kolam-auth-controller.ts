@@ -20,8 +20,18 @@ import {
   type StaffOtpLoginConfig,
 } from '../services/auth-api';
 
-const INITIAL_AUTH_MESSAGE =
+export const INITIAL_AUTH_MESSAGE =
   'Mode server existing siap. Seed hanya fallback UI/test.';
+
+/** Seed/runtime hint — jangan tampilkan di layar login JungleSystem. */
+export function isAuthLoginSeedMessage(message: string): boolean {
+  const text = message.trim();
+  return (
+    text.length === 0 ||
+    text === INITIAL_AUTH_MESSAGE ||
+    text.startsWith('Mode server existing siap')
+  );
+}
 
 export type KolamAuthLoginMode = 'password' | 'otp';
 export type KolamAuthOtpStep = 'email' | 'code';

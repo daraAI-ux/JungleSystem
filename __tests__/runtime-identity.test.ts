@@ -35,7 +35,29 @@ describe('runtime identity surface', () => {
     expect(getRuntimeIdentityItems()).toContainEqual(
       expect.objectContaining({
         id: 'device-identity',
+        value: 'MAC missing',
+        detail: 'native MAC unavailable',
+        status: 'partial',
+      }),
+    );
+
+    expect(
+      getRuntimeIdentityItems({deviceIdentityStatus: 'pending'}),
+    ).toContainEqual(
+      expect.objectContaining({
+        id: 'device-identity',
         value: 'Pending native MAC',
+        status: 'partial',
+      }),
+    );
+
+    expect(
+      getRuntimeIdentityItems({deviceIdentityStatus: 'missing'}),
+    ).toContainEqual(
+      expect.objectContaining({
+        id: 'device-identity',
+        value: 'MAC missing',
+        detail: 'native MAC unavailable',
         status: 'partial',
       }),
     );

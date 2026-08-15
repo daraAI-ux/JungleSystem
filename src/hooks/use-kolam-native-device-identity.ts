@@ -4,7 +4,7 @@ import {bootstrapNativeDeviceIdentity} from '../services/native-device-identity'
 
 export function useKolamNativeDeviceIdentity(): RuntimeDeviceIdentityStatus {
   const [status, setStatus] =
-    useState<RuntimeDeviceIdentityStatus>('missing');
+    useState<RuntimeDeviceIdentityStatus>('pending');
 
   useEffect(() => {
     let active = true;

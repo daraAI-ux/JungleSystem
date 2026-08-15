@@ -24,6 +24,8 @@ import {useKolamCheckoutController} from '../hooks/use-kolam-checkout-controller
 import {useKolamCustomerController} from '../hooks/use-kolam-customer-controller';
 import {useKolamNavigationController} from '../hooks/use-kolam-navigation-controller';
 import {useKolamNativeDeviceIdentity} from '../hooks/use-kolam-native-device-identity';
+import {bootstrapNativeDeviceIdentity} from '../services/native-device-identity';
+import type {RuntimeDeviceIdentityStatus} from '../domain/runtime-identity';
 import {useKolamNotificationCenterController} from '../hooks/use-kolam-notification-center-controller';
 import {useKolamPosDatasetMutationController} from '../hooks/use-kolam-pos-dataset-mutation-controller';
 import {useKolamRuntimeActionController} from '../hooks/use-kolam-runtime-action-controller';
@@ -274,9 +276,12 @@ export function KolamAppStateProvider({
       onReconcileDataset: reconcileCheckoutWithDataset,
       onRefreshUnifiedDataset: refreshUnifiedDataset,
       onSignIn: async () => {
-        if (authSource === 'kolam' && deviceIdentityStatus === 'missing') {
-          setAuthMessage(getKolamLoginDeviceIdentityMessage());
-          return null;
+        if (authSource === 'kolam') {
+          const identityStatus = await bootstrapNativeDeviceIdentity();
+          if (identityStatus !== 'signed') {
+            setAuthMessage(getKolamLoginDeviceIdentityMessage(identityStatus));
+            return null;
+          }
         }
 
         const session = await signInAuth();
@@ -292,9 +297,12 @@ export function KolamAppStateProvider({
     });
 
   const handleVerifyOtp = React.useCallback(async () => {
-    if (authSource === 'kolam' && deviceIdentityStatus === 'missing') {
-      setAuthMessage(getKolamLoginDeviceIdentityMessage());
-      return;
+    if (authSource === 'kolam') {
+      const identityStatus = await bootstrapNativeDeviceIdentity();
+      if (identityStatus !== 'signed') {
+        setAuthMessage(getKolamLoginDeviceIdentityMessage(identityStatus));
+        return;
+      }
     }
 
     const session = await verifyOtpAuth();
@@ -320,7 +328,6 @@ export function KolamAppStateProvider({
     }
   }, [
     authSource,
-    deviceIdentityStatus,
     reconcileCheckoutWithDataset,
     refreshUnifiedDataset,
     setAuthMessage,
@@ -955,8 +962,18 @@ export function KolamAppStateProvider({
   );
 }
 
-function getKolamLoginDeviceIdentityMessage(): string {
-  return 'Login Kolam belum dikirim: native runtime belum membaca MAC address perangkat.';
+function getKolamLoginDeviceIdentityMessage(
+  status: RuntimeDeviceIdentityStatus,
+): string {
+  if (status === 'pending') {
+    return 'Menyiapkan identitas perangkat.';
+  }
+
+  if (status === 'mac-only') {
+    return 'Signature perangkat belum siap. Pasang ulang via Setup.exe.';
+  }
+
+  return 'MAC perangkat belum terbaca.';
 }
 
 function getCacheOwnerId(user: {id?: string; email?: string} | null) {

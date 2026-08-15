@@ -1,4 +1,6 @@
 import React from 'react';
+import {Text} from 'react-native';
+import {isAuthLoginSeedMessage} from '../hooks/use-kolam-auth-controller';
 import {KolamAuthControls} from './kolam-auth-controls';
 import {KolamAuthIdentity} from './kolam-auth-identity';
 import {authPanelStyles as styles} from './kolam-auth-panel-styles';
@@ -36,6 +38,8 @@ export function KolamAuthPanel({
   variant = 'full',
 }: KolamAuthPanelProps & {variant?: 'full' | 'login'}) {
   const compactLogin = variant === 'login';
+  const loginMessage =
+    compactLogin && !isAuthLoginSeedMessage(authMessage) ? authMessage : null;
 
   return (
     <KolamPanelFrame
@@ -75,6 +79,14 @@ export function KolamAuthPanel({
         onVerifyOtp={onVerifyOtp}
         variant={variant}
       />
+      {loginMessage ? (
+        <Text
+          accessibilityLiveRegion="polite"
+          accessibilityRole="alert"
+          style={styles.authMessageLogin}>
+          {loginMessage}
+        </Text>
+      ) : null}
     </KolamPanelFrame>
   );
 }

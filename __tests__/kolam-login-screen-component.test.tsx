@@ -91,6 +91,7 @@ describe('KolamLoginScreen', () => {
       'Logout',
       'Sinkron',
       'Keluar',
+      'Mode server existing siap.',
     ]);
 
     await ReactTestRenderer.act(async () => {
@@ -100,6 +101,50 @@ describe('KolamLoginScreen', () => {
     });
 
     expect(onLogin).toHaveBeenCalled();
+  });
+
+  it('shows login failure messages on the compact login panel', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamLoginScreen
+            auth={{
+              accessScope: {am: false, kolam: false, pos: false},
+              amApiBaseUrl: 'https://frogs.dunia-anura.com/api',
+              authEmail: '',
+              authMessage:
+                'Signature perangkat belum siap. Pasang ulang via Setup.exe.',
+              authPassword: '',
+              authSource: 'kolam',
+              authSourceHint: 'Inventory/Kolam access_inventory.',
+              authSources,
+              displayName: 'Belum login',
+              isSigningIn: false,
+              onAmApiBaseUrlChange: () => undefined,
+              onAuthEmailChange: () => undefined,
+              onAuthPasswordChange: () => undefined,
+              onAuthSourceChange: () => undefined,
+              onLogin: () => undefined,
+              onLogout: () => undefined,
+              onSync: () => undefined,
+            }}
+            deviceIdentityStatus="mac-only"
+            syncStatus={{
+              loading: false,
+              message: 'Sync: POS seed, Kolam seed, AM disabled.',
+            }}
+          />
+        </View>,
+      );
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Signature perangkat belum siap. Pasang ulang via Setup.exe.',
+      ]),
+    );
   });
 
   it('reveals and hides the login password with the eye button', async () => {

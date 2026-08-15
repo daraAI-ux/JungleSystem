@@ -57,6 +57,13 @@ export const authPanelStyles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
   },
+  authMessageLogin: {
+    marginTop: 2,
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
   authAccess: {
     marginTop: 4,
     color: V.colors.fg,

@@ -6,7 +6,11 @@ import {
 } from './runtime-backend-contract';
 
 export type RuntimeIdentityStatus = 'ready' | 'partial' | 'blocked';
-export type RuntimeDeviceIdentityStatus = 'missing' | 'mac-only' | 'signed';
+export type RuntimeDeviceIdentityStatus =
+  | 'pending'
+  | 'missing'
+  | 'mac-only'
+  | 'signed';
 
 export type RuntimeIdentityItem = {
   id: string;
@@ -100,6 +104,10 @@ function getDeviceIdentityValue(status: RuntimeDeviceIdentityStatus): string {
     return 'MAC attached';
   }
 
+  if (status === 'missing') {
+    return 'MAC missing';
+  }
+
   return 'Pending native MAC';
 }
 
@@ -110,6 +118,10 @@ function getDeviceIdentityDetail(status: RuntimeDeviceIdentityStatus): string {
 
   if (status === 'mac-only') {
     return 'x-device-mac attached; signature pending';
+  }
+
+  if (status === 'missing') {
+    return 'native MAC unavailable';
   }
 
   return 'x-device-mac + signature slot';
