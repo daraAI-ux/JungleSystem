@@ -6510,11 +6510,15 @@ function KolamChatLinkifiedText({
 }) {
   const parts = splitChatLinkText(text);
   if (parts.length === 1 && parts[0]?.type === 'text') {
-    return <Text style={[styles.messageBody, style]}>{text}</Text>;
+    return (
+      <Text selectable style={[styles.messageBody, style]}>
+        {text}
+      </Text>
+    );
   }
 
   return (
-    <Text style={[styles.messageBody, style]}>
+    <Text selectable style={[styles.messageBody, style]}>
       {parts.map((part, index) => {
         if (part.type === 'url') {
           return (
@@ -6578,12 +6582,16 @@ function KolamTeamMessageBody({
 function KolamTeamMentionText({ body }: { body: string }) {
   const parts = splitTeamChatMentionText(body);
   if (parts.length === 1 && parts[0]?.type === 'text') {
-    return <Text style={styles.messageBodyText}>{body}</Text>;
+    return (
+      <Text selectable style={styles.messageBodyText}>
+        {body}
+      </Text>
+    );
   }
 
   // Nested Text (not row+wrap Views) keeps large bubbles stable while wrapping.
   return (
-    <Text style={styles.messageBodyText}>
+    <Text selectable style={styles.messageBodyText}>
       {parts.map((part, index) => {
         if (part.type === 'url') {
           return (
