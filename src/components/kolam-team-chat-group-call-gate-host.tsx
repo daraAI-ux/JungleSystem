@@ -4,6 +4,7 @@ import {
   useKolamAuthContext,
   useKolamNavigationContext,
 } from '../context/kolam-app-contexts';
+import {formatKolamTeamChatCallMediaStatusLabel} from '../domain/kolam-team-chat-call';
 import {useKolamTeamChatGroupCallGate} from '../hooks/use-kolam-team-chat-group-call-gate';
 import {KolamButton} from './kolam-button';
 import {KolamModalDialog} from './kolam-modal-dialog';
@@ -11,7 +12,7 @@ import {KolamPressable} from './kolam-pressable';
 
 /**
  * Global group-call invite overlay (SoT `TeamChatGroupCallGate`).
- * Signaling-only — no WebRTC. Ringtone loops while `isRingingForMe`.
+ * Signaling + LiveKit media after join; pill shows media connection status.
  */
 export function KolamTeamChatGroupCallGateHost() {
   const {authUser} = useKolamAuthContext();
@@ -36,6 +37,17 @@ export function KolamTeamChatGroupCallGateHost() {
     }
     handleDashboardRouteContext(`/team-chat?room=${encodeURIComponent(roomId)}`);
   };
+
+  const mediaLabel = formatKolamTeamChatCallMediaStatusLabel(
+    gate.mediaConnection,
+  );
+  const pillStatusParts = [
+    `Call · ${gate.online} online`,
+    gate.liveCall.status === 'ringing' && gate.countdown > 0
+      ? `${gate.countdown}s`
+      : null,
+    mediaLabel,
+  ].filter(Boolean);
 
   return (
     <>
@@ -86,12 +98,18 @@ export function KolamTeamChatGroupCallGateHost() {
               onPress={openRoom}
               style={styles.pillLink}
             >
-              <View style={styles.pillDot} />
+              <View
+                style={[
+                  styles.pillDot,
+                  gate.mediaConnection.status === 'failed'
+                    ? styles.pillDotFailed
+                    : gate.mediaConnection.status === 'connected'
+                      ? styles.pillDotConnected
+                      : null,
+                ]}
+              />
               <Text numberOfLines={1} style={styles.pillText}>
-                Call · {gate.online} online
-                {gate.liveCall.status === 'ringing' && gate.countdown > 0
-                  ? ` · ${gate.countdown}s`
-                  : ''}
+                {pillStatusParts.join(' · ')}
               </Text>
             </KolamPressable>
             {gate.canEnd ? (
@@ -146,6 +164,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     height: 8,
     width: 8,
+  },
+  pillDotConnected: {
+    backgroundColor: '#4ade80',
+  },
+  pillDotFailed: {
+    backgroundColor: '#f87171',
   },
   pillText: {
     color: '#a9d4b7',

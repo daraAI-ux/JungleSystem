@@ -1,3 +1,4 @@
+import {formatKolamTeamChatCallMediaStatusLabel} from '../src/domain/kolam-team-chat-call';
 import {createKolamTeamChatCallMediaSession} from '../src/services/kolam-team-chat-call-media-session';
 import type {KolamTeamChatCallMediaToken} from '../src/services/kolam-api';
 
@@ -18,7 +19,30 @@ describe('kolam team chat call media session', () => {
     status: 'active' as const,
   };
 
-  it('does not request a token when the native bridge is missing', async () => {
+  it('formats short media status labels for the call strip', () => {
+    expect(formatKolamTeamChatCallMediaStatusLabel({status: 'idle', callId: null})).toBeNull();
+    expect(
+      formatKolamTeamChatCallMediaStatusLabel({
+        status: 'connecting',
+        callId: 'call-1',
+      }),
+    ).toBe('Menghubungkan');
+    expect(
+      formatKolamTeamChatCallMediaStatusLabel({
+        status: 'connected',
+        callId: 'call-1',
+      }),
+    ).toBe('Terhubung');
+    expect(
+      formatKolamTeamChatCallMediaStatusLabel({
+        status: 'failed',
+        callId: 'call-1',
+        reason: 'Media native tidak tersedia',
+      }),
+    ).toBe('Media native tidak tersedia');
+  });
+
+  it('fails visibly when the native bridge is missing', async () => {
     const requestMediaToken = jest.fn();
     const session = createKolamTeamChatCallMediaSession({
       nativeModules: {},
@@ -26,7 +50,7 @@ describe('kolam team chat call media session', () => {
       requestMediaToken,
     });
 
-    await session.startAfterJoin({
+    const state = await session.startAfterJoin({
       call: joinedCall,
       config: readyConfig,
       userId: 'me',
@@ -34,6 +58,11 @@ describe('kolam team chat call media session', () => {
 
     expect(requestMediaToken).not.toHaveBeenCalled();
     expect(session.getActiveCallId()).toBeNull();
+    expect(state).toEqual({
+      callId: 'call-1',
+      reason: 'Media native tidak tersedia',
+      status: 'failed',
+    });
   });
 
   it('connects with media-token and applies mutedByAdmin', async () => {
@@ -48,6 +77,7 @@ describe('kolam team chat call media session', () => {
       expiresAt: '2026-08-14T12:02:00.000Z',
     };
     const requestMediaToken = jest.fn(async () => token);
+    const onStatus = jest.fn();
 
     const session = createKolamTeamChatCallMediaSession({
       nativeModules: {
@@ -60,8 +90,9 @@ describe('kolam team chat call media session', () => {
       platformOS: 'windows',
       requestMediaToken,
     });
+    const unsubscribe = session.subscribe(onStatus);
 
-    await session.startAfterJoin({
+    const state = await session.startAfterJoin({
       call: {
         ...joinedCall,
         participants: [
@@ -83,6 +114,13 @@ describe('kolam team chat call media session', () => {
     });
     expect(setMicEnabled).toHaveBeenCalledWith(false);
     expect(session.getActiveCallId()).toBe('call-1');
+    expect(state.status).toBe('connected');
+    expect(onStatus).toHaveBeenCalledWith(
+      expect.objectContaining({status: 'connecting', callId: 'call-1'}),
+    );
+    expect(onStatus).toHaveBeenCalledWith(
+      expect.objectContaining({status: 'connected', callId: 'call-1'}),
+    );
 
     await session.onCallUpdated({
       call: {
@@ -98,6 +136,42 @@ describe('kolam team chat call media session', () => {
     await session.stop();
     expect(disconnectRoom).toHaveBeenCalled();
     expect(session.getActiveCallId()).toBeNull();
+    expect(session.getConnectionState().status).toBe('idle');
+    unsubscribe();
+  });
+
+  it('surfaces connect failures instead of staying silent', async () => {
+    const connectRoom = jest.fn(async () => ({
+      ok: false,
+      reason: 'livekit_unavailable',
+    }));
+    const requestMediaToken = jest.fn(async () => ({
+      url: 'wss://lk.example',
+      token: 'jwt',
+      roomName: 'tc-call-call-1',
+      identity: 'me',
+      expiresAt: '2026-08-14T12:02:00.000Z',
+    }));
+
+    const session = createKolamTeamChatCallMediaSession({
+      nativeModules: {
+        KolamWindowsLiveKitRoom: {connectRoom},
+      },
+      platformOS: 'windows',
+      requestMediaToken,
+    });
+
+    await expect(
+      session.startAfterJoin({
+        call: joinedCall,
+        config: readyConfig,
+        userId: 'me',
+      }),
+    ).resolves.toEqual({
+      callId: 'call-1',
+      reason: 'livekit_unavailable',
+      status: 'failed',
+    });
   });
 
   it('skips media-token when media.enabled is false', async () => {
@@ -111,7 +185,7 @@ describe('kolam team chat call media session', () => {
       requestMediaToken,
     });
 
-    await session.startAfterJoin({
+    const state = await session.startAfterJoin({
       call: joinedCall,
       config: {enabled: true, media: {enabled: false, url: 'wss://lk.example'}},
       userId: 'me',
@@ -119,5 +193,10 @@ describe('kolam team chat call media session', () => {
 
     expect(requestMediaToken).not.toHaveBeenCalled();
     expect(connectRoom).not.toHaveBeenCalled();
+    expect(state).toEqual({
+      callId: 'call-1',
+      reason: 'Media call belum dikonfigurasi',
+      status: 'failed',
+    });
   });
 });

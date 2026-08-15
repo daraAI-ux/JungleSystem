@@ -82,11 +82,16 @@ export function useKolamTeamChatGroupCallGate({
   const liveCallRef = useRef<KolamTeamChatCall | null>(null);
   const ringtone = getSharedKolamGroupCallRingtoneController();
   const mediaSession = getSharedKolamTeamChatCallMediaSession();
+  const [mediaConnection, setMediaConnection] = useState(() =>
+    mediaSession.getConnectionState(),
+  );
   const soundSettings = useKolamNotificationSoundSettings({
     enabled: Boolean(enabled && userId),
   });
 
   liveCallRef.current = liveCall;
+
+  useEffect(() => mediaSession.subscribe(setMediaConnection), [mediaSession]);
 
   useEffect(() => {
     ringtone.setWebSetting(
@@ -254,11 +259,14 @@ export function useKolamTeamChatGroupCallGate({
         stopSharedKolamGroupCallRingtone();
         mergeCall(call.status === 'ended' ? null : call);
         if (options?.forceMyStatus === 'joined' && call.status !== 'ended') {
-          void mediaSession.startAfterJoin({
+          const mediaState = await mediaSession.startAfterJoin({
             call,
             config: callConfig,
             userId,
           });
+          if (mediaState.status === 'failed') {
+            setErrorMessage(mediaState.reason || 'Gagal media');
+          }
         }
       } catch (error) {
         setErrorMessage(
@@ -318,7 +326,8 @@ export function useKolamTeamChatGroupCallGate({
     featureEnabled,
     joinCall,
     liveCall: liveCall && liveCall.status !== 'ended' ? liveCall : null,
-    /** LiveKit ready — native bridge (Batch B) may connect; do not call media-token if false. */
+    mediaConnection,
+    /** LiveKit ready — native bridge may connect; do not call media-token if false. */
     mediaReady: isKolamTeamChatCallMediaReady(callConfig),
     online,
     ringingMe,

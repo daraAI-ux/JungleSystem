@@ -70,6 +70,7 @@ import {
   isKolamTeamChatCallMediaReady,
   isKolamTeamChatCallWaitingRingbackForMe,
   withKolamTeamChatCallMyParticipantStatus,
+  type KolamTeamChatCallMediaConnectionState,
 } from '../domain/kolam-team-chat-call';
 import {buildKolamYoutubeContent} from '../domain/kolam-chat-youtube';
 import { copyTextToClipboard } from '../lib/native-clipboard';
@@ -149,6 +150,7 @@ export interface KolamChatRailDetailState {
   callConfig: KolamTeamChatCallConfig;
   /** LiveKit ready — native bridge may connect; never request media-token if false. */
   mediaReady: boolean;
+  mediaConnection: KolamTeamChatCallMediaConnectionState;
   callErrorMessage?: string;
   callNoticeMessage?: string;
   conversation: KolamChatConversation | null;
@@ -240,6 +242,9 @@ export function useKolamChatRailDetail({
   const [callNoticeMessage, setCallNoticeMessage] = useState<
     string | undefined
   >();
+  const [mediaConnection, setMediaConnection] = useState(
+    () => getSharedKolamTeamChatCallMediaSession().getConnectionState(),
+  );
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [purgingMessages, setPurgingMessages] = useState(false);
   const [presence, setPresence] = useState<KolamTeamChatPresence>(
@@ -249,6 +254,11 @@ export function useKolamChatRailDetail({
     useState<KolamChatRailTeamRoomMetadata>(EMPTY_TEAM_ROOM_METADATA);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshGenerationRef = useRef(0);
+
+  useEffect(
+    () => getSharedKolamTeamChatCallMediaSession().subscribe(setMediaConnection),
+    [],
+  );
 
   const refresh = useCallback(
     async (options?: KolamChatRailRefreshOptions) => {
@@ -1067,11 +1077,14 @@ export function useKolamChatRailDetail({
         setActiveCall(call);
         const mediaSession = getSharedKolamTeamChatCallMediaSession();
         if (options?.startMediaAfterJoin) {
-          void mediaSession.startAfterJoin({
+          const mediaState = await mediaSession.startAfterJoin({
             call,
             config: callConfig,
             userId: currentUserId,
           });
+          if (mediaState.status === 'failed') {
+            setCallErrorMessage(mediaState.reason || 'Gagal media');
+          }
         } else {
           void mediaSession.onCallUpdated({
             call,
@@ -1248,6 +1261,7 @@ export function useKolamChatRailDetail({
     callBusy,
     callConfig,
     callErrorMessage,
+    mediaConnection,
     mediaReady: isKolamTeamChatCallMediaReady(callConfig),
     callNoticeMessage,
     conversation,

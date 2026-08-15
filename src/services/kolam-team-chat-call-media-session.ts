@@ -1,7 +1,10 @@
 import {
   canRequestKolamTeamChatCallMediaToken,
   getKolamTeamChatCallMyParticipant,
+  getKolamTeamChatCallMyParticipantStatus,
+  isKolamTeamChatCallMediaReady,
   isKolamTeamChatCallParticipantMuted,
+  type KolamTeamChatCallMediaConnectionState,
 } from '../domain/kolam-team-chat-call';
 import type {
   KolamTeamChatCall,
@@ -18,18 +21,56 @@ export type KolamTeamChatCallMediaSessionOptions =
     requestMediaToken?: typeof requestKolamTeamChatCallMediaTokenIfReady;
   };
 
+export type {
+  KolamTeamChatCallMediaConnectionState,
+  KolamTeamChatCallMediaConnectionStatus,
+} from '../domain/kolam-team-chat-call';
+
+type MediaConnectionListener = (
+  state: KolamTeamChatCallMediaConnectionState,
+) => void;
+
+const IDLE_CONNECTION: KolamTeamChatCallMediaConnectionState = {
+  callId: null,
+  status: 'idle',
+};
+
 /**
  * JS session for LiveKit voice after signaling join.
- * Native C++ room (Batch B1+) does the actual WebRTC; until linked this is a no-op.
+ * Native C++ room does the actual WebRTC when the bridge is linked.
  */
 export function createKolamTeamChatCallMediaSession(
   options: KolamTeamChatCallMediaSessionOptions = {},
 ) {
   let activeCallId: string | null = null;
   let starting = false;
+  let connectionState: KolamTeamChatCallMediaConnectionState = IDLE_CONNECTION;
+  const listeners = new Set<MediaConnectionListener>();
 
   const requestMediaToken =
     options.requestMediaToken ?? requestKolamTeamChatCallMediaTokenIfReady;
+
+  function emitConnectionState(
+    next: KolamTeamChatCallMediaConnectionState,
+  ): KolamTeamChatCallMediaConnectionState {
+    connectionState = next;
+    listeners.forEach(listener => {
+      listener(connectionState);
+    });
+    return connectionState;
+  }
+
+  function getConnectionState(): KolamTeamChatCallMediaConnectionState {
+    return connectionState;
+  }
+
+  function subscribe(listener: MediaConnectionListener): () => void {
+    listeners.add(listener);
+    listener(connectionState);
+    return () => {
+      listeners.delete(listener);
+    };
+  }
 
   async function syncMicFromCall(
     call: KolamTeamChatCall | null | undefined,
@@ -47,6 +88,7 @@ export function createKolamTeamChatCallMediaSession(
 
   async function stop(): Promise<void> {
     activeCallId = null;
+    emitConnectionState(IDLE_CONNECTION);
     const bridge = getKolamLiveKitNativeBridge(options);
     if (!bridge?.disconnectRoom) {
       return;
@@ -66,9 +108,26 @@ export function createKolamTeamChatCallMediaSession(
     call: KolamTeamChatCall | null | undefined;
     config: KolamTeamChatCallConfig | null | undefined;
     userId?: string | null;
-  }): Promise<void> {
+  }): Promise<KolamTeamChatCallMediaConnectionState> {
     if (!call?._id || starting) {
-      return;
+      return connectionState;
+    }
+
+    if (activeCallId === call._id && connectionState.status === 'connected') {
+      return connectionState;
+    }
+
+    const myStatus = getKolamTeamChatCallMyParticipantStatus(call, userId);
+    if (myStatus !== 'joined') {
+      return connectionState;
+    }
+
+    if (!isKolamTeamChatCallMediaReady(config)) {
+      return emitConnectionState({
+        callId: call._id,
+        reason: 'Media call belum dikonfigurasi',
+        status: 'failed',
+      });
     }
 
     if (
@@ -78,16 +137,24 @@ export function createKolamTeamChatCallMediaSession(
         userId,
       })
     ) {
-      return;
+      return connectionState;
     }
 
     const bridge = getKolamLiveKitNativeBridge(options);
     if (!bridge?.connectRoom) {
-      // Native LiveKit room not linked yet (Batch B1+).
-      return;
+      return emitConnectionState({
+        callId: call._id,
+        reason: 'Media native tidak tersedia',
+        status: 'failed',
+      });
     }
 
     starting = true;
+    emitConnectionState({
+      callId: call._id,
+      status: 'connecting',
+    });
+
     try {
       const mediaToken = await requestMediaToken({
         call,
@@ -96,7 +163,12 @@ export function createKolamTeamChatCallMediaSession(
         userId,
       });
       if (!mediaToken?.token || !mediaToken.url) {
-        return;
+        activeCallId = null;
+        return emitConnectionState({
+          callId: call._id,
+          reason: 'Token media gagal',
+          status: 'failed',
+        });
       }
 
       const connectResult = await bridge.connectRoom({
@@ -107,12 +179,29 @@ export function createKolamTeamChatCallMediaSession(
       });
       if (connectResult && connectResult.ok === false) {
         activeCallId = null;
-        return;
+        const reason = String(connectResult.reason || '').trim();
+        return emitConnectionState({
+          callId: call._id,
+          reason: reason || 'Gagal terhubung',
+          status: 'failed',
+        });
       }
       activeCallId = call._id;
       await syncMicFromCall(call, userId);
-    } catch {
+      return emitConnectionState({
+        callId: call._id,
+        status: 'connected',
+      });
+    } catch (error) {
       activeCallId = null;
+      return emitConnectionState({
+        callId: call._id,
+        reason:
+          error instanceof Error && error.message.trim()
+            ? error.message.trim()
+            : 'Gagal media',
+        status: 'failed',
+      });
     } finally {
       starting = false;
     }
@@ -139,9 +228,11 @@ export function createKolamTeamChatCallMediaSession(
 
   return {
     getActiveCallId: () => activeCallId,
+    getConnectionState,
     onCallUpdated,
     startAfterJoin,
     stop,
+    subscribe,
   };
 }
 

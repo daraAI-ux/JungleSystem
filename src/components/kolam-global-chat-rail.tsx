@@ -53,6 +53,7 @@ import {
   canManageKolamTeamChatCall,
   canMuteKolamTeamChatCallParticipants,
   formatKolamTeamChatCallOnlineLabel,
+  formatKolamTeamChatCallMediaStatusLabel,
   formatKolamTeamChatCallParticipantRowLabel,
   getKolamTeamChatCallParticipantUserId,
   isKolamTeamChatCallParticipantMuted,
@@ -7885,7 +7886,10 @@ function KolamChatCallStrip({
       })
     : null;
   const metaLabel =
-    detail.callErrorMessage || detail.callNoticeMessage || null;
+    formatKolamTeamChatCallMediaStatusLabel(detail.mediaConnection) ||
+    detail.callErrorMessage ||
+    detail.callNoticeMessage ||
+    null;
   const showCallCopy = Boolean(primaryLabel || metaLabel);
   const myParticipant = activeCall?.participants?.find(
     participant => getCallParticipantUserId(participant) === currentUserId,

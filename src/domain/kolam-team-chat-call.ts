@@ -332,6 +332,38 @@ export function formatKolamTeamChatCallOnlineLabel(
   return `Call · ${online} online`;
 }
 
+export type KolamTeamChatCallMediaConnectionStatus =
+  | 'idle'
+  | 'connecting'
+  | 'connected'
+  | 'failed';
+
+export type KolamTeamChatCallMediaConnectionState = {
+  callId: string | null;
+  reason?: string;
+  status: KolamTeamChatCallMediaConnectionStatus;
+};
+
+/** Short media status for call strip / gate pill (signaling label stays separate). */
+export function formatKolamTeamChatCallMediaStatusLabel(
+  state: KolamTeamChatCallMediaConnectionState | null | undefined,
+): string | null {
+  if (!state || state.status === 'idle') {
+    return null;
+  }
+
+  if (state.status === 'connecting') {
+    return 'Menghubungkan';
+  }
+
+  if (state.status === 'connected') {
+    return 'Terhubung';
+  }
+
+  const reason = state.reason?.trim();
+  return reason || 'Gagal media';
+}
+
 export function formatKolamTeamChatCallHandoverNotice(token: string): string {
   const trimmed = token.trim();
   if (!trimmed) {
