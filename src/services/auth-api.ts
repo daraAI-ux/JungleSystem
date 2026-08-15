@@ -199,15 +199,25 @@ export async function getStaffOtpLoginConfig(): Promise<StaffOtpLoginConfig> {
     notifyOnAuthFailure: false,
   });
 
-  const data: StaffOtpLoginConfig = response.data ?? {
-    enabled: Boolean(response.enabled),
-    otpExpireMinutes: Number(response.otpExpireMinutes) || 10,
-    resendCooldownSeconds: Number(response.resendCooldownSeconds) || 60,
-  };
+  const nested =
+    response.data && typeof response.data === 'object' ? response.data : null;
+  const enabledSource =
+    nested && typeof nested.enabled === 'boolean'
+      ? nested.enabled
+      : response.enabled;
+  const expireSource =
+    nested && nested.otpExpireMinutes != null
+      ? nested.otpExpireMinutes
+      : response.otpExpireMinutes;
+  const resendSource =
+    nested && nested.resendCooldownSeconds != null
+      ? nested.resendCooldownSeconds
+      : response.resendCooldownSeconds;
+
   return {
-    enabled: Boolean(data.enabled),
-    otpExpireMinutes: Number(data.otpExpireMinutes) || 10,
-    resendCooldownSeconds: Number(data.resendCooldownSeconds) || 60,
+    enabled: Boolean(enabledSource),
+    otpExpireMinutes: Number(expireSource) || 10,
+    resendCooldownSeconds: Number(resendSource) || 60,
   };
 }
 

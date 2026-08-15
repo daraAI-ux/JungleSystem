@@ -60,6 +60,10 @@ export function useKolamAuthController() {
       signOut();
       setAuthUser(null);
       setAuthPassword('');
+      setAuthOtpCode('');
+      setAuthOtpStep('email');
+      setAuthLoginMode('password');
+      setAuthSource('kolam');
       setAuthMessage(
         'Sesi login berakhir. Silakan login lagi untuk melanjutkan.',
       );
@@ -101,6 +105,11 @@ export function useKolamAuthController() {
   }, []);
 
   useEffect(() => {
+    // Cold start and every return to the login screen (logout / session clear).
+    if (authUser) {
+      return undefined;
+    }
+
     let cancelled = false;
 
     getStaffOtpLoginConfig()
@@ -111,14 +120,24 @@ export function useKolamAuthController() {
       })
       .catch(() => {
         if (!cancelled) {
-          setAuthOtpConfig({enabled: false, otpExpireMinutes: 10, resendCooldownSeconds: 60});
+          // Keep a previously successful enablement so logout does not hide OTP
+          // when a transient config fetch fails.
+          setAuthOtpConfig(current =>
+            current?.enabled
+              ? current
+              : {
+                  enabled: false,
+                  otpExpireMinutes: 10,
+                  resendCooldownSeconds: 60,
+                },
+          );
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authUser]);
 
   useEffect(() => {
     if (authSource !== 'kolam' && authLoginMode === 'otp') {
@@ -227,7 +246,12 @@ export function useKolamAuthController() {
       signOut();
     });
     setAuthUser(null);
-    setAuthMessage('Logout. Sesi server dilepas; fallback UI/test tetap tersedia.');
+    setAuthPassword('');
+    setAuthOtpCode('');
+    setAuthOtpStep('email');
+    setAuthLoginMode('password');
+    setAuthSource('kolam');
+    setAuthMessage('Silakan login lagi.');
   };
 
   return {
