@@ -73,7 +73,15 @@ export function createKolamGroupCallRingtoneController(
           unassignedNotificationSound: undefined,
         },
       }),
-    ).catch(() => undefined);
+    )
+      .then(() => {
+        // In-flight play can finish after stop(); kill audio that started late.
+        if (playGeneration !== generation) {
+          return stopPlayback();
+        }
+        return undefined;
+      })
+      .catch(() => undefined);
   };
 
   return {

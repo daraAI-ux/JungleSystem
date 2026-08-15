@@ -119,6 +119,36 @@ describe('kolam-team-chat-call domain', () => {
     expect(isKolamTeamChatCallWaitingRingbackForMe(active, 'host')).toBe(false);
   });
 
+  it('stops host ringback once another peer has joined even if status lags', () => {
+    const statusLag: KolamTeamChatCall = {
+      _id: 'c-lag',
+      onlineInCall: 1,
+      participants: [
+        {status: 'joined', userId: 'host'},
+        {status: 'joined', userId: 'peer'},
+        {status: 'ringing', userId: 'other'},
+      ],
+      status: 'ringing',
+    };
+    const countSaysTwo: KolamTeamChatCall = {
+      _id: 'c-count',
+      onlineInCall: 2,
+      participants: [
+        {status: 'joined', userId: 'host'},
+        {status: 'ringing', userId: 'peer'},
+      ],
+      status: 'ringing',
+    };
+
+    expect(isKolamTeamChatCallWaitingRingbackForMe(statusLag, 'host')).toBe(
+      false,
+    );
+    expect(isKolamTeamChatCallRingingForMe(statusLag, 'other')).toBe(true);
+    expect(isKolamTeamChatCallWaitingRingbackForMe(countSaysTwo, 'host')).toBe(
+      false,
+    );
+  });
+
   it('resolves participant display name from room members and status label', () => {
     const participant = {
       status: 'ringing' as const,

@@ -45,4 +45,32 @@ describe('kolam group call ringtone controller', () => {
     await jest.advanceTimersByTimeAsync(2000);
     expect(play).toHaveBeenCalledTimes(2);
   });
+
+  it('cancels in-flight play that finishes after stop', async () => {
+    let resolvePlay: (() => void) | undefined;
+    const play = jest.fn(
+      () =>
+        new Promise(resolve => {
+          resolvePlay = () => resolve({played: true, intent: 'group-call', uri: 'x'});
+        }),
+    );
+    const stopPlayback = jest.fn().mockResolvedValue(undefined);
+    const controller = createKolamGroupCallRingtoneController({
+      createSoundService: () => ({play}),
+      intervalMs: 1000,
+      stopPlayback,
+    });
+
+    controller.start();
+    expect(play).toHaveBeenCalledTimes(1);
+
+    controller.stop();
+    expect(stopPlayback).toHaveBeenCalledTimes(1);
+
+    resolvePlay?.();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(stopPlayback).toHaveBeenCalledTimes(2);
+  });
 });

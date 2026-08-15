@@ -121,8 +121,9 @@ export function isKolamTeamChatCallRingingForMe(
 }
 
 /**
- * Outbound ringback for a joined host/peer while the call is still waiting
- * for someone else (call.status === 'ringing'). Mutual exclusive with invite ring.
+ * Outbound ringback for a joined host/peer while waiting for the first peer.
+ * Stops once another participant has joined (or onlineInCall >= 2), even if
+ * call.status briefly lags on 'ringing'. Mutual exclusive with invite ring.
  */
 export function isKolamTeamChatCallWaitingRingbackForMe(
   call: KolamTeamChatCall | null | undefined,
@@ -136,7 +137,25 @@ export function isKolamTeamChatCallWaitingRingbackForMe(
     return false;
   }
 
-  return getKolamTeamChatCallMyParticipantStatus(call, userId) === 'joined';
+  if (getKolamTeamChatCallMyParticipantStatus(call, userId) !== 'joined') {
+    return false;
+  }
+
+  if ((call.onlineInCall ?? call.participantCount ?? 0) >= 2) {
+    return false;
+  }
+
+  const myId = String(userId);
+  const otherJoined = (call.participants ?? []).some(participant => {
+    const participantUserId = getKolamTeamChatCallParticipantUserId(participant);
+    return (
+      Boolean(participantUserId) &&
+      participantUserId !== myId &&
+      participant.status === 'joined'
+    );
+  });
+
+  return !otherJoined;
 }
 
 /** Short operator label for participant invite/presence state. */
