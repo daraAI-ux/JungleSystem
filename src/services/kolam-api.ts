@@ -186,6 +186,7 @@ export type KolamAppKey =
   | 'kolam'
   | 'kolam-da'
   | 'enclonura'
+  | 'junglesystem'
   | 'pos'
   | 'pos-da'
   | 'marketplace';

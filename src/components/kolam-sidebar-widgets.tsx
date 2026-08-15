@@ -31,7 +31,7 @@ export function KolamSidebar({
   React.useEffect(() => {
     let mounted = true;
 
-    getKolamWebSettingVersion('kolam')
+    getKolamWebSettingVersion('junglesystem')
       .then(result => {
         if (mounted) {
           const nextVersion = String(result.version ?? '').trim();
