@@ -25,11 +25,139 @@ std::mutex g_sessionMutex;
   return ::React::JSValueObject{{"ok", false}, {"reason", std::move(reason)}};
 }
 
+void EmitOnJs(
+    winrt::Microsoft::ReactNative::ReactContext const &context,
+    std::function<void(::React::JSValueObject const &)> handler,
+    ::React::JSValueObject payload) {
+  if (!handler) {
+    return;
+  }
+
+  context.JSDispatcher().Post(
+      [handler = std::move(handler), payload = std::move(payload)]() {
+        if (handler) {
+          handler(payload);
+        }
+      });
+}
+
 #if defined(_M_X64) && defined(KOLAM_HAS_LIVEKIT)
+
+struct LiveKitEmitters {
+  winrt::Microsoft::ReactNative::ReactContext context{nullptr};
+  std::function<void(::React::JSValueObject const &)> onConnectionChanged;
+  std::function<void(::React::JSValueObject const &)> onMediaError;
+};
+
+char const *ConnectionStateLabel(livekit::ConnectionState state) {
+  switch (state) {
+    case livekit::ConnectionState::Connected:
+      return "connected";
+    case livekit::ConnectionState::Reconnecting:
+      return "reconnecting";
+    case livekit::ConnectionState::Disconnected:
+    default:
+      return "disconnected";
+  }
+}
+
+char const *DisconnectReasonLabel(livekit::DisconnectReason reason) {
+  switch (reason) {
+    case livekit::DisconnectReason::ClientInitiated:
+      return "client_initiated";
+    case livekit::DisconnectReason::DuplicateIdentity:
+      return "duplicate_identity";
+    case livekit::DisconnectReason::ServerShutdown:
+      return "server_shutdown";
+    case livekit::DisconnectReason::ParticipantRemoved:
+      return "participant_removed";
+    case livekit::DisconnectReason::RoomDeleted:
+      return "room_deleted";
+    case livekit::DisconnectReason::JoinFailure:
+      return "join_failure";
+    case livekit::DisconnectReason::SignalClose:
+      return "signal_close";
+    default:
+      return "disconnected";
+  }
+}
+
+class KolamLiveKitRoomDelegate final : public livekit::RoomDelegate {
+ public:
+  explicit KolamLiveKitRoomDelegate(LiveKitEmitters emitters)
+      : m_emitters(std::move(emitters)) {}
+
+  void onConnectionStateChanged(
+      livekit::Room &,
+      livekit::ConnectionStateChangedEvent const &event) override {
+    EmitOnJs(
+        m_emitters.context,
+        m_emitters.onConnectionChanged,
+        ::React::JSValueObject{
+            {"status", ConnectionStateLabel(event.state)},
+        });
+  }
+
+  void onDisconnected(
+      livekit::Room &,
+      livekit::DisconnectedEvent const &event) override {
+    if (m_intentionalDisconnect.load()) {
+      EmitOnJs(
+          m_emitters.context,
+          m_emitters.onConnectionChanged,
+          ::React::JSValueObject{{"status", "disconnected"}, {"intentional", true}});
+      return;
+    }
+
+    EmitOnJs(
+        m_emitters.context,
+        m_emitters.onConnectionChanged,
+        ::React::JSValueObject{
+            {"status", "disconnected"},
+            {"reason", DisconnectReasonLabel(event.reason)},
+        });
+  }
+
+  void onReconnecting(livekit::Room &, livekit::ReconnectingEvent const &) override {
+    EmitOnJs(
+        m_emitters.context,
+        m_emitters.onConnectionChanged,
+        ::React::JSValueObject{{"status", "reconnecting"}});
+  }
+
+  void onReconnected(livekit::Room &, livekit::ReconnectedEvent const &) override {
+    EmitOnJs(
+        m_emitters.context,
+        m_emitters.onConnectionChanged,
+        ::React::JSValueObject{{"status", "connected"}});
+  }
+
+  void onTrackSubscriptionFailed(
+      livekit::Room &,
+      livekit::TrackSubscriptionFailedEvent const &event) override {
+    auto reason = event.error.empty() ? std::string("track_subscribe_failed") : event.error;
+    EmitOnJs(
+        m_emitters.context,
+        m_emitters.onMediaError,
+        ::React::JSValueObject{
+            {"reason", reason},
+            {"trackSid", event.track_sid},
+        });
+  }
+
+  void setIntentionalDisconnect(bool value) {
+    m_intentionalDisconnect.store(value);
+  }
+
+ private:
+  LiveKitEmitters m_emitters;
+  std::atomic_bool m_intentionalDisconnect{false};
+};
 
 struct LiveKitSession {
   std::unique_ptr<livekit::PlatformAudio> platformAudio;
   std::unique_ptr<livekit::Room> room;
+  std::unique_ptr<KolamLiveKitRoomDelegate> delegate;
   std::shared_ptr<livekit::PlatformAudioSource> micSource;
   std::shared_ptr<livekit::LocalAudioTrack> micTrack;
   bool micEnabled{true};
@@ -53,6 +181,10 @@ void TearDownSessionUnlocked() {
     return;
   }
 
+  if (g_session->delegate) {
+    g_session->delegate->setIntentionalDisconnect(true);
+  }
+
   if (g_session->micTrack) {
     try {
       g_session->micTrack->mute();
@@ -62,6 +194,7 @@ void TearDownSessionUnlocked() {
 
   if (g_session->room) {
     try {
+      g_session->room->setDelegate(nullptr);
       g_session->room->disconnect();
     } catch (...) {
     }
@@ -93,7 +226,11 @@ void SetConnectReason(ConnectRawResult *out, char const *reason) {
 }
 
 // C++ body — catches C++ exceptions. Must NOT contain __try.
-int ConnectLiveKitRoomBody(char const *url, char const *token, ConnectRawResult *out) {
+int ConnectLiveKitRoomBody(
+    char const *url,
+    char const *token,
+    LiveKitEmitters const *emitters,
+    ConnectRawResult *out) {
   out->code = 1;
   out->session = nullptr;
   SetConnectReason(out, "connect_failed");
@@ -103,17 +240,23 @@ int ConnectLiveKitRoomBody(char const *url, char const *token, ConnectRawResult 
 
     auto session = std::make_unique<LiveKitSession>();
 
+    // Create ADM/WASAPI before connect so playout is ready when remote tracks arrive.
+    session->platformAudio = std::make_unique<livekit::PlatformAudio>();
+
     livekit::RoomOptions options;
     options.auto_subscribe = true;
     session->room = std::make_unique<livekit::Room>();
+
+    if (emitters) {
+      session->delegate = std::make_unique<KolamLiveKitRoomDelegate>(*emitters);
+      session->room->setDelegate(session->delegate.get());
+    }
+
     if (!session->room->connect(url, token, options)) {
       out->code = 1;
       SetConnectReason(out, "connect_failed");
       return 1;
     }
-
-    // Mic path after room connect (WASAPI/ADM needs COM on this thread).
-    session->platformAudio = std::make_unique<livekit::PlatformAudio>();
 
     livekit::PlatformAudioOptions audioOptions;
     audioOptions.echo_cancellation = true;
@@ -127,6 +270,7 @@ int ConnectLiveKitRoomBody(char const *url, char const *token, ConnectRawResult 
     auto local = session->room->localParticipant().lock();
     if (!local) {
       try {
+        session->room->setDelegate(nullptr);
         session->room->disconnect();
       } catch (...) {
       }
@@ -155,9 +299,13 @@ int ConnectLiveKitRoomBody(char const *url, char const *token, ConnectRawResult 
 }
 
 // SEH trampoline — only POD locals. Converts access violations into soft fail.
-int ConnectLiveKitRoomSeh(char const *url, char const *token, ConnectRawResult *out) {
+int ConnectLiveKitRoomSeh(
+    char const *url,
+    char const *token,
+    LiveKitEmitters const *emitters,
+    ConnectRawResult *out) {
   __try {
-    return ConnectLiveKitRoomBody(url, token, out);
+    return ConnectLiveKitRoomBody(url, token, emitters, out);
   } __except (EXCEPTION_EXECUTE_HANDLER) {
     out->code = -1;
     out->session = nullptr;
@@ -174,6 +322,10 @@ void KolamWindowsLiveKitRoom::Initialize(
     winrt::Microsoft::ReactNative::ReactContext const &reactContext) noexcept {
   m_context = reactContext;
 }
+
+void KolamWindowsLiveKitRoom::addListener(std::string /*eventName*/) noexcept {}
+
+void KolamWindowsLiveKitRoom::removeListeners(int /*count*/) noexcept {}
 
 void KolamWindowsLiveKitRoom::connectRoom(
     ::React::JSValueObject params,
@@ -192,10 +344,17 @@ void KolamWindowsLiveKitRoom::connectRoom(
     return;
   }
 
+  LiveKitEmitters emitters{
+      m_context,
+      ConnectionChanged,
+      MediaError,
+  };
+
   std::thread([url = std::move(url),
                token = std::move(token),
                roomName = std::move(roomName),
                identity = std::move(identity),
+               emitters = std::move(emitters),
                result = std::move(result)]() mutable {
     HRESULT const comHr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     bool const comOwned = comHr == S_OK || comHr == S_FALSE;
@@ -212,7 +371,7 @@ void KolamWindowsLiveKitRoom::connectRoom(
       SetConnectReason(&raw, "connect_failed");
 
       // Do not hold session mutex across LiveKit connect / publish.
-      ConnectLiveKitRoomSeh(url.c_str(), token.c_str(), &raw);
+      ConnectLiveKitRoomSeh(url.c_str(), token.c_str(), &emitters, &raw);
 
       if (raw.code == 0 && raw.session != nullptr) {
         std::unique_ptr<LiveKitSession> owned(raw.session);
@@ -228,13 +387,25 @@ void KolamWindowsLiveKitRoom::connectRoom(
           response["identity"] = identity;
         }
         result.Resolve(std::move(response));
+        EmitOnJs(
+            emitters.context,
+            emitters.onConnectionChanged,
+            ::React::JSValueObject{{"status", "connected"}});
       } else {
         if (raw.session != nullptr) {
           delete raw.session;
           raw.session = nullptr;
         }
-        result.Resolve(FailResult(
-            raw.reason[0] != '\0' ? raw.reason : "connect_failed"));
+        auto reason =
+            raw.reason[0] != '\0' ? std::string(raw.reason) : std::string("connect_failed");
+        result.Resolve(FailResult(reason));
+        EmitOnJs(
+            emitters.context,
+            emitters.onConnectionChanged,
+            ::React::JSValueObject{
+                {"status", "disconnected"},
+                {"reason", reason},
+            });
       }
     } catch (std::exception const &ex) {
       std::lock_guard<std::mutex> lock(g_sessionMutex);
@@ -259,13 +430,23 @@ void KolamWindowsLiveKitRoom::disconnectRoom(
   result.Resolve(FailResult("livekit_unavailable"));
   return;
 #else
-  std::thread([result = std::move(result)]() mutable {
+  auto emitters = LiveKitEmitters{m_context, ConnectionChanged, MediaError};
+  std::thread([result = std::move(result), emitters = std::move(emitters)]() mutable {
     HRESULT const comHr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     bool const comOwned = comHr == S_OK || comHr == S_FALSE;
     try {
-      std::lock_guard<std::mutex> lock(g_sessionMutex);
-      TearDownSessionUnlocked();
+      {
+        std::lock_guard<std::mutex> lock(g_sessionMutex);
+        TearDownSessionUnlocked();
+      }
       result.Resolve(OkResult("disconnected"));
+      EmitOnJs(
+          emitters.context,
+          emitters.onConnectionChanged,
+          ::React::JSValueObject{
+              {"status", "disconnected"},
+              {"intentional", true},
+          });
     } catch (...) {
       result.Resolve(FailResult("disconnect_exception"));
     }

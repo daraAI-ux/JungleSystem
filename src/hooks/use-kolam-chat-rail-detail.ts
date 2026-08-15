@@ -410,6 +410,7 @@ export function useKolamChatRailDetail({
       } else {
         void getSharedKolamTeamChatCallMediaSession().onCallUpdated({
           call: next,
+          config,
           userId: currentUserId,
         });
       }
@@ -1088,6 +1089,7 @@ export function useKolamChatRailDetail({
         } else {
           void mediaSession.onCallUpdated({
             call,
+            config: callConfig,
             userId: currentUserId,
           });
         }

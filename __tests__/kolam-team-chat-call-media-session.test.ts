@@ -19,6 +19,16 @@ describe('kolam team chat call media session', () => {
     status: 'active' as const,
   };
 
+  function mockLiveKitRoom(
+    methods: Record<string, unknown>,
+  ): Record<string, unknown> {
+    return {
+      addListener: jest.fn(),
+      removeListeners: jest.fn(),
+      ...methods,
+    };
+  }
+
   it('formats short media status labels for the call strip', () => {
     expect(formatKolamTeamChatCallMediaStatusLabel({status: 'idle', callId: null})).toBeNull();
     expect(
@@ -81,11 +91,11 @@ describe('kolam team chat call media session', () => {
 
     const session = createKolamTeamChatCallMediaSession({
       nativeModules: {
-        KolamWindowsLiveKitRoom: {
+        KolamWindowsLiveKitRoom: mockLiveKitRoom({
           connectRoom,
           disconnectRoom,
           setMicEnabled,
-        },
+        }),
       },
       platformOS: 'windows',
       requestMediaToken,
@@ -129,6 +139,7 @@ describe('kolam team chat call media session', () => {
           {status: 'joined', userId: 'me', mutedByAdmin: false},
         ],
       },
+      config: readyConfig,
       userId: 'me',
     });
     expect(setMicEnabled).toHaveBeenCalledWith(true);
@@ -155,7 +166,7 @@ describe('kolam team chat call media session', () => {
 
     const session = createKolamTeamChatCallMediaSession({
       nativeModules: {
-        KolamWindowsLiveKitRoom: {connectRoom},
+        KolamWindowsLiveKitRoom: mockLiveKitRoom({connectRoom}),
       },
       platformOS: 'windows',
       requestMediaToken,
@@ -174,12 +185,53 @@ describe('kolam team chat call media session', () => {
     });
   });
 
+  it('reconnects media when already joined but session is idle', async () => {
+    const connectRoom = jest.fn(async () => ({ok: true}));
+    const setMicEnabled = jest.fn(async () => ({ok: true}));
+    const requestMediaToken = jest.fn(async () => ({
+      url: 'wss://lk.example',
+      token: 'jwt',
+      roomName: 'tc-call-call-1',
+      identity: 'me',
+      expiresAt: '2026-08-14T12:02:00.000Z',
+    }));
+
+    const session = createKolamTeamChatCallMediaSession({
+      nativeModules: {
+        KolamWindowsLiveKitRoom: mockLiveKitRoom({
+          connectRoom,
+          setMicEnabled,
+          disconnectRoom: async () => ({ok: true}),
+        }),
+      },
+      platformOS: 'windows',
+      requestMediaToken,
+    });
+
+    await session.onCallUpdated({
+      call: joinedCall,
+      config: readyConfig,
+      userId: 'me',
+    });
+
+    expect(connectRoom).toHaveBeenCalledTimes(1);
+    expect(session.getConnectionState().status).toBe('connected');
+
+    await session.onCallUpdated({
+      call: joinedCall,
+      config: readyConfig,
+      userId: 'me',
+    });
+    expect(connectRoom).toHaveBeenCalledTimes(1);
+    expect(setMicEnabled).toHaveBeenCalled();
+  });
+
   it('skips media-token when media.enabled is false', async () => {
     const connectRoom = jest.fn();
     const requestMediaToken = jest.fn();
     const session = createKolamTeamChatCallMediaSession({
       nativeModules: {
-        KolamWindowsLiveKitRoom: {connectRoom},
+        KolamWindowsLiveKitRoom: mockLiveKitRoom({connectRoom}),
       },
       platformOS: 'windows',
       requestMediaToken,

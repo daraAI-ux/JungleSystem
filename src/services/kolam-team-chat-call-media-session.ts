@@ -12,6 +12,7 @@ import type {
 } from './kolam-api';
 import {
   getKolamLiveKitNativeBridge,
+  subscribeKolamLiveKitNativeEvents,
   type KolamLiveKitNativeBridgeOptions,
 } from './kolam-livekit-native-bridge';
 import {requestKolamTeamChatCallMediaTokenIfReady} from './kolam-team-chat-call-media';
@@ -70,6 +71,68 @@ export function createKolamTeamChatCallMediaSession(
     return () => {
       listeners.delete(listener);
     };
+  }
+
+  function applyNativeConnectionEvent(event: {
+    intentional?: boolean;
+    reason?: string;
+    status?: string;
+  }) {
+    const status = String(event.status || '')
+      .trim()
+      .toLowerCase();
+
+    if (status === 'connected') {
+      if (!activeCallId && connectionState.callId) {
+        activeCallId = connectionState.callId;
+      }
+      emitConnectionState({
+        callId: activeCallId ?? connectionState.callId,
+        status: 'connected',
+      });
+      return;
+    }
+
+    if (status === 'reconnecting') {
+      emitConnectionState({
+        callId: activeCallId ?? connectionState.callId,
+        status: 'connecting',
+      });
+      return;
+    }
+
+    if (status === 'disconnected') {
+      if (event.intentional) {
+        return;
+      }
+      const reason = String(event.reason || '').trim() || 'Terputus';
+      activeCallId = null;
+      emitConnectionState({
+        callId: connectionState.callId,
+        reason,
+        status: 'failed',
+      });
+    }
+  }
+
+  let unsubscribeNative: (() => void) | null = null;
+  try {
+    unsubscribeNative = subscribeKolamLiveKitNativeEvents(
+      {
+        onConnectionChanged: applyNativeConnectionEvent,
+        onMediaError: event => {
+          const reason = String(event.reason || '').trim() || 'Gagal media';
+          emitConnectionState({
+            callId: activeCallId ?? connectionState.callId,
+            reason,
+            status: 'failed',
+          });
+        },
+      },
+      options,
+    );
+  } catch {
+    unsubscribeNative = null;
   }
 
   async function syncMicFromCall(
@@ -207,11 +270,46 @@ export function createKolamTeamChatCallMediaSession(
     }
   }
 
-  async function onCallUpdated({
+  async function ensureMediaAfterJoined({
     call,
+    config,
     userId,
   }: {
     call: KolamTeamChatCall | null | undefined;
+    config: KolamTeamChatCallConfig | null | undefined;
+    userId?: string | null;
+  }): Promise<KolamTeamChatCallMediaConnectionState> {
+    if (!call?._id) {
+      return connectionState;
+    }
+
+    if (getKolamTeamChatCallMyParticipantStatus(call, userId) !== 'joined') {
+      return connectionState;
+    }
+
+    if (starting) {
+      return connectionState;
+    }
+
+    if (
+      activeCallId === call._id &&
+      (connectionState.status === 'connected' ||
+        connectionState.status === 'connecting')
+    ) {
+      await syncMicFromCall(call, userId);
+      return connectionState;
+    }
+
+    return startAfterJoin({call, config, userId});
+  }
+
+  async function onCallUpdated({
+    call,
+    config,
+    userId,
+  }: {
+    call: KolamTeamChatCall | null | undefined;
+    config?: KolamTeamChatCallConfig | null;
     userId?: string | null;
   }): Promise<void> {
     if (!call || call.status === 'ended') {
@@ -224,15 +322,23 @@ export function createKolamTeamChatCallMediaSession(
     }
 
     await syncMicFromCall(call, userId);
+    if (config) {
+      await ensureMediaAfterJoined({call, config, userId});
+    }
   }
 
   return {
+    ensureMediaAfterJoined,
     getActiveCallId: () => activeCallId,
     getConnectionState,
     onCallUpdated,
     startAfterJoin,
     stop,
     subscribe,
+    unsubscribeNativeEvents: () => {
+      unsubscribeNative?.();
+      unsubscribeNative = null;
+    },
   };
 }
 

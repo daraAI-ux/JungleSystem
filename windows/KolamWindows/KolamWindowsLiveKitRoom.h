@@ -1,6 +1,10 @@
 #pragma once
 
 #include <NativeModules.h>
+#include <atomic>
+#include <functional>
+#include <mutex>
+#include <string>
 
 namespace KolamWindows {
 
@@ -21,6 +25,19 @@ struct KolamWindowsLiveKitRoom {
   void setMicEnabled(
       bool enabled,
       ::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
+
+  // NativeEventEmitter wiring (RNW).
+  REACT_METHOD(addListener)
+  void addListener(std::string eventName) noexcept;
+
+  REACT_METHOD(removeListeners)
+  void removeListeners(int count) noexcept;
+
+  REACT_EVENT(ConnectionChanged)
+  std::function<void(::React::JSValueObject const &)> ConnectionChanged;
+
+  REACT_EVENT(MediaError)
+  std::function<void(::React::JSValueObject const &)> MediaError;
 
  private:
   winrt::Microsoft::ReactNative::ReactContext m_context;

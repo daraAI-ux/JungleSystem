@@ -1,4 +1,4 @@
-import {NativeModules, Platform} from 'react-native';
+import {NativeEventEmitter, NativeModules, Platform} from 'react-native';
 
 export type KolamLiveKitConnectParams = {
   identity: string;
@@ -13,7 +13,19 @@ export type KolamLiveKitNativeResult = {
   status?: string;
 };
 
+export type KolamLiveKitConnectionChangedEvent = {
+  intentional?: boolean;
+  reason?: string;
+  status?: string;
+};
+
+export type KolamLiveKitMediaErrorEvent = {
+  reason?: string;
+  trackSid?: string;
+};
+
 export type KolamLiveKitNativeBridge = {
+  addListener?: (eventName: string) => void;
   connectRoom?: (
     params: KolamLiveKitConnectParams,
   ) =>
@@ -24,6 +36,7 @@ export type KolamLiveKitNativeBridge = {
     | Promise<KolamLiveKitNativeResult | void>
     | KolamLiveKitNativeResult
     | void;
+  removeListeners?: (count: number) => void;
   setMicEnabled?: (
     enabled: boolean,
   ) =>
@@ -57,4 +70,34 @@ export function isKolamLiveKitNativeBridgeAvailable(
 ): boolean {
   const bridge = getKolamLiveKitNativeBridge(options);
   return typeof bridge?.connectRoom === 'function';
+}
+
+export function subscribeKolamLiveKitNativeEvents(
+  handlers: {
+    onConnectionChanged?: (event: KolamLiveKitConnectionChangedEvent) => void;
+    onMediaError?: (event: KolamLiveKitMediaErrorEvent) => void;
+  },
+  options: KolamLiveKitNativeBridgeOptions = {},
+): () => void {
+  const bridge = getKolamLiveKitNativeBridge(options);
+  if (!bridge) {
+    return () => undefined;
+  }
+
+  const modules = options.nativeModules ?? NativeModules;
+  const emitter = new NativeEventEmitter(
+    modules[NATIVE_MODULE_NAME] as Parameters<typeof NativeEventEmitter>[0],
+  );
+  const subscriptions = [
+    handlers.onConnectionChanged
+      ? emitter.addListener('ConnectionChanged', handlers.onConnectionChanged)
+      : null,
+    handlers.onMediaError
+      ? emitter.addListener('MediaError', handlers.onMediaError)
+      : null,
+  ].filter(Boolean) as Array<{remove: () => void}>;
+
+  return () => {
+    subscriptions.forEach(subscription => subscription.remove());
+  };
 }

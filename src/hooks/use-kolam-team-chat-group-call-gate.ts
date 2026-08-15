@@ -114,9 +114,9 @@ export function useKolamTeamChatGroupCallGate({
         return;
       }
       setLiveCall(call);
-      void mediaSession.onCallUpdated({call, userId});
+      void mediaSession.onCallUpdated({call, config: callConfig, userId});
     },
-    [mediaSession, userId],
+    [callConfig, mediaSession, userId],
   );
 
   const refreshMyCalls = useCallback(async () => {
