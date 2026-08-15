@@ -4,6 +4,7 @@ import {
   getNativeDeviceIdentity,
   setAuthSessionHandlers,
 } from '../lib/api-client';
+import {isNonRetryableKolamAuthError} from '../lib/api-error';
 import {
   getAuthSource,
   type AuthSource,
@@ -318,6 +319,9 @@ async function withKolamLoginStep<T>(
   try {
     return await request();
   } catch (error) {
+    if (isNonRetryableKolamAuthError(error)) {
+      throw error;
+    }
     const message = error instanceof Error ? error.message : 'Login gagal.';
     throw new Error(`Login Kolam ${step} gagal: ${message}`);
   }

@@ -222,10 +222,16 @@ npm run build:setup
 ```
 
 Setup memasang secret ke Machine + User environment saat install (langkah
-“Mengatur akses perangkat”). File payload `kolam-desktop-client.secret` hanya
-hidup di `installer/payload/` (gitignored) dan `{tmp}` installer — jangan
-commit. Setelah install di PC lama yang sudah terpasang tanpa secret, pasang
-ulang Setup baru atau set env Machine secara manual lalu relaunch app.
+“Mengatur akses perangkat”), dan menulis file (untuk MSIX yang sering tidak
+melihat Machine env):
+
+- `%ProgramData%\Dunia Anura\JungleSystem\kolam-desktop-client.secret`
+- `%LOCALAPPDATA%\Dunia Anura\KolamWindows\kolam-desktop-client.secret`
+
+File payload `kolam-desktop-client.secret` hanya hidup di `installer/payload/`
+(gitignored) dan `{tmp}` installer — jangan commit. Setelah install di PC lama
+yang sudah terpasang tanpa secret, pasang ulang Setup baru atau set env Machine
+secara manual lalu relaunch app.
 
 Cert `.cer` diambil dari luar repo (`JUNGLESYSTEM_DEV_CER_PATH` atau
 `E:\Data\Dunia-Anura\certs\JungleSystem-dev.cer`). Jangan commit `.pfx`,

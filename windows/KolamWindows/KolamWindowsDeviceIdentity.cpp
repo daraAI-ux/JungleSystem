@@ -31,6 +31,18 @@ std::string FormatMacAddress(BYTE const *address, ULONG length) {
   return stream.str();
 }
 
+bool IsZeroMac(BYTE const *address, ULONG length) {
+  if (!address || length != 6) {
+    return true;
+  }
+  for (ULONG index = 0; index < length; ++index) {
+    if (address[index] != 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool ShouldUseAdapter(IP_ADAPTER_ADDRESSES const &adapter) {
   if (adapter.PhysicalAddressLength != 6) {
     return false;
@@ -40,7 +52,14 @@ bool ShouldUseAdapter(IP_ADAPTER_ADDRESSES const &adapter) {
     return false;
   }
 
-  return adapter.OperStatus == IfOperStatusUp;
+  if (IsZeroMac(adapter.PhysicalAddress, adapter.PhysicalAddressLength)) {
+    return false;
+  }
+
+  // Include down adapters so a registered NIC still appears when temporarily offline.
+  return adapter.OperStatus == IfOperStatusUp ||
+      adapter.OperStatus == IfOperStatusDormant ||
+      adapter.OperStatus == IfOperStatusDown;
 }
 
 std::vector<std::string> ReadMacAddresses() {
@@ -109,6 +128,75 @@ std::string ReadRegistryString(HKEY root, char const *subKey, char const *valueN
   return value;
 }
 
+std::string ReadSecretFile(std::wstring const &path) {
+  HANDLE file = CreateFileW(
+      path.c_str(),
+      GENERIC_READ,
+      FILE_SHARE_READ,
+      nullptr,
+      OPEN_EXISTING,
+      FILE_ATTRIBUTE_NORMAL,
+      nullptr);
+  if (file == INVALID_HANDLE_VALUE) {
+    return {};
+  }
+
+  LARGE_INTEGER size{};
+  if (!GetFileSizeEx(file, &size) || size.QuadPart <= 0 || size.QuadPart > 4096) {
+    CloseHandle(file);
+    return {};
+  }
+
+  std::string value(static_cast<size_t>(size.QuadPart), '\0');
+  DWORD bytesRead = 0;
+  BOOL ok = ReadFile(
+      file,
+      value.data(),
+      static_cast<DWORD>(value.size()),
+      &bytesRead,
+      nullptr);
+  CloseHandle(file);
+  if (!ok || bytesRead == 0) {
+    return {};
+  }
+
+  value.resize(bytesRead);
+  while (!value.empty() &&
+         (value.back() == '\0' || value.back() == '\n' || value.back() == '\r' ||
+          value.back() == ' ' || value.back() == '\t')) {
+    value.pop_back();
+  }
+  return value;
+}
+
+std::string ReadSecretFromKnownFiles() {
+  wchar_t programData[MAX_PATH] = {};
+  DWORD programDataLength =
+      GetEnvironmentVariableW(L"PROGRAMDATA", programData, MAX_PATH);
+  if (programDataLength > 0 && programDataLength < MAX_PATH) {
+    auto secret = ReadSecretFile(
+        std::wstring(programData) +
+        L"\\Dunia Anura\\JungleSystem\\kolam-desktop-client.secret");
+    if (!secret.empty()) {
+      return secret;
+    }
+  }
+
+  wchar_t localAppData[MAX_PATH] = {};
+  DWORD localAppDataLength =
+      GetEnvironmentVariableW(L"LOCALAPPDATA", localAppData, MAX_PATH);
+  if (localAppDataLength > 0 && localAppDataLength < MAX_PATH) {
+    auto secret = ReadSecretFile(
+        std::wstring(localAppData) +
+        L"\\Dunia Anura\\KolamWindows\\kolam-desktop-client.secret");
+    if (!secret.empty()) {
+      return secret;
+    }
+  }
+
+  return {};
+}
+
 std::string ReadDesktopClientSecret() {
   DWORD requiredLength =
       GetEnvironmentVariableA("KOLAM_DESKTOP_CLIENT_SECRET", nullptr, 0);
@@ -130,10 +218,16 @@ std::string ReadDesktopClientSecret() {
     return userSecret;
   }
 
-  return ReadRegistryString(
+  auto machineSecret = ReadRegistryString(
       HKEY_LOCAL_MACHINE,
       "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment",
       "KOLAM_DESKTOP_CLIENT_SECRET");
+  if (!machineSecret.empty()) {
+    return machineSecret;
+  }
+
+  // MSIX process env can miss Machine vars; Setup also writes these files.
+  return ReadSecretFromKnownFiles();
 }
 
 std::string BuildCanonicalMacPayload(std::vector<std::string> macs) {

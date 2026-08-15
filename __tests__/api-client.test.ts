@@ -58,7 +58,7 @@ describe('native runtime API identity', () => {
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer live-token',
-          'x-device-mac': 'AA:BB:CC:DD:EE:FF,11-22-33-44-55-66',
+          'x-device-mac': '11:22:33:44:55:66,AA:BB:CC:DD:EE:FF',
           'x-device-mac-signature': 'signed-macs',
           'x-source': appConfig.kolamSourceHeader,
         }),
@@ -154,6 +154,51 @@ describe('native runtime API identity', () => {
       message:
         'API mengembalikan halaman HTML (503). Backend mungkin down / gateway error.',
     });
+  });
+
+  it('does not send MAC headers without a signature', async () => {
+    setNativeDeviceIdentity({
+      macAddresses: ['aa:bb:cc:dd:ee:ff'],
+    });
+
+    await apiRequest({method: 'GET', path: '/health'});
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.apiBaseUrl}/health`,
+      expect.objectContaining({
+        headers: expect.not.objectContaining({
+          'x-device-mac': expect.anything(),
+          'x-device-mac-signature': expect.anything(),
+        }),
+      }),
+    );
+  });
+
+  it('does not retry MAC_ACCESS_DENIED or rate-limit responses', async () => {
+    const refreshAccessToken = jest.fn().mockResolvedValue('fresh-token');
+    setAuthSessionHandlers({refreshAccessToken});
+    setAccessToken('live-token');
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 403,
+      headers: {get: jest.fn()},
+      text: jest.fn().mockResolvedValue(
+        JSON.stringify({
+          code: 'MAC_ACCESS_DENIED',
+          message: 'MAC address tidak terdeteksi.',
+        }),
+      ),
+    });
+
+    await expect(
+      apiRequest({method: 'GET', path: '/auth/detail-user'}),
+    ).rejects.toMatchObject({
+      status: 403,
+      code: 'MAC_ACCESS_DENIED',
+    });
+
+    expect(refreshAccessToken).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('refreshes the stored access token once and retries an expired request', async () => {

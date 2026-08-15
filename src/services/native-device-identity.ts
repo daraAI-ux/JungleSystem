@@ -1,5 +1,6 @@
 import {NativeModules, Platform} from 'react-native';
 import type {RuntimeDeviceIdentityStatus} from '../domain/runtime-identity';
+import {normalizeKolamDeviceMacAddressList} from '../domain/kolam-device-mac';
 import {
   clearNativeDeviceIdentity,
   setNativeDeviceIdentity,
@@ -100,12 +101,7 @@ export function normalizeNativeDeviceIdentity(
 }
 
 function normalizeMacValues(value: unknown): string[] {
-  const values = Array.isArray(value) ? value : [value];
-
-  return values
-    .flatMap(item => String(item ?? '').split(/[,;]/))
-    .map(item => item.trim().toUpperCase())
-    .filter(Boolean);
+  return normalizeKolamDeviceMacAddressList(value);
 }
 
 function normalizeOptionalString(value: unknown): string | undefined {

@@ -70,6 +70,7 @@ describe('unified auth source contracts', () => {
   it('trims and lowercases email before Kolam password sign-in', async () => {
     setNativeDeviceIdentity({
       macAddresses: ['AA:BB:CC:DD:EE:FF'],
+      macSignature: 'signed-macs',
     });
     fetchMock
       .mockResolvedValueOnce(
@@ -105,6 +106,7 @@ describe('unified auth source contracts', () => {
   it('signs in to Kolam with inventory source and maps top-level backend user fields', async () => {
     setNativeDeviceIdentity({
       macAddresses: ['AA:BB:CC:DD:EE:FF'],
+      macSignature: 'signed-macs',
     });
     fetchMock
       .mockResolvedValueOnce(jsonResponse({
@@ -160,6 +162,7 @@ describe('unified auth source contracts', () => {
         headers: expect.objectContaining({
           'x-source': appConfig.kolamSourceHeader,
           'x-device-mac': 'AA:BB:CC:DD:EE:FF',
+          'x-device-mac-signature': 'signed-macs',
         }),
         body: JSON.stringify({
           email: 'staff@example.test',
@@ -333,6 +336,7 @@ describe('unified auth source contracts', () => {
   it('logs out remotely with the active auth source header and clears local session', async () => {
     setNativeDeviceIdentity({
       macAddresses: ['AA:BB:CC:DD:EE:FF'],
+      macSignature: 'signed-macs',
     });
     fetchMock
       .mockResolvedValueOnce(jsonResponse({

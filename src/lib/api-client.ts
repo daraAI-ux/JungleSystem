@@ -1,6 +1,15 @@
 import { appConfig } from '../config/app';
+import {
+  canonicalKolamDeviceMacPayload,
+  normalizeKolamDeviceMacAddressList,
+} from '../domain/kolam-device-mac';
 import { getRuntimeClientHeaders } from '../domain/runtime-client-contract';
-import { ApiError, sanitizeApiErrorMessage, type ApiErrorPayload } from './api-error';
+import {
+  ApiError,
+  isNonRetryableKolamAuthError,
+  sanitizeApiErrorMessage,
+  type ApiErrorPayload,
+} from './api-error';
 
 type QueryValue = string | number | boolean | string[] | undefined | null;
 type RequestCredentialsMode = 'include' | 'omit' | 'same-origin';
@@ -50,10 +59,13 @@ export function setAuthSessionHandlers(handlers: {
 }
 
 export function setNativeDeviceIdentity(identity: NativeDeviceIdentity) {
-  nativeDeviceIdentity = {
-    macAddresses: normalizeMacAddresses(identity.macAddresses),
-    macSignature: identity.macSignature?.trim() || undefined,
-  };
+  const macAddresses = normalizeMacAddresses(identity.macAddresses);
+  const macSignature = identity.macSignature?.trim() || undefined;
+  // Never attach bare MAC without signature — BE treats that as empty MAC.
+  nativeDeviceIdentity =
+    macAddresses?.length && macSignature
+      ? {macAddresses, macSignature}
+      : {};
 }
 
 export function getNativeDeviceIdentity(): NativeDeviceIdentity {
@@ -139,12 +151,11 @@ async function apiRequestWithAuthRefresh<T>(
     ...(requestHeaders ?? {}),
   };
 
-  const macHeader = nativeDeviceIdentity.macAddresses?.join(',');
-  if (macHeader) {
+  const macHeader = nativeDeviceIdentity.macAddresses?.length
+    ? canonicalKolamDeviceMacPayload(nativeDeviceIdentity.macAddresses)
+    : '';
+  if (macHeader && nativeDeviceIdentity.macSignature) {
     headers['x-device-mac'] = macHeader;
-  }
-
-  if (nativeDeviceIdentity.macSignature) {
     headers['x-device-mac-signature'] = nativeDeviceIdentity.macSignature;
   }
 
@@ -191,7 +202,10 @@ async function apiRequestWithAuthRefresh<T>(
 
   if (!response.ok) {
     const error = new ApiError(response.status, normalizeErrorPayload(payload));
-    if (shouldRefreshAuth(error, token, skipAuthRefresh, didRefresh)) {
+    if (
+      !isNonRetryableKolamAuthError(error) &&
+      shouldRefreshAuth(error, token, skipAuthRefresh, didRefresh)
+    ) {
       const refreshedToken = await refreshStoredAccessToken();
       if (refreshedToken) {
         return apiRequestWithAuthRefresh<T>(
@@ -368,8 +382,7 @@ function normalizeMacAddresses(values: string[] | undefined) {
     return undefined;
   }
 
-  const macs = values.map(value => value.trim().toUpperCase()).filter(Boolean);
-
+  const macs = normalizeKolamDeviceMacAddressList(values);
   return macs.length ? macs : undefined;
 }
 

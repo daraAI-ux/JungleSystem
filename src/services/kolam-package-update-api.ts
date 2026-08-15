@@ -1,10 +1,12 @@
 import {appConfig} from '../config/app';
-import {getAccessToken} from '../lib/api-client';
+import {canonicalKolamDeviceMacPayload} from '../domain/kolam-device-mac';
+import {getRuntimeClientHeaders} from '../domain/runtime-client-contract';
 import {
   KOLAM_PACKAGE_UPDATE_LATEST_PATH,
   parseKolamPackageReleaseManifest,
   type KolamPackageReleaseManifest,
 } from '../domain/kolam-package-update';
+import {getAccessToken, getNativeDeviceIdentity} from '../lib/api-client';
 
 export class KolamPackageUpdateRequestError extends Error {
   readonly status: number;
@@ -30,11 +32,23 @@ export async function fetchKolamPackageLatestRelease(
     throw new KolamPackageUpdateRequestError(401, 'Login dulu');
   }
 
+  const identity = getNativeDeviceIdentity();
+  const macHeader = identity.macAddresses?.length
+    ? canonicalKolamDeviceMacPayload(identity.macAddresses)
+    : '';
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    ...getRuntimeClientHeaders({sourceHeader: appConfig.kolamSourceHeader}),
+    Authorization: `Bearer ${token}`,
+  };
+
+  if (macHeader && identity.macSignature) {
+    headers['x-device-mac'] = macHeader;
+    headers['x-device-mac-signature'] = identity.macSignature;
+  }
+
   const response = await fetch(getKolamPackageUpdateLatestUrl(baseUrl), {
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    headers,
   });
 
   const status = Number(response.status);
@@ -43,6 +57,9 @@ export async function fetchKolamPackageLatestRelease(
   }
   if (status === 401 || status === 403) {
     throw new KolamPackageUpdateRequestError(status, 'Akses ditolak');
+  }
+  if (status === 429) {
+    throw new KolamPackageUpdateRequestError(status, 'Terlalu banyak permintaan');
   }
 
   if (!response.ok) {

@@ -14,12 +14,12 @@ describe('runtime identity surface', () => {
           id: 'native-client',
           value: appConfig.nativeUserAgent,
           detail:
-            'Origin: app://kolamwindows / User-Agent: KolamWindows/0.0.1 / x-da-client: kolam-windows / x-da-client-version: 0.0.1 / x-source: pos',
+            'Origin: app://kolamwindows / User-Agent: KolamWindows/3.1.6 / x-da-client: kolam-windows / x-da-client-version: 3.1.6 / x-source: pos',
           status: 'ready',
         }),
         expect.objectContaining({
           id: 'kolam-api',
-          value: 'amfibi.dunia-anura.com/api',
+          value: 'kolam.dunia-anura.com/api',
           status: 'ready',
         }),
         expect.objectContaining({

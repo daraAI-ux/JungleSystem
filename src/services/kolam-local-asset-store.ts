@@ -1,4 +1,5 @@
 import { appConfig } from '../config/app';
+import { canonicalKolamDeviceMacPayload } from '../domain/kolam-device-mac';
 import { getRuntimeClientHeaders } from '../domain/runtime-client-contract';
 import { getAccessToken, getNativeDeviceIdentity } from '../lib/api-client';
 import { getKolamImageDiskBackend } from './kolam-image-disk-backend';
@@ -47,17 +48,16 @@ export function createKolamLocalAssetRequestHeaders(
   };
   const token = getAccessToken();
   const identity = getNativeDeviceIdentity();
-  const macHeader = identity.macAddresses?.join(',');
+  const macHeader = identity.macAddresses?.length
+    ? canonicalKolamDeviceMacPayload(identity.macAddresses)
+    : '';
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  if (macHeader) {
+  if (macHeader && identity.macSignature) {
     headers['x-device-mac'] = macHeader;
-  }
-
-  if (identity.macSignature) {
     headers['x-device-mac-signature'] = identity.macSignature;
   }
 

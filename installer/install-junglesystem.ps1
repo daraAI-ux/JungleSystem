@@ -74,7 +74,8 @@ switch ($Action) {
     if (-not $secret) {
       throw "Kolam desktop client secret file is empty."
     }
-    # Same secret BE uses for Patch D HMAC. Native bridge reads process/User/Machine env.
+    # Same secret BE uses for Patch D HMAC. Native bridge reads process/User/Machine
+    # env and these files (MSIX may miss Machine env until relaunch).
     [Environment]::SetEnvironmentVariable(
       'KOLAM_DESKTOP_CLIENT_SECRET',
       $secret,
@@ -86,6 +87,14 @@ switch ($Action) {
       'User'
     )
     $env:KOLAM_DESKTOP_CLIENT_SECRET = $secret
+
+    $programDataDir = Join-Path $env:PROGRAMDATA 'Dunia Anura\JungleSystem'
+    $localDir = Join-Path $env:LOCALAPPDATA 'Dunia Anura\KolamWindows'
+    New-Item -ItemType Directory -Force -Path $programDataDir | Out-Null
+    New-Item -ItemType Directory -Force -Path $localDir | Out-Null
+    Set-Content -LiteralPath (Join-Path $programDataDir 'kolam-desktop-client.secret') -Value $secret -NoNewline -Encoding ascii
+    Set-Content -LiteralPath (Join-Path $localDir 'kolam-desktop-client.secret') -Value $secret -NoNewline -Encoding ascii
+
     Broadcast-EnvironmentChange
   }
   'shortcut' {

@@ -1,3 +1,4 @@
+import {appConfig} from '../src/config/app';
 import {
   getRenderableKolamImageUri,
   readKolamImageCache,
@@ -108,9 +109,9 @@ describe('Kolam image local cache', () => {
           'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
         Authorization: 'Bearer token-123',
         Origin: 'app://kolamwindows',
-        'User-Agent': 'KolamWindows/0.0.1',
+        'User-Agent': appConfig.nativeUserAgent,
         'x-da-client': 'kolam-windows',
-        'x-da-client-version': '0.0.1',
+        'x-da-client-version': appConfig.nativeClientVersion,
         'x-device-mac': 'AA:BB:CC:DD:EE:FF',
         'x-device-mac-signature': 'signed-mac',
         'x-source': 'Kolam',

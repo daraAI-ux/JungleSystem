@@ -26,12 +26,21 @@ export class ApiError extends Error {
   }
 }
 
-export function getErrorMessage(error: unknown, fallback = 'Unknown error'): string {
-  if (error instanceof Error) {
-    return sanitizeApiErrorMessage(error.message);
-  }
+export function isMacAccessDeniedError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.status === 403 &&
+    error.code === 'MAC_ACCESS_DENIED'
+  );
+}
 
-  return fallback;
+export function isRateLimitedError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 429;
+}
+
+/** Login/OTP must not retry these — BE counts them toward IP+email lockout. */
+export function isNonRetryableKolamAuthError(error: unknown): boolean {
+  return isMacAccessDeniedError(error) || isRateLimitedError(error);
 }
 
 /** Strip HTML bodies so RN empty-states never dump raw markup. */
