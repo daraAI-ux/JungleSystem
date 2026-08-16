@@ -95,7 +95,9 @@ export function KolamSettingsActivityLogSurface({
         .filter(column => column.id !== 'detail')
         .map(column => ({
           align:
+            column.id === 'type' ||
             column.id === 'method' ||
+            column.id === 'path' ||
             column.id === 'ip' ||
             column.id === 'status' ||
             column.id === 'duration'
@@ -319,10 +321,16 @@ function ActivityLogTableCell({
   if (column.id === 'path') {
     return (
       <View style={styles.pathCell}>
-        <Text numberOfLines={1} style={styles.primaryCell}>
+        <Text
+          numberOfLines={1}
+          style={[styles.primaryCell, styles.pathCellText]}
+        >
           {row.path || '-'}
         </Text>
-        <Text numberOfLines={1} style={styles.secondaryCell}>
+        <Text
+          numberOfLines={1}
+          style={[styles.secondaryCell, styles.pathCellText]}
+        >
           {row.event || '-'}
         </Text>
       </View>
@@ -376,6 +384,8 @@ function getActivityLogTableColumnFlex(column: SettingsActivityLogTableColumn) {
 function isCenteredActivityLogColumn(columnId: SettingsActivityLogTableColumn['id']) {
   return (
     columnId === 'method' ||
+    columnId === 'type' ||
+    columnId === 'path' ||
     columnId === 'ip' ||
     columnId === 'status' ||
     columnId === 'duration'
@@ -587,8 +597,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Consolas',
   },
   pathCell: {
+    alignItems: 'center',
     gap: 2,
     minWidth: 0,
+    width: '100%',
+  },
+  pathCellText: {
+    textAlign: 'center',
+    width: '100%',
   },
   primaryCell: {
     color: V.colors.fg,
