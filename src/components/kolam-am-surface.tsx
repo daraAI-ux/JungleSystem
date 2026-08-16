@@ -7101,6 +7101,9 @@ function AmActivityLogPage() {
       return next;
     });
   }, []);
+  const openActivityLogDetail = React.useCallback((log: AmActivityLog) => {
+    setSelectedLog(current => (current?._id === log._id ? null : log));
+  }, []);
 
   const hasActiveFilters =
     Boolean(search.trim()) || type !== 'all' || status !== 'all' || method !== 'all';
@@ -7227,12 +7230,12 @@ function AmActivityLogPage() {
             accessibilityLabel={`AM Activity Log Detail ${log._id}`}
             size="sm"
             style={styles.activityLogActionButton}
-            onPress={() => setSelectedLog(current => current?._id === log._id ? null : log)}
+            onPress={() => openActivityLogDetail(log)}
           />
         </View>
       ),
     },
-  ], [selectedLogIds, toggleSelectedLogId]);
+  ], [openActivityLogDetail, selectedLogIds, toggleSelectedLogId]);
 
   if (!accessLoaded) {
     return (
@@ -9575,12 +9578,18 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     gap: 6,
     minWidth: 0,
+    overflow: 'visible',
+    position: 'relative',
     width: '100%',
+    zIndex: 3,
   },
   activityLogActionButton: {
     alignSelf: 'stretch',
+    elevation: 3,
     minWidth: 68,
+    position: 'relative',
     width: '100%',
+    zIndex: 4,
   },
   typeCol: {
     flex: 1.2,
