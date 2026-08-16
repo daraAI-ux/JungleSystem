@@ -2010,6 +2010,78 @@ describe('KolamAmSurface', () => {
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Service Submit Input service-otp'})).toHaveLength(0);
   });
 
+  it('places Instagram OTP input below the Live console (AM-FE parity)', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-ig-otp',
+          platform: 'instagram',
+          label: 'Instagram OTP',
+          deviceId: {
+            _id: 'device-ig-otp',
+            name: 'Browser IG',
+            connectionType: 'browser',
+            tcpAddress: null,
+            udid: null,
+          },
+          status: 'active',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
+      logs: [
+        {
+          ts: '2026-01-01T00:00:00.000Z',
+          level: 'stderr',
+          message: '[instagram] 2FA required (WhatsApp OTP) — emitting login_required',
+        },
+        {
+          ts: '2026-01-01T00:00:01.000Z',
+          level: 'info',
+          message: 'Login required (2fa)',
+        },
+        {
+          ts: '2026-01-01T00:00:02.000Z',
+          level: 'stderr',
+          message: '[instagram] OTP_REQUIRED',
+        },
+      ],
+      processRunning: true,
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValue([]);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Instagram OTP'}).props.onPress();
+    });
+
+    const treeText = renderText(renderer!).join(' ');
+    const consoleIdx = treeText.indexOf('Process running');
+    const otpLogIdx = treeText.indexOf('[instagram] OTP_REQUIRED');
+    const submitIdx = treeText.indexOf('Kirim Input');
+    expect(consoleIdx).toBeGreaterThanOrEqual(0);
+    expect(otpLogIdx).toBeGreaterThan(consoleIdx);
+    expect(submitIdx).toBeGreaterThan(otpLogIdx);
+    const inputs = renderer!.root.findAllByType(TextInput);
+    expect(inputs[inputs.length - 1].props.placeholder).toBe('Masukkan OTP service');
+    expect(
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Submit Input service-ig-otp'}),
+    ).toBeTruthy();
+  });
+
   it('renders nested QR base64 events from AM worker logs', async () => {
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [

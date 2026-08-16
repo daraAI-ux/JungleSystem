@@ -3134,10 +3134,23 @@ function AmServiceDetailPanel({
   const logTotalPages = Math.max(1, Math.ceil(logTotal / Math.max(logLimit, 1)));
   const logFrom = logTotal ? (logPage - 1) * logLimit + 1 : 0;
   const logTo = logTotal ? Math.min(logPage * logLimit, logTotal) : 0;
-  const displayedLogs = logSource === 'history' ? logs : logs.slice(-20);
+  // Parity AM-FE: full Live buffer (not a 20-line tail).
+  const displayedLogs = logs;
   const visibleLineCount = logSource === 'history'
     ? logTotal || logs.length
     : logs.length;
+  const logScrollRef = React.useRef<ScrollView>(null);
+
+  React.useEffect(() => {
+    if (logSource !== 'realtime' || !logs.length) {
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      logScrollRef.current?.scrollToEnd({animated: false});
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [logSource, logs]);
+
   const taskHistoryColumns = React.useMemo<Array<KolamListTableColumn<AmTask>>>(
     () => [
       {
@@ -3260,25 +3273,6 @@ function AmServiceDetailPanel({
               <Text style={styles.successText}>Login berhasil - cookies tersimpan. Service siap dipakai.</Text>
             </View>
           ) : null}
-          {needsInput ? (
-            <View style={styles.formGrid}>
-              <AmTextInput
-                label={needsPassword ? 'Password' : 'OTP'}
-                placeholder={needsPassword ? 'Masukkan password service' : 'Masukkan OTP service'}
-                value={serviceInputValue}
-                onChangeText={onChangeServiceInput}
-              />
-              <KolamButton
-                accessibilityLabel={`AM Service Submit Input ${account._id}`}
-                disabled={serviceInputSending}
-                label={serviceInputSending ? 'Mengirim' : 'Kirim Input'}
-                muted={serviceInputSending}
-                size="sm"
-                style={styles.serviceActionButton}
-                onPress={() => onSubmitServiceInput(needsPassword ? 'password' : 'otp')}
-              />
-            </View>
-          ) : null}
           <View style={styles.serviceConsolePanel}>
             <View style={styles.serviceConsoleHeader}>
               <View style={styles.serviceConsoleStatus}>
@@ -3326,6 +3320,7 @@ function AmServiceDetailPanel({
             </View>
             {logSource ? (
               <ScrollView
+                ref={logScrollRef}
                 nestedScrollEnabled
                 showsVerticalScrollIndicator
                 style={styles.serviceLogPanel}
@@ -3342,6 +3337,26 @@ function AmServiceDetailPanel({
               </ScrollView>
             ) : null}
           </View>
+          {/* OTP/password under Live console (AM-FE parity). */}
+          {needsInput ? (
+            <View style={styles.formGrid}>
+              <AmTextInput
+                label={needsPassword ? 'Password' : 'OTP'}
+                placeholder={needsPassword ? 'Masukkan password service' : 'Masukkan OTP service'}
+                value={serviceInputValue}
+                onChangeText={onChangeServiceInput}
+              />
+              <KolamButton
+                accessibilityLabel={`AM Service Submit Input ${account._id}`}
+                disabled={serviceInputSending}
+                label={serviceInputSending ? 'Mengirim' : 'Kirim Input'}
+                muted={serviceInputSending}
+                size="sm"
+                style={styles.serviceActionButton}
+                onPress={() => onSubmitServiceInput(needsPassword ? 'password' : 'otp')}
+              />
+            </View>
+          ) : null}
           {logSource === 'history' && logTotal > logLimit ? (
             <AmServiceHistoryPagination
               currentPage={logPage}
