@@ -7199,7 +7199,7 @@ function AmActivityLogPage() {
     },
     {
       align: 'center',
-      flex: 0.7,
+      flex: 0.62,
       id: 'duration',
       label: 'Durasi',
       render: log => (
@@ -7208,7 +7208,31 @@ function AmActivityLogPage() {
         </Text>
       ),
     },
-  ], []);
+    {
+      align: 'center',
+      flex: 0.86,
+      id: 'actions',
+      label: 'Aksi',
+      render: log => (
+        <View style={styles.activityLogActionsCell}>
+          <KolamButton
+            accessibilityLabel={`AM Activity Log Select ${log._id}`}
+            label={selectedLogIds.has(log._id) ? 'Dipilih' : 'Pilih'}
+            intent="outline"
+            size="sm"
+            style={styles.activityLogActionButton}
+            onPress={() => toggleSelectedLogId(log._id)}
+          />
+          <KolamDetailButton
+            accessibilityLabel={`AM Activity Log Detail ${log._id}`}
+            size="sm"
+            style={styles.activityLogActionButton}
+            onPress={() => setSelectedLog(current => current?._id === log._id ? null : log)}
+          />
+        </View>
+      ),
+    },
+  ], [selectedLogIds, toggleSelectedLogId]);
 
   if (!accessLoaded) {
     return (
@@ -7383,22 +7407,6 @@ function AmActivityLogPage() {
           pageSize: limit,
           total,
         } : undefined}
-        renderActions={log => (
-          <View style={styles.statusActionStack}>
-            <KolamButton
-              accessibilityLabel={`AM Activity Log Select ${log._id}`}
-              label={selectedLogIds.has(log._id) ? 'Dipilih' : 'Pilih'}
-              intent="outline"
-              size="sm"
-              onPress={() => toggleSelectedLogId(log._id)}
-            />
-            <KolamDetailButton
-              accessibilityLabel={`AM Activity Log Detail ${log._id}`}
-              size="sm"
-              onPress={() => setSelectedLog(current => current?._id === log._id ? null : log)}
-            />
-          </View>
-        )}
         rows={logs}
         showFooter={total > 0}
       />
@@ -9561,6 +9569,17 @@ const styles = StyleSheet.create({
   activityLogPathCell: {
     alignItems: 'center',
     minWidth: 0,
+    width: '100%',
+  },
+  activityLogActionsCell: {
+    alignItems: 'stretch',
+    gap: 6,
+    minWidth: 0,
+    width: '100%',
+  },
+  activityLogActionButton: {
+    alignSelf: 'stretch',
+    minWidth: 68,
     width: '100%',
   },
   typeCol: {
