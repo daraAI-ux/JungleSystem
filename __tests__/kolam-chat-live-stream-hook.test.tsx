@@ -319,7 +319,7 @@ describe('useKolamChatLiveStream', () => {
       xhr.readyState = xhr.LOADING;
 
       await ReactTestRenderer.act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(() => resolve(undefined), 500));
       });
 
       expect(events).toEqual([

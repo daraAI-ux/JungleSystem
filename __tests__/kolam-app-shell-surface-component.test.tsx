@@ -1,5 +1,12 @@
 import React from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamAppShellSurface } from '../src/components/kolam-app-shell-surface';
 import { showKolamOverflowMenuOverlay } from '../src/components/kolam-overflow-menu-overlay-host';
@@ -58,13 +65,14 @@ function flattenText(value: React.ReactNode): string[] {
 
 function isMainPageContainerStyle(style: ReturnType<typeof StyleSheet.flatten>) {
   const visual = getDashboardLayoutVisualContract();
+  const viewStyle = style as ViewStyle | undefined;
 
   return (
-    style?.padding === 16 ||
-    style?.maxWidth === visual.page.maxWidthPx ||
-    (typeof style?.paddingHorizontal === 'number' &&
-      typeof style?.paddingTop === 'number' &&
-      typeof style?.paddingBottom === 'number')
+    viewStyle?.padding === 16 ||
+    viewStyle?.maxWidth === visual.page.maxWidthPx ||
+    (typeof viewStyle?.paddingHorizontal === 'number' &&
+      typeof viewStyle?.paddingTop === 'number' &&
+      typeof viewStyle?.paddingBottom === 'number')
   );
 }
 

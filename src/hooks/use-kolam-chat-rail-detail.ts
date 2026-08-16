@@ -150,7 +150,7 @@ export interface KolamChatRailDetailState {
   callConfig: KolamTeamChatCallConfig;
   /** LiveKit ready — native bridge may connect; never request media-token if false. */
   mediaReady: boolean;
-  mediaConnection: KolamTeamChatCallMediaConnectionState;
+  mediaConnection?: KolamTeamChatCallMediaConnectionState;
   callErrorMessage?: string;
   callNoticeMessage?: string;
   conversation: KolamChatConversation | null;
@@ -175,7 +175,7 @@ export interface KolamChatRailDetailState {
     patch: Partial<KolamChatMessage>,
   ) => void;
   upsertInboxMessageFromLive: (message: KolamChatMessage) => void;
-  upsertTeamChatMessageFromLive: (message: KolamTeamChatMessage) => void;
+  upsertTeamChatMessageFromLive?: (message: KolamTeamChatMessage) => void;
   reactToMessage: (messageId: string, emoji: string) => Promise<void>;
   redialCall: () => Promise<void>;
   refreshCall: () => Promise<void>;

@@ -4,6 +4,7 @@ import {
   NativeModules,
   Platform,
   TurboModuleRegistry,
+  type TurboModule,
 } from 'react-native';
 import {
   resolveKolamChatDesktopToast,
@@ -25,7 +26,7 @@ export type KolamWindowsToastActivation = {
   targetId: string;
 };
 
-type KolamWindowsToastNativeBridge = {
+type KolamWindowsToastNativeBridge = TurboModule & {
   showToast?: (
     options: KolamChatDesktopToastRequest,
   ) => Promise<{status?: string; tag?: string} | void> | void;

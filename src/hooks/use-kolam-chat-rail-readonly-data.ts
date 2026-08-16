@@ -9,7 +9,7 @@ import {
 } from '../services/kolam-api';
 
 export interface KolamChatRailReadonlyDataState {
-  clearItemUnread: (itemId: string) => number;
+  clearItemUnread?: (itemId: string) => number;
   conversations: KolamChatConversation[];
   errorMessage?: string;
   loading: boolean;

@@ -1,4 +1,9 @@
-import {NativeEventEmitter, NativeModules, Platform} from 'react-native';
+import {
+  NativeEventEmitter,
+  NativeModules,
+  Platform,
+  type TurboModule,
+} from 'react-native';
 
 export type KolamLiveKitConnectParams = {
   identity: string;
@@ -24,7 +29,7 @@ export type KolamLiveKitMediaErrorEvent = {
   trackSid?: string;
 };
 
-export type KolamLiveKitNativeBridge = {
+export type KolamLiveKitNativeBridge = TurboModule & {
   addListener?: (eventName: string) => void;
   connectRoom?: (
     params: KolamLiveKitConnectParams,
@@ -85,9 +90,7 @@ export function subscribeKolamLiveKitNativeEvents(
   }
 
   const modules = options.nativeModules ?? NativeModules;
-  const emitter = new NativeEventEmitter(
-    modules[NATIVE_MODULE_NAME] as Parameters<typeof NativeEventEmitter>[0],
-  );
+  const emitter = new NativeEventEmitter(modules[NATIVE_MODULE_NAME]);
   const subscriptions = [
     handlers.onConnectionChanged
       ? emitter.addListener('ConnectionChanged', handlers.onConnectionChanged)

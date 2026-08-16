@@ -43,6 +43,25 @@ export function isNonRetryableKolamAuthError(error: unknown): boolean {
   return isMacAccessDeniedError(error) || isRateLimitedError(error);
 }
 
+export function getErrorMessage(
+  error: unknown,
+  fallback = 'Terjadi kesalahan.',
+): string {
+  if (error instanceof ApiError) {
+    return sanitizeApiErrorMessage(error.message, error.status);
+  }
+
+  if (error instanceof Error) {
+    return sanitizeApiErrorMessage(error.message);
+  }
+
+  if (typeof error === 'string') {
+    return sanitizeApiErrorMessage(error);
+  }
+
+  return fallback;
+}
+
 /** Strip HTML bodies so RN empty-states never dump raw markup. */
 export function sanitizeApiErrorMessage(
   message: string,

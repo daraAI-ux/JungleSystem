@@ -415,6 +415,20 @@ function normalizeComposerText(value: string) {
   return value.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
 
+function isKolamTeamChatRailMode(mode: KolamGlobalChatRailMode) {
+  return mode === 'team-chat';
+}
+
+function scheduleKolamComposerMicrotask(task: () => void) {
+  const scheduler = (globalThis as {queueMicrotask?: (task: () => void) => void})
+    .queueMicrotask;
+  if (typeof scheduler === 'function') {
+    scheduler(task);
+    return;
+  }
+  Promise.resolve().then(task).catch(() => undefined);
+}
+
 function countComposerNewlines(value: string) {
   return (value.match(/\n/g) || []).length;
 }
@@ -450,7 +464,7 @@ function useKolamComposerEnterKey(
     newlineGestureRef.current = true;
     // Clear after this turn so the same Enter's submitEditing is ignored,
     // but the next physical Shift+Enter can insert another line.
-    queueMicrotask(() => {
+    scheduleKolamComposerMicrotask(() => {
       newlineGestureRef.current = false;
     });
 
@@ -1050,7 +1064,7 @@ export function KolamGlobalChatRail({
   > | null>(null);
   const clearUnreadForSelected = React.useCallback(
     (itemId: string) => {
-      const cleared = data.clearItemUnread(itemId);
+      const cleared = data.clearItemUnread?.(itemId) ?? 0;
       if (cleared > 0) {
         onChatUnreadDelta?.(mode === 'team-chat' ? 'team' : 'inbox', -cleared);
       }
@@ -1296,7 +1310,7 @@ export function KolamGlobalChatRail({
         liveIdsEqual(teamLiveRoomId, selectedItemId)
       ) {
         if (teamMessageCreated) {
-          detail.upsertTeamChatMessageFromLive(teamMessageCreated);
+          detail.upsertTeamChatMessageFromLive?.(teamMessageCreated);
         } else {
           Promise.resolve(detail.refresh({quiet: true})).catch(() => undefined);
         }
@@ -1309,7 +1323,7 @@ export function KolamGlobalChatRail({
         liveIdsEqual(teamLiveRoomId, daraWindowRoomId)
       ) {
         if (teamMessageCreated) {
-          daraWindowDetail.upsertTeamChatMessageFromLive(teamMessageCreated);
+          daraWindowDetail.upsertTeamChatMessageFromLive?.(teamMessageCreated);
           if (isLiveTeamChatAiMessage(teamMessageCreated)) {
             setDaraWindowThinkingLiveSignal(null);
           }
@@ -5355,11 +5369,13 @@ function KolamChatRailDetailPanel({
                               />
                             ) : null}
                           </View>
-                          {(canReply || canEdit || mode === 'team-chat') &&
+                          {(canReply ||
+                            canEdit ||
+                            isKolamTeamChatRailMode(mode)) &&
                           !isEditing ? (
                             <KolamChatReactionControls
                               canEdit={canEdit}
-                              canReact={mode === 'team-chat'}
+                              canReact={isKolamTeamChatRailMode(mode)}
                               canReply={canReply}
                               disabled={detail.sending}
                               message={message}
@@ -5372,7 +5388,7 @@ function KolamChatRailDetailPanel({
                                 onReplyToMessage({
                                   author: message.author,
                                   body:
-                                    mode === 'team-chat'
+                                    isKolamTeamChatRailMode(mode)
                                       ? getTeamChatReplyTargetBody(message)
                                       : getInboxReplyTargetBody(message),
                                   id: message.id,
@@ -6176,12 +6192,10 @@ function KolamChatStoreCatalogPicker({
       ? pickedParent.raw.name
       : pickedParent.raw.scientificName || pickedParent.raw.displayName
     : '';
-  const detailRaw =
-    pickedParent?.kind === 'product'
-      ? detailProduct ?? pickedParent.raw
-      : pickedParent?.kind === 'species'
-      ? detailSpecies ?? pickedParent.raw
-      : null;
+  const detailProductRaw =
+    pickedParent?.kind === 'product' ? detailProduct ?? pickedParent.raw : null;
+  const detailSpeciesRaw =
+    pickedParent?.kind === 'species' ? detailSpecies ?? pickedParent.raw : null;
   const browseRows: KolamChatCatalogPickerParent[] =
     tab === 'product'
       ? products.map(raw => ({kind: 'product' as const, raw}))
@@ -6262,35 +6276,67 @@ function KolamChatStoreCatalogPicker({
         <Text style={styles.templatePickerMessage}>Loading...</Text>
       ) : null}
 
-      {pickedParent && !detailLoading && detailRaw ? (
+      {pickedParent?.kind === 'product' && !detailLoading && detailProductRaw ? (
         <ScrollView
           style={styles.marketplaceListScroll}
           showsVerticalScrollIndicator
         >
           <KolamMappedList
-            items={detailRaw.variants}
+            items={detailProductRaw.variants}
             getKey={variant => variant.id || variantKolamCatalogDisplayName(variant)}
             renderItem={variant => {
-              const stock = effectiveKolamCatalogStock(detailRaw, variant);
+              const stock = effectiveKolamCatalogStock(detailProductRaw, variant);
               const price = pickKolamCatalogPrice(variant);
               const title = variantKolamCatalogDisplayName(variant);
               return (
                 <KolamPressable
                   accessibilityLabel={`Kirim varian ${title}`}
                   disabled={disabled}
-                  onPress={() => {
-                    if (pickedParent.kind === 'product') {
-                      sendProductPick(
-                        detailRaw as KolamProduct,
-                        variant as KolamProductVariant,
-                      );
-                      return;
-                    }
-                    sendSpeciesPick(
-                      detailRaw as KolamSpecies,
-                      variant as KolamSpeciesVariantMedia,
-                    );
-                  }}
+                  onPress={() => sendProductPick(detailProductRaw, variant)}
+                  style={[
+                    styles.marketplaceListingRow,
+                    disabled && styles.marketplaceListingRowDisabled,
+                  ]}
+                >
+                  <View style={styles.marketplaceListingCopy}>
+                    <Text
+                      numberOfLines={2}
+                      style={styles.marketplaceListingTitle}
+                    >
+                      {title}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={styles.marketplaceListingMeta}
+                    >
+                      {`${formatKolamCatalogRupiah(price) || '-'} · Stok ${stock}`}
+                    </Text>
+                  </View>
+                  <Text style={styles.marketplaceListingState}>Kirim</Text>
+                </KolamPressable>
+              );
+            }}
+          />
+        </ScrollView>
+      ) : null}
+
+      {pickedParent?.kind === 'species' && !detailLoading && detailSpeciesRaw ? (
+        <ScrollView
+          style={styles.marketplaceListScroll}
+          showsVerticalScrollIndicator
+        >
+          <KolamMappedList
+            items={detailSpeciesRaw.variants}
+            getKey={variant => variant.id || variantKolamCatalogDisplayName(variant)}
+            renderItem={variant => {
+              const stock = effectiveKolamCatalogStock(detailSpeciesRaw, variant);
+              const price = pickKolamCatalogPrice(variant);
+              const title = variantKolamCatalogDisplayName(variant);
+              return (
+                <KolamPressable
+                  accessibilityLabel={`Kirim varian ${title}`}
+                  disabled={disabled}
+                  onPress={() => sendSpeciesPick(detailSpeciesRaw, variant)}
                   style={[
                     styles.marketplaceListingRow,
                     disabled && styles.marketplaceListingRowDisabled,

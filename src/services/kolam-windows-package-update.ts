@@ -3,6 +3,7 @@ import {
   NativeModules,
   Platform,
   TurboModuleRegistry,
+  type TurboModule,
 } from 'react-native';
 import type {KolamPackageInfo} from '../domain/kolam-package-update';
 
@@ -16,7 +17,7 @@ export type KolamPackageInstallProgress = {
   percent: number;
 };
 
-type KolamWindowsPackageUpdateNativeBridge = {
+type KolamWindowsPackageUpdateNativeBridge = TurboModule & {
   addListener?: (eventName: string) => void;
   downloadMsix?: (options: {
     authorization?: string;

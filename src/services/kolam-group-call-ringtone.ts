@@ -21,6 +21,9 @@ type KolamGroupCallRingtonePlayer = {
   ) => Promise<unknown>;
 };
 
+type KolamGroupCallSoundServiceOptions =
+  Partial<KolamNotificationSoundServiceOptions>;
+
 const RING_INTERVAL_MS = 2_400;
 
 /**
@@ -31,7 +34,7 @@ const RING_INTERVAL_MS = 2_400;
 export function createKolamGroupCallRingtoneController(
   options: {
     createSoundService?: (
-      serviceOptions?: KolamNotificationSoundServiceOptions,
+      serviceOptions?: KolamGroupCallSoundServiceOptions,
     ) => KolamGroupCallRingtonePlayer;
     intervalMs?: number;
     stopPlayback?: () => Promise<void> | void;
@@ -39,7 +42,7 @@ export function createKolamGroupCallRingtoneController(
 ) {
   const soundService = (
     options.createSoundService ??
-    ((serviceOptions?: KolamNotificationSoundServiceOptions) =>
+    ((serviceOptions?: KolamGroupCallSoundServiceOptions) =>
       createKolamNotificationSoundService({
         adapter: createKolamRuntimeNotificationSoundAdapter(),
         ...serviceOptions,
@@ -77,7 +80,7 @@ export function createKolamGroupCallRingtoneController(
       .then(() => {
         // In-flight play can finish after stop(); kill audio that started late.
         if (playGeneration !== generation) {
-          return stopPlayback();
+          Promise.resolve(stopPlayback()).catch(() => undefined);
         }
         return undefined;
       })

@@ -17,8 +17,13 @@ import {
   useKolamAuthContext,
   useKolamNavigationContext,
 } from '../src/context/kolam-app-contexts';
+import type {KolamProduct} from '../src/domain/kolam-product';
+import type {KolamTeamChatCallMediaConnectionState} from '../src/domain/kolam-team-chat-call';
 import {useKolamChatLiveStream} from '../src/hooks/use-kolam-chat-live-stream';
-import {useKolamChatRailDetail} from '../src/hooks/use-kolam-chat-rail-detail';
+import {
+  type KolamChatRailDetailState,
+  useKolamChatRailDetail,
+} from '../src/hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../src/hooks/use-kolam-chat-rail-readonly-data';
 import {useKolamNotificationSoundSettings} from '../src/hooks/use-kolam-notification-sound-settings';
 import {
@@ -259,6 +264,10 @@ const pickNativeAssetFileMock = pickNativeAssetFile as jest.MockedFunction<
 const pickNativeImageFileMock = pickNativeImageFile as jest.MockedFunction<
   typeof pickNativeImageFile
 >;
+const idleMediaConnection: KolamTeamChatCallMediaConnectionState = {
+  callId: null,
+  status: 'idle',
+};
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -278,12 +287,13 @@ function flattenText(value: React.ReactNode): string[] {
   return [];
 }
 
-function getDefaultDetailMock() {
+function getDefaultDetailMock(): KolamChatRailDetailState {
   return {
     activeCall: null,
     assignInboxToMe: jest.fn(),
     callBusy: false,
     callConfig: {enabled: false},
+    mediaConnection: idleMediaConnection,
     mediaReady: false,
     conversation: null,
     declineCall: jest.fn(),
@@ -299,6 +309,7 @@ function getDefaultDetailMock() {
     muteCallParticipant: jest.fn(),
     patchInboxMessageFromLive: jest.fn(),
     upsertInboxMessageFromLive: jest.fn(),
+    upsertTeamChatMessageFromLive: jest.fn(),
     presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
     purgeMessages: jest.fn(),
     purgingMessages: false,
@@ -341,7 +352,7 @@ describe('KolamGlobalChatRail', () => {
     useNavigationContextMock.mockReturnValue({
       handleChatRailClose: handleChatRailCloseMock,
       handleDashboardRouteContext: handleDashboardRouteContextMock,
-    } as ReturnType<typeof useKolamNavigationContext>);
+    } as unknown as ReturnType<typeof useKolamNavigationContext>);
     copyTextToClipboardMock.mockClear();
     createTeamChatRoomMock.mockClear();
     createChatLabelMock.mockClear();
@@ -1260,7 +1271,17 @@ describe('KolamGlobalChatRail', () => {
           sendMessage,
           teamRoomMetadata: {
             ...detail.teamRoomMetadata,
-            bots: [{id: 'dara', label: 'DARA', username: 'dara'}],
+            bots: [
+              {
+                botKey: 'dara',
+                displayName: 'DARA',
+                isAi: true,
+                isBot: true,
+                online: true,
+                profile_picture: null,
+                username: 'dara',
+              },
+            ],
           },
         } as ReturnType<typeof getDefaultDetailMock>;
       }
@@ -2545,7 +2566,7 @@ describe('KolamGlobalChatRail', () => {
         variants: [],
         photoUris: ['https://cdn.example/nemo.jpg'],
         thumbnailUri: 'https://cdn.example/nemo.jpg',
-      };
+      } as unknown as KolamProduct;
       const sendCatalogCard = jest.fn().mockResolvedValue(undefined);
       getKolamProductsMock.mockResolvedValue({
         data: [product],
@@ -2656,7 +2677,7 @@ describe('KolamGlobalChatRail', () => {
         variants: [],
         photoUris: ['https://cdn.example/anemon.jpg'],
         thumbnailUri: 'https://cdn.example/anemon.jpg',
-      };
+      } as unknown as KolamProduct;
       getKolamProductsMock.mockResolvedValue({
         data: [product],
         pagination: {page: 1, limit: 15, total: 1, totalPages: 1},
@@ -3531,7 +3552,7 @@ describe('KolamGlobalChatRail', () => {
         {
           _id: 'conv-deeplink',
           assignedStaffId: null,
-          platform: 'web',
+          platform: 'store',
           contactId: {displayName: 'Buyer Web'},
           lastMessagePreview: 'Kartu katalog',
           unreadCount: 1,
@@ -3549,7 +3570,7 @@ describe('KolamGlobalChatRail', () => {
         assignedStaffId: null,
         isAiHandled: false,
         labelIds: [],
-        platform: 'web',
+        platform: 'store',
         status: 'open',
       },
       loading: false,
