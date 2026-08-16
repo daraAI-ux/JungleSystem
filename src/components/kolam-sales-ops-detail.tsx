@@ -1151,248 +1151,259 @@ export function KolamSalesOpsDetail({
       <View style={styles.columns}>
         <View style={styles.columnMain}>
           {marketplaceManaged || allowedTransitions.length === 0 ? (
-            <>
-              <Text style={styles.sectionTitle}>Aksi status</Text>
-              {marketplaceManaged ? (
-                <Text style={styles.metaText}>
-                  Status pembayaran marketplace dikelola otomatis dari platform.
-                </Text>
-              ) : (
-                <>
+            <KolamDetailSummaryCard
+              body={
+                marketplaceManaged ? (
                   <Text style={styles.metaText}>
-                    {sale.status === 'pending'
-                      ? 'Menunggu persetujuan finance (ubah via Persetujuan Diskon).'
-                      : 'Tidak ada transisi status yang tersedia.'}
+                    Status pembayaran marketplace dikelola otomatis dari platform.
                   </Text>
-                  {sale.status === 'pending' ? (
-                    <KolamButton
-                      label="Ke persetujuan diskon"
-                      onPress={() =>
-                        onRouteChange?.(KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE)
-                      }
-                    />
-                  ) : null}
-                </>
-              )}
-            </>
-          ) : null}
-
-          <Text style={styles.sectionTitle}>Detail Item Penjualan</Text>
-          {sale.items.length === 0 ? (
-            <Text style={styles.metaText}>Tidak ada item.</Text>
-          ) : (
-            sale.items.map((item, index) => {
-              const lineTotal = item.unitPrice * item.quantity;
-              const discountAmount = getKolamSaleItemDiscountAmount(item);
-              const voucherApplied = getKolamSaleItemVoucherDiscountApplied(item);
-              const packingClientTotal = item.packings.reduce(
-                (sum, packing) =>
-                  sum + packing.unitPriceAtSale * packing.quantity,
-                0,
-              );
-              const clientPay =
-                Math.max(0, item.subtotal - voucherApplied) +
-                Math.max(0, item.shippingCost) +
-                packingClientTotal;
-              const internal = profitByIndex.get(index) ?? null;
-
-              return (
-                <View key={item.id} style={styles.itemCard}>
-                  <View style={styles.itemRow}>
-                    {item.thumbnailUri ? (
-                      <KolamRemoteImage
-                        accessibilityLabel={`Gambar ${item.title}`}
-                        sourceUri={item.thumbnailUri}
-                        style={styles.itemThumb}
-                      />
-                    ) : (
-                      <View style={styles.itemThumbPlaceholder}>
-                        <Text style={styles.itemThumbPlaceholderText}>—</Text>
-                      </View>
-                    )}
-                    <View style={styles.itemBody}>
-                      <Text style={styles.primaryText}>{item.title}</Text>
-                      <Text style={styles.metaText}>
-                        {formatKolamSaleItemTypeLabel(item.itemType)}
-                        {item.variantLabel ? ` · ${item.variantLabel}` : ''}
-                        {item.sku ? ` · ${item.sku}` : ''}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.breakdownCard}>
-                    <View
-                      style={[
-                        styles.breakdownSection,
-                        styles.breakdownSectionFirst,
-                      ]}
-                    >
-                      <Text style={styles.breakdownSectionTitle}>
-                        Tagihan Client
-                      </Text>
-                      <BreakdownAmountRow
-                        label={`${formatRupiah(item.unitPrice)} × ${item.quantity}`}
-                        value={formatRupiah(lineTotal)}
-                      />
-                      {discountAmount > 0 ? (
-                        <BreakdownAmountRow
-                          label={
-                            item.discount?.type === 'percentage'
-                              ? `Diskon (${item.discount.amount}%)`
-                              : 'Diskon'
-                          }
-                          tone="deduction"
-                          value={`-${formatRupiah(discountAmount)}`}
-                        />
-                      ) : null}
-                      {voucherApplied > 0 ? (
-                        <BreakdownAmountRow
-                          label={`Voucher ${formatKolamSaleItemVoucherLabel(item) || item.voucherCode}`}
-                          tone="deduction"
-                          value={`-${formatRupiah(voucherApplied)}`}
-                        />
-                      ) : item.voucherCode ? (
-                        <BreakdownAmountRow
-                          label={`Voucher ${item.voucherCode}`}
-                          tone="muted"
-                          value=""
-                        />
-                      ) : null}
-                      {item.shippingCost > 0 ? (
-                        <BreakdownAmountRow
-                          label="Ongkir"
-                          value={formatRupiah(item.shippingCost)}
-                        />
-                      ) : null}
-                      {packingClientTotal > 0 ? (
-                        <BreakdownAmountRow
-                          label="Kemasan"
-                          value={formatRupiah(packingClientTotal)}
-                        />
-                      ) : null}
-                      <BreakdownAmountRow
-                        emphasis
-                        label="Client Bayar"
-                        value={formatRupiah(clientPay)}
-                      />
-                    </View>
-
-                    {internal ? (
-                      <ItemInternalBreakdownSection
-                        bd={internal}
-                        mode={profitSummary.mode}
+                ) : (
+                  <>
+                    <Text style={styles.metaText}>
+                      {sale.status === 'pending'
+                        ? 'Menunggu persetujuan finance (ubah via Persetujuan Diskon).'
+                        : 'Tidak ada transisi status yang tersedia.'}
+                    </Text>
+                    {sale.status === 'pending' ? (
+                      <KolamButton
+                        label="Ke persetujuan diskon"
+                        onPress={() =>
+                          onRouteChange?.(KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE)
+                        }
                       />
                     ) : null}
-                  </View>
-                </View>
-              );
-            })
-          )}
-
-          <View style={styles.totalsCard}>
-            <BreakdownAmountRow
-              label="Subtotal"
-              value={formatRupiah(sale.total)}
+                  </>
+                )
+              }
+              fields={[]}
+              title="Aksi status"
             />
-            {sale.shippingCost > 0 ? (
-              <BreakdownAmountRow
-                label="Ongkir"
-                value={formatRupiah(sale.shippingCost)}
-              />
-            ) : null}
-            {sale.customCosts.map((cost, index) => (
-              <BreakdownAmountRow
-                key={`custom-cost-${index}`}
-                label={cost.name}
-                value={formatRupiah(cost.amount)}
-              />
-            ))}
-            {sale.sourceCost > 0 && !marketplaceManaged ? (
-              <BreakdownAmountRow
-                label="Biaya sumber"
-                value={formatRupiah(sale.sourceCost)}
-              />
-            ) : null}
-            <BreakdownAmountRow
-              emphasis
-              label="Total keseluruhan"
-              tone="profit"
-              value={formatRupiah(sale.finalTotal)}
-            />
-            <BreakdownAmountRow
-              label="Sudah dibayar"
-              value={formatRupiah(sale.paidAmount)}
-            />
-          </View>
-
-          {showInternalSummary ? (
-            <View style={styles.internalSummaryCard}>
-              <Text style={styles.breakdownSectionTitle}>
-                Internal keseluruhan
-              </Text>
-              <BreakdownAmountRow
-                label={
-                  profitSummary.mode === 'olshop'
-                    ? `Sub Total (${profitSummary.itemBreakdowns.length} item — Pemasukan kotor)`
-                    : 'Pendapatan'
-                }
-                value={formatRupiah(profitSummary.grossSubtotal)}
-              />
-              {profitSummary.totalProductHpp > 0 ? (
-                <BreakdownAmountRow
-                  label="Total HPP"
-                  tone="deduction"
-                  value={`-${formatRupiah(profitSummary.totalProductHpp)}`}
-                />
-              ) : null}
-              {profitSummary.mode === 'olshop' &&
-              profitSummary.marketplaceFees > 0 ? (
-                <>
-                  <Text style={styles.metaText}>
-                    {profitSummary.marketplaceFeeLabel}
-                  </Text>
-                  {profitSummary.marketplaceFeeBreakdown.length > 0
-                    ? profitSummary.marketplaceFeeBreakdown.map((row, i) => (
-                        <BreakdownAmountRow
-                          key={`${row.name}-${i}`}
-                          label={`– ${row.name}`}
-                          tone="deduction"
-                          value={`-${formatRupiah(row.amount)}`}
-                        />
-                      ))
-                    : null}
-                  <BreakdownAmountRow
-                    label="Total"
-                    tone="deduction"
-                    value={`-${formatRupiah(profitSummary.marketplaceFees)}`}
-                  />
-                </>
-              ) : null}
-              {profitSummary.mode === 'internal' &&
-              profitSummary.paymentMethodCost > 0 ? (
-                <BreakdownAmountRow
-                  label="Biaya Payment Method"
-                  tone="deduction"
-                  value={`-${formatRupiah(profitSummary.paymentMethodCost)}`}
-                />
-              ) : null}
-              {profitSummary.totalCommission > 0 ? (
-                <BreakdownAmountRow
-                  label="Komisi final"
-                  tone="deduction"
-                  value={`-${formatRupiah(profitSummary.totalCommission)}`}
-                />
-              ) : null}
-              <BreakdownAmountRow
-                emphasis
-                label="Profit bersih"
-                tone={
-                  profitSummary.netProfit >= 0 ? 'profit' : 'deduction'
-                }
-                value={formatRupiah(profitSummary.netProfit)}
-              />
-            </View>
           ) : null}
+
+          <KolamDetailSummaryCard
+            body={
+              <>
+                {sale.items.length === 0 ? (
+                  <Text style={styles.metaText}>Tidak ada item.</Text>
+                ) : (
+                  sale.items.map((item, index) => {
+                    const lineTotal = item.unitPrice * item.quantity;
+                    const discountAmount = getKolamSaleItemDiscountAmount(item);
+                    const voucherApplied =
+                      getKolamSaleItemVoucherDiscountApplied(item);
+                    const packingClientTotal = item.packings.reduce(
+                      (sum, packing) =>
+                        sum + packing.unitPriceAtSale * packing.quantity,
+                      0,
+                    );
+                    const clientPay =
+                      Math.max(0, item.subtotal - voucherApplied) +
+                      Math.max(0, item.shippingCost) +
+                      packingClientTotal;
+                    const internal = profitByIndex.get(index) ?? null;
+
+                    return (
+                      <View key={item.id} style={styles.itemCard}>
+                        <View style={styles.itemRow}>
+                          {item.thumbnailUri ? (
+                            <KolamRemoteImage
+                              accessibilityLabel={`Gambar ${item.title}`}
+                              sourceUri={item.thumbnailUri}
+                              style={styles.itemThumb}
+                            />
+                          ) : (
+                            <View style={styles.itemThumbPlaceholder}>
+                              <Text style={styles.itemThumbPlaceholderText}>—</Text>
+                            </View>
+                          )}
+                          <View style={styles.itemBody}>
+                            <Text style={styles.primaryText}>{item.title}</Text>
+                            <Text style={styles.metaText}>
+                              {formatKolamSaleItemTypeLabel(item.itemType)}
+                              {item.variantLabel ? ` · ${item.variantLabel}` : ''}
+                              {item.sku ? ` · ${item.sku}` : ''}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.breakdownCard}>
+                          <View
+                            style={[
+                              styles.breakdownSection,
+                              styles.breakdownSectionFirst,
+                            ]}
+                          >
+                            <Text style={styles.breakdownSectionTitle}>
+                              Tagihan Client
+                            </Text>
+                            <BreakdownAmountRow
+                              label={`${formatRupiah(item.unitPrice)} × ${item.quantity}`}
+                              value={formatRupiah(lineTotal)}
+                            />
+                            {discountAmount > 0 ? (
+                              <BreakdownAmountRow
+                                label={
+                                  item.discount?.type === 'percentage'
+                                    ? `Diskon (${item.discount.amount}%)`
+                                    : 'Diskon'
+                                }
+                                tone="deduction"
+                                value={`-${formatRupiah(discountAmount)}`}
+                              />
+                            ) : null}
+                            {voucherApplied > 0 ? (
+                              <BreakdownAmountRow
+                                label={`Voucher ${formatKolamSaleItemVoucherLabel(item) || item.voucherCode}`}
+                                tone="deduction"
+                                value={`-${formatRupiah(voucherApplied)}`}
+                              />
+                            ) : item.voucherCode ? (
+                              <BreakdownAmountRow
+                                label={`Voucher ${item.voucherCode}`}
+                                tone="muted"
+                                value=""
+                              />
+                            ) : null}
+                            {item.shippingCost > 0 ? (
+                              <BreakdownAmountRow
+                                label="Ongkir"
+                                value={formatRupiah(item.shippingCost)}
+                              />
+                            ) : null}
+                            {packingClientTotal > 0 ? (
+                              <BreakdownAmountRow
+                                label="Kemasan"
+                                value={formatRupiah(packingClientTotal)}
+                              />
+                            ) : null}
+                            <BreakdownAmountRow
+                              emphasis
+                              label="Client Bayar"
+                              value={formatRupiah(clientPay)}
+                            />
+                          </View>
+
+                          {internal ? (
+                            <ItemInternalBreakdownSection
+                              bd={internal}
+                              mode={profitSummary.mode}
+                            />
+                          ) : null}
+                        </View>
+                      </View>
+                    );
+                  })
+                )}
+
+                <View style={styles.totalsCard}>
+                  <BreakdownAmountRow
+                    label="Subtotal"
+                    value={formatRupiah(sale.total)}
+                  />
+                  {sale.shippingCost > 0 ? (
+                    <BreakdownAmountRow
+                      label="Ongkir"
+                      value={formatRupiah(sale.shippingCost)}
+                    />
+                  ) : null}
+                  {sale.customCosts.map((cost, index) => (
+                    <BreakdownAmountRow
+                      key={`custom-cost-${index}`}
+                      label={cost.name}
+                      value={formatRupiah(cost.amount)}
+                    />
+                  ))}
+                  {sale.sourceCost > 0 && !marketplaceManaged ? (
+                    <BreakdownAmountRow
+                      label="Biaya sumber"
+                      value={formatRupiah(sale.sourceCost)}
+                    />
+                  ) : null}
+                  <BreakdownAmountRow
+                    emphasis
+                    label="Total keseluruhan"
+                    tone="profit"
+                    value={formatRupiah(sale.finalTotal)}
+                  />
+                  <BreakdownAmountRow
+                    label="Sudah dibayar"
+                    value={formatRupiah(sale.paidAmount)}
+                  />
+                </View>
+
+                {showInternalSummary ? (
+                  <View style={styles.internalSummaryCard}>
+                    <Text style={styles.breakdownSectionTitle}>
+                      Internal keseluruhan
+                    </Text>
+                    <BreakdownAmountRow
+                      label={
+                        profitSummary.mode === 'olshop'
+                          ? `Sub Total (${profitSummary.itemBreakdowns.length} item — Pemasukan kotor)`
+                          : 'Pendapatan'
+                      }
+                      value={formatRupiah(profitSummary.grossSubtotal)}
+                    />
+                    {profitSummary.totalProductHpp > 0 ? (
+                      <BreakdownAmountRow
+                        label="Total HPP"
+                        tone="deduction"
+                        value={`-${formatRupiah(profitSummary.totalProductHpp)}`}
+                      />
+                    ) : null}
+                    {profitSummary.mode === 'olshop' &&
+                    profitSummary.marketplaceFees > 0 ? (
+                      <>
+                        <Text style={styles.metaText}>
+                          {profitSummary.marketplaceFeeLabel}
+                        </Text>
+                        {profitSummary.marketplaceFeeBreakdown.length > 0
+                          ? profitSummary.marketplaceFeeBreakdown.map((row, i) => (
+                              <BreakdownAmountRow
+                                key={`${row.name}-${i}`}
+                                label={`– ${row.name}`}
+                                tone="deduction"
+                                value={`-${formatRupiah(row.amount)}`}
+                              />
+                            ))
+                          : null}
+                        <BreakdownAmountRow
+                          label="Total"
+                          tone="deduction"
+                          value={`-${formatRupiah(profitSummary.marketplaceFees)}`}
+                        />
+                      </>
+                    ) : null}
+                    {profitSummary.mode === 'internal' &&
+                    profitSummary.paymentMethodCost > 0 ? (
+                      <BreakdownAmountRow
+                        label="Biaya Payment Method"
+                        tone="deduction"
+                        value={`-${formatRupiah(profitSummary.paymentMethodCost)}`}
+                      />
+                    ) : null}
+                    {profitSummary.totalCommission > 0 ? (
+                      <BreakdownAmountRow
+                        label="Komisi final"
+                        tone="deduction"
+                        value={`-${formatRupiah(profitSummary.totalCommission)}`}
+                      />
+                    ) : null}
+                    <BreakdownAmountRow
+                      emphasis
+                      label="Profit bersih"
+                      tone={
+                        profitSummary.netProfit >= 0 ? 'profit' : 'deduction'
+                      }
+                      value={formatRupiah(profitSummary.netProfit)}
+                    />
+                  </View>
+                ) : null}
+              </>
+            }
+            fields={[]}
+            title="Detail Item Penjualan"
+          />
           {sale.status === 'partial_paid' ? (
             <KolamCardFrame style={styles.outstandingCard} variant="compact">
               <Text style={styles.sectionTitle}>Sisa Pembayaran</Text>
@@ -1405,17 +1416,14 @@ export function KolamSalesOpsDetail({
           ) : null}
 
           {sale.walletTransactions.length > 0 ? (
-            <>
-              <Text style={styles.sectionTitle}>
-                Transaksi Dompet ({sale.walletTransactions.length})
-              </Text>
-              {sale.walletTransactions.map(tx => {
+            <KolamDetailSummaryCard
+              body={sale.walletTransactions.map(tx => {
                 const isCredit = tx.type === 'credit';
                 return (
                   <Pressable
                     accessibilityRole="button"
-                    key={tx.id}
                     disabled={!tx.walletId}
+                    key={tx.id}
                     onPress={() =>
                       tx.walletId
                         ? onRouteChange?.(
@@ -1472,7 +1480,9 @@ export function KolamSalesOpsDetail({
                   </Pressable>
                 );
               })}
-            </>
+              fields={[]}
+              title={`Transaksi Dompet (${sale.walletTransactions.length})`}
+            />
           ) : null}
 
         </View>
