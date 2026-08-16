@@ -1479,54 +1479,57 @@ export function KolamSalesOpsDetail({
 
         <View style={styles.columnSide}>
           {sale.saleHistories.length > 0 ? (
-            <>
-              <Text style={styles.sectionTitle}>Riwayat Status</Text>
-              <ScrollView
-                contentContainerStyle={styles.historyScroll}
-                nestedScrollEnabled
-                style={[
-                  styles.historyScrollView,
-                  {
-                    maxHeight: getSaleHistoryTimelineMaxHeight(
-                      sale.saleHistories,
-                    ),
-                  },
-                ]}
-              >
-                <View style={styles.historyTimeline}>
-                  {[...sale.saleHistories]
-                    .sort(
-                      (a, b) =>
-                        new Date(b.changedAt).getTime() -
-                        new Date(a.changedAt).getTime(),
-                    )
-                    .map(history => (
-                      <View key={history.id} style={styles.historyTimelineItem}>
-                        <View
-                          style={[
-                            styles.historyTimelineDot,
-                            historyTimelineDotStyle(history.status),
-                          ]}
-                        />
-                        <View style={styles.historyTimelineBody}>
-                          <Text style={styles.historyTimelineTitle}>
-                            {formatKolamSalePaymentStatusLabel(history.status)}
-                          </Text>
-                          <Text style={styles.metaText}>
-                            {formatShortDateTime(history.changedAt)}
-                            {history.changedByName
-                              ? ` · ${history.changedByName}`
-                              : ''}
-                          </Text>
-                          {history.note ? (
-                            <Text style={styles.metaText}>{history.note}</Text>
-                          ) : null}
+            <KolamDetailSummaryCard
+              body={
+                <ScrollView
+                  contentContainerStyle={styles.historyScroll}
+                  nestedScrollEnabled
+                  style={[
+                    styles.historyScrollView,
+                    {
+                      maxHeight: getSaleHistoryTimelineMaxHeight(
+                        sale.saleHistories,
+                      ),
+                    },
+                  ]}
+                >
+                  <View style={styles.historyTimeline}>
+                    {[...sale.saleHistories]
+                      .sort(
+                        (a, b) =>
+                          new Date(b.changedAt).getTime() -
+                          new Date(a.changedAt).getTime(),
+                      )
+                      .map(history => (
+                        <View key={history.id} style={styles.historyTimelineItem}>
+                          <View
+                            style={[
+                              styles.historyTimelineDot,
+                              historyTimelineDotStyle(history.status),
+                            ]}
+                          />
+                          <View style={styles.historyTimelineBody}>
+                            <Text style={styles.historyTimelineTitle}>
+                              {formatKolamSalePaymentStatusLabel(history.status)}
+                            </Text>
+                            <Text style={styles.metaText}>
+                              {formatShortDateTime(history.changedAt)}
+                              {history.changedByName
+                                ? ` · ${history.changedByName}`
+                                : ''}
+                            </Text>
+                            {history.note ? (
+                              <Text style={styles.metaText}>{history.note}</Text>
+                            ) : null}
+                          </View>
                         </View>
-                      </View>
-                    ))}
-                </View>
-              </ScrollView>
-            </>
+                      ))}
+                  </View>
+                </ScrollView>
+              }
+              fields={[]}
+              title="Riwayat Status"
+            />
           ) : null}
 
           <KolamSalesEnclosureAllocationPanel
