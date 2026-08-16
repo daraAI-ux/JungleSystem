@@ -7130,6 +7130,7 @@ function AmActivityLogPage() {
       label: 'Tipe',
       render: log => (
         <AmStatusChip
+          centered
           label={formatActivityLogTypeLabel(log.type)}
           tone={log.type === 'api' ? 'warning' : 'muted'}
         />
@@ -7142,29 +7143,46 @@ function AmActivityLogPage() {
       label: 'Metode',
       render: log => log.method ? (
         <AmStatusChip
+          centered
           label={log.method}
           tone={getActivityLogMethodTone(log.method)}
         />
       ) : (
-        <Text style={styles.cellText}>-</Text>
+        <Text style={[styles.cellText, styles.activityLogCenterText]}>-</Text>
       ),
     },
     {
+      align: 'center',
       flex: 1.7,
       id: 'path',
       label: 'Path',
       render: log => (
-        <View>
-          <Text style={styles.monoText} numberOfLines={1}>{log.path}</Text>
-          <Text style={styles.rowMeta} numberOfLines={1}>{log.action}</Text>
+        <View style={styles.activityLogPathCell}>
+          <Text
+            style={[styles.monoText, styles.activityLogCenterText]}
+            numberOfLines={1}>
+            {log.path}
+          </Text>
+          <Text
+            style={[styles.rowMeta, styles.activityLogCenterText]}
+            numberOfLines={1}>
+            {log.action}
+          </Text>
         </View>
       ),
     },
     {
+      align: 'center',
       flex: 0.85,
       id: 'ip',
       label: 'IP',
-      render: log => <Text style={styles.cellText} numberOfLines={1}>{log.ip || '-'}</Text>,
+      render: log => (
+        <Text
+          style={[styles.cellText, styles.activityLogCenterText]}
+          numberOfLines={1}>
+          {log.ip || '-'}
+        </Text>
+      ),
     },
     {
       align: 'center',
@@ -7173,17 +7191,22 @@ function AmActivityLogPage() {
       label: 'Status',
       render: log => (
         <AmStatusChip
+          centered
           label={log.statusCode ? String(log.statusCode) : log.status}
           tone={log.status === 'success' ? 'success' : 'danger'}
         />
       ),
     },
     {
-      align: 'right',
+      align: 'center',
       flex: 0.7,
       id: 'duration',
       label: 'Durasi',
-      render: log => <Text style={styles.cellText}>{formatAmDuration(log.duration)}</Text>,
+      render: log => (
+        <Text style={[styles.cellText, styles.activityLogCenterText]}>
+          {formatAmDuration(log.duration)}
+        </Text>
+      ),
     },
   ], []);
 
@@ -7640,9 +7663,11 @@ function AmStatusPill({danger = false, label, value}: {danger?: boolean; label: 
 }
 
 function AmStatusChip({
+  centered = false,
   label,
   tone,
 }: {
+  centered?: boolean;
   label: string;
   tone: 'success' | 'warning' | 'info' | 'danger' | 'muted';
 }) {
@@ -7654,6 +7679,7 @@ function AmStatusChip({
         tone === 'warning' && styles.statusChipWarning,
         tone === 'info' && styles.statusChipInfo,
         tone === 'danger' && styles.statusChipDanger,
+        centered && styles.statusChipCentered,
       ]}>
       <Text style={styles.statusChipText} numberOfLines={1}>{formatAmDisplayLabel(label)}</Text>
     </View>
@@ -9528,6 +9554,15 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
+  activityLogCenterText: {
+    textAlign: 'center',
+    width: '100%',
+  },
+  activityLogPathCell: {
+    alignItems: 'center',
+    minWidth: 0,
+    width: '100%',
+  },
   typeCol: {
     flex: 1.2,
     minWidth: 0,
@@ -9643,6 +9678,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     backgroundColor: V.colors.muted,
+  },
+  statusChipCentered: {
+    alignSelf: 'center',
   },
   statusChipSuccess: {
     backgroundColor: V.colors.successSoft,
