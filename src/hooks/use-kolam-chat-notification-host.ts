@@ -74,11 +74,14 @@ export function useKolamChatNotificationHost({
   enabled,
   visibleRailMode,
   visibleSelectedItemId,
+  visibleSelectedItemIds,
 }: {
   currentUserId?: string | null;
   enabled: boolean;
   visibleRailMode?: KolamChatLiveStreamKind | null;
+  /** @deprecated Prefer visibleSelectedItemIds when excluding multiple open threads. */
   visibleSelectedItemId?: string | null;
+  visibleSelectedItemIds?: string[] | null;
 }) {
   const [unreadCounts, setUnreadCounts] = useState<KolamChatUnreadCounts>({
     inbox: 0,
@@ -87,7 +90,7 @@ export function useKolamChatNotificationHost({
   const unreadCountsRef = useRef(unreadCounts);
   const previousUnreadRef = useRef<KolamChatUnreadCounts | null>(null);
   const visibleRailModeRef = useRef(visibleRailMode);
-  const visibleSelectedItemIdRef = useRef(visibleSelectedItemId);
+  const visibleSelectedItemIdsRef = useRef<string[]>([]);
   const lastSoundAtRef = useRef(0);
   const soundSettings = useKolamNotificationSoundSettings({enabled});
   const webSettingRef = useRef(soundSettings.webSetting);
@@ -101,7 +104,10 @@ export function useKolamChatNotificationHost({
 
   unreadCountsRef.current = unreadCounts;
   visibleRailModeRef.current = visibleRailMode;
-  visibleSelectedItemIdRef.current = visibleSelectedItemId;
+  visibleSelectedItemIdsRef.current = normalizeNotificationExcludeIds(
+    visibleSelectedItemIds,
+    visibleSelectedItemId,
+  );
   webSettingRef.current = soundSettings.webSetting;
 
   const playSoundIntent = useCallback(
@@ -149,15 +155,15 @@ export function useKolamChatNotificationHost({
       return;
     }
 
-    const viewingId = visibleSelectedItemIdRef.current?.trim() || null;
+    const viewingIds = visibleSelectedItemIdsRef.current;
     const viewingStream = visibleRailModeRef.current;
     const [inboxResult, teamResult] = await Promise.allSettled([
       sumChatUnreadTotal({
-        excludeItemId: viewingStream === 'inbox' ? viewingId : null,
+        excludeItemIds: viewingStream === 'inbox' ? viewingIds : [],
         kind: 'inbox',
       }),
       sumChatUnreadTotal({
-        excludeItemId: viewingStream === 'team-chat' ? viewingId : null,
+        excludeItemIds: viewingStream === 'team-chat' ? viewingIds : [],
         kind: 'team',
       }),
     ]);
@@ -223,7 +229,7 @@ export function useKolamChatNotificationHost({
     (event: KolamChatLiveEvent) => {
       const classification = classifyKolamChatLiveEvent(event, {
         currentUserId,
-        selectedItemId: visibleSelectedItemIdRef.current ?? null,
+        selectedItemId: visibleSelectedItemIdsRef.current[0] ?? null,
       });
 
       if (classification.soundIntent !== 'none') {
@@ -264,10 +270,10 @@ export function useKolamChatNotificationHost({
 }
 
 async function sumChatUnreadTotal({
-  excludeItemId,
+  excludeItemIds,
   kind,
 }: {
-  excludeItemId?: string | null;
+  excludeItemIds?: string[] | null;
   kind: 'inbox' | 'team';
 }) {
   const items =
@@ -278,12 +284,34 @@ async function sumChatUnreadTotal({
           unreadOnly: true,
           limit: 100,
         });
-  const excludeId = excludeItemId?.trim() || null;
+  const excludeIds = new Set(
+    (excludeItemIds ?? [])
+      .map(value => value?.trim())
+      .filter((value): value is string => Boolean(value)),
+  );
 
   return items.reduce((total, item) => {
-    if (excludeId && item._id === excludeId) {
+    if (item._id && excludeIds.has(item._id)) {
       return total;
     }
     return total + Math.max(0, item.unreadCount ?? 0);
   }, 0);
+}
+
+function normalizeNotificationExcludeIds(
+  visibleSelectedItemIds?: string[] | null,
+  visibleSelectedItemId?: string | null,
+): string[] {
+  if (Array.isArray(visibleSelectedItemIds) && visibleSelectedItemIds.length > 0) {
+    return [
+      ...new Set(
+        visibleSelectedItemIds
+          .map(value => value?.trim())
+          .filter((value): value is string => Boolean(value)),
+      ),
+    ];
+  }
+
+  const legacyId = visibleSelectedItemId?.trim();
+  return legacyId ? [legacyId] : [];
 }

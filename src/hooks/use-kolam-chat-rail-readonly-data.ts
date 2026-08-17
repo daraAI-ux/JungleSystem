@@ -27,7 +27,8 @@ export function useKolamChatRailReadonlyData({
   inboxParams?: KolamChatConversationListParams;
   intervalMs?: number;
   mode: KolamGlobalChatRailMode;
-  viewingItemId?: string | null;
+  /** Active thread(s) to keep at unread 0 while list refresh races mark-read. */
+  viewingItemId?: string | string[] | null;
 }): KolamChatRailReadonlyDataState {
   const mountedRef = useRef(false);
   const viewingItemIdRef = useRef(viewingItemId);
@@ -184,17 +185,34 @@ export function useKolamChatRailReadonlyData({
 
 export function applyViewingItemUnreadZero<
   T extends {_id?: string; unreadCount?: number},
->(items: T[], viewingItemId?: string | null): T[] {
-  const id = viewingItemId?.trim();
-  if (!id) {
+>(items: T[], viewingItemId?: string | string[] | null): T[] {
+  const viewingIds = normalizeViewingItemIds(viewingItemId);
+  if (viewingIds.size === 0) {
     return items;
   }
 
-  return items.map(item =>
-    item._id === id && (item.unreadCount ?? 0) > 0
-      ? {...item, unreadCount: 0}
-      : item,
-  );
+  return items.map(item => {
+    const id = item._id?.trim();
+    if (!id || !viewingIds.has(id) || (item.unreadCount ?? 0) <= 0) {
+      return item;
+    }
+    return {...item, unreadCount: 0};
+  });
+}
+
+function normalizeViewingItemIds(
+  viewingItemId?: string | string[] | null,
+): Set<string> {
+  if (Array.isArray(viewingItemId)) {
+    return new Set(
+      viewingItemId
+        .map(value => value?.trim())
+        .filter((value): value is string => Boolean(value)),
+    );
+  }
+
+  const id = viewingItemId?.trim();
+  return id ? new Set([id]) : new Set();
 }
 
 function getHasLoadedData(state: KolamChatRailReadonlyDataState) {

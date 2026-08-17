@@ -851,8 +851,19 @@ export function useKolamChatRailDetail({
 
         return [...current, nextMessage];
       });
+
+      // While this room is open, advance lastReadAt so DARA/other live replies
+      // do not revive unread badges on the next rooms/badge refresh.
+      if (!nextMessage.mine) {
+        const roomId = selectedId;
+        void markKolamTeamChatRoomRead(roomId)
+          .then(() => {
+            onMarkedRead?.(roomId);
+          })
+          .catch(() => undefined);
+      }
     },
-    [currentUserId, mode, selectedId],
+    [currentUserId, mode, onMarkedRead, selectedId],
   );
 
   const editMessage = useCallback(

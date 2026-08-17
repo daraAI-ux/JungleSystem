@@ -913,6 +913,7 @@ export function KolamGlobalChatRail({
   onChatUnreadInvalidate,
   onClose,
   onSelectedItemIdChange,
+  onViewingUnreadItemIdsChange,
 }: {
   initialSelectedId?: string | null;
   mode: KolamGlobalChatRailMode;
@@ -920,6 +921,7 @@ export function KolamGlobalChatRail({
   onChatUnreadInvalidate?: () => void;
   onClose: () => void;
   onSelectedItemIdChange?: (selectedItemId: string | null) => void;
+  onViewingUnreadItemIdsChange?: (itemIds: string[]) => void;
 }) {
   const { authUser } = useKolamAuthContext();
   const content = getChatRailContent(mode);
@@ -954,10 +956,24 @@ export function KolamGlobalChatRail({
   const [selectedItemId, setSelectedItemId] = React.useState<string | null>(
     null,
   );
+  const viewingUnreadItemIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    const selectedId = selectedItemId?.trim();
+    if (selectedId) {
+      ids.add(selectedId);
+    }
+    if (mode === 'team-chat' && daraHeaderMenuOpen) {
+      const daraId = daraWindowRoomId?.trim();
+      if (daraId) {
+        ids.add(daraId);
+      }
+    }
+    return [...ids];
+  }, [daraHeaderMenuOpen, daraWindowRoomId, mode, selectedItemId]);
   const data = useKolamChatRailReadonlyData({
     inboxParams,
     mode,
-    viewingItemId: selectedItemId,
+    viewingItemId: viewingUnreadItemIds,
   });
   const platformHealth = useKolamChatPlatformHealth({
     enabled: mode === 'inbox',
@@ -1063,10 +1079,18 @@ export function KolamGlobalChatRail({
     typeof setTimeout
   > | null>(null);
   const clearUnreadForSelected = React.useCallback(
-    (itemId: string) => {
+    (
+      itemId: string,
+      options?: {
+        invalidate?: boolean;
+      },
+    ) => {
       const cleared = data.clearItemUnread?.(itemId) ?? 0;
       if (cleared > 0) {
         onChatUnreadDelta?.(mode === 'team-chat' ? 'team' : 'inbox', -cleared);
+      }
+      if (options?.invalidate === false) {
+        return;
       }
       if (unreadInvalidateTimerRef.current) {
         clearTimeout(unreadInvalidateTimerRef.current);
@@ -1094,7 +1118,8 @@ export function KolamGlobalChatRail({
     if (!selectedItemId) {
       return;
     }
-    clearUnreadForSelected(selectedItemId);
+    // Optimistic list clear only — wait for mark-read success before badge invalidate.
+    clearUnreadForSelected(selectedItemId, {invalidate: false});
   }, [selectedItemId]); // eslint-disable-line react-hooks/exhaustive-deps -- only on select change
 
   React.useEffect(
@@ -1717,6 +1742,13 @@ export function KolamGlobalChatRail({
       onSelectedItemIdChange?.(null);
     };
   }, [onSelectedItemIdChange, selectedItemId]);
+
+  React.useEffect(() => {
+    onViewingUnreadItemIdsChange?.(viewingUnreadItemIds);
+    return () => {
+      onViewingUnreadItemIdsChange?.([]);
+    };
+  }, [onViewingUnreadItemIdsChange, viewingUnreadItemIds]);
 
   const handleChooseAttachment = React.useCallback(async () => {
     if (detail.sending) {

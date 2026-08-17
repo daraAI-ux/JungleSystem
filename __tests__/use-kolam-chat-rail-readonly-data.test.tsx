@@ -108,4 +108,21 @@ describe('applyViewingItemUnreadZero', () => {
       {_id: 'room-b', unreadCount: 0},
     ]);
   });
+
+  it('clears unread for multiple viewing threads', () => {
+    expect(
+      applyViewingItemUnreadZero(
+        [
+          {_id: 'room-a', unreadCount: 2},
+          {_id: 'room-b', unreadCount: 9},
+          {_id: 'room-c', unreadCount: 1},
+        ],
+        ['room-a', 'room-c'],
+      ),
+    ).toEqual([
+      {_id: 'room-a', unreadCount: 0},
+      {_id: 'room-b', unreadCount: 9},
+      {_id: 'room-c', unreadCount: 0},
+    ]);
+  });
 });

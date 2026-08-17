@@ -66,6 +66,8 @@ export function KolamAppStateProvider({
     React.useState<string | null>(null);
   const [chatRailSelectedItemId, setChatRailSelectedItemId] =
     React.useState<string | null>(null);
+  const [chatRailViewingUnreadItemIds, setChatRailViewingUnreadItemIds] =
+    React.useState<string[]>([]);
   const [activeSettingsTab, setActiveSettingsTab] =
     React.useState<SettingsTabItem | null>(
       getSettingsTabItemById(DEFAULT_SETTINGS_TAB_ID),
@@ -454,6 +456,7 @@ export function KolamAppStateProvider({
 
       setChatRailInitialSelectedId(null);
       setChatRailSelectedItemId(null);
+      setChatRailViewingUnreadItemIds([]);
       setActiveChatRail(currentMode =>
         currentMode === nextMode ? null : nextMode,
       );
@@ -463,6 +466,7 @@ export function KolamAppStateProvider({
   const handleChatRailClose = React.useCallback(() => {
     setChatRailInitialSelectedId(null);
     setChatRailSelectedItemId(null);
+    setChatRailViewingUnreadItemIds([]);
     setActiveChatRail(null);
   }, []);
   const handleChatRailSelectedItemIdChange = React.useCallback(
@@ -500,7 +504,7 @@ export function KolamAppStateProvider({
         : null,
     enabled: Boolean(authUser),
     visibleRailMode: activeChatRail,
-    visibleSelectedItemId: activeChatRail ? chatRailSelectedItemId : null,
+    visibleSelectedItemIds: activeChatRail ? chatRailViewingUnreadItemIds : [],
   });
   const handleChatUnreadInvalidate = React.useCallback(() => {
     Promise.resolve(refreshUnreadCounts()).catch(() => undefined);
@@ -753,6 +757,7 @@ export function KolamAppStateProvider({
           onChatUnreadInvalidate={handleChatUnreadInvalidate}
           onClose={handleChatRailClose}
           onSelectedItemIdChange={handleChatRailSelectedItemIdChange}
+          onViewingUnreadItemIdsChange={setChatRailViewingUnreadItemIds}
         />
       ) : null,
     [

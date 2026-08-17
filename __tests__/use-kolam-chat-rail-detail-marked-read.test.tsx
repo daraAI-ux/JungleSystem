@@ -150,6 +150,51 @@ describe('useKolamChatRailDetail mark-read invalidate', () => {
     expect(onMarkedRead).toHaveBeenCalledWith('room-1');
   });
 
+  it('rematches mark-read when a non-mine live team message is upserted', async () => {
+    const onMarkedRead = jest.fn();
+    let upsert:
+      | ((message: {
+          _id: string;
+          body: string;
+          createdAt: string;
+          sender: {_id: string; first_name: string};
+          senderType?: string;
+        }) => void)
+      | null = null;
+
+    function Probe() {
+      const detail = useKolamChatRailDetail({
+        currentUserId: 'staff-1',
+        mode: 'team-chat',
+        onMarkedRead,
+        selectedId: 'room-dara',
+      });
+      upsert = detail.upsertTeamChatMessageFromLive ?? null;
+      return <Text>{detail.loading ? 'loading' : 'ready'}</Text>;
+    }
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(<Probe />);
+    });
+    onMarkedRead.mockClear();
+    markTeamReadMock.mockClear();
+
+    await ReactTestRenderer.act(async () => {
+      upsert?.({
+        _id: 'msg-dara-live',
+        body: 'Balasan DARA',
+        createdAt: '2026-08-17T04:00:00.000Z',
+        sender: {_id: 'bot-dara', first_name: 'DARA'},
+        senderType: 'ai',
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(markTeamReadMock).toHaveBeenCalledWith('room-dara');
+    expect(onMarkedRead).toHaveBeenCalledWith('room-dara');
+  });
+
   it('notifies onMarkedRead after inbox conversation open mark-read', async () => {
     const onMarkedRead = jest.fn();
 
