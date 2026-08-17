@@ -2711,7 +2711,22 @@ describe('KolamGlobalChatRail', () => {
             ].join('\n'),
             embeds: [],
             id: 'msg-share',
-            linkPreviews: [],
+            linkPreviews: [
+              {
+                description: 'https://cdn.example/anemon.jpg',
+                imageUrl: '',
+                siteName: 'cdn.example',
+                title: 'cdn.example',
+                url: 'https://cdn.example/anemon.jpg',
+              },
+              {
+                description: 'Selamat datang di Dunia Anura.',
+                imageUrl: '',
+                siteName: 'dunia-anura.com',
+                title: 'Dunia Anura',
+                url: 'https://dunia-anura.com/id/products/anemon-premium',
+              },
+            ],
             mine: false,
             reactions: [],
             replyPreview: null,
@@ -2749,6 +2764,13 @@ describe('KolamGlobalChatRail', () => {
           'Lampirkan produk',
         ]),
       );
+      expect(labels).not.toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(/^Buka tautan /),
+        ]),
+      );
+      expect(renderText(renderer!).join(' ')).not.toContain('Dunia Anura');
+      expect(renderText(renderer!).join(' ')).not.toContain('cdn.example');
 
       const catalogButton = renderer!.root
         .findAllByType(KolamPressable)

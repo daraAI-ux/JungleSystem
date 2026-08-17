@@ -3715,7 +3715,7 @@ function KolamTeamChatDaraWindowMessages({
             {message.attachments.length > 0 ? (
               <KolamChatAttachmentList attachments={message.attachments} />
             ) : null}
-            {message.linkPreviews.length > 0 ? (
+            {shouldShowTeamChatLinkPreviews(message) ? (
               <KolamChatLinkPreviewList previews={message.linkPreviews} />
             ) : null}
             {message.embeds.length > 0 ? (
@@ -5344,7 +5344,7 @@ function KolamChatRailDetailPanel({
                                     attachments={message.attachments}
                                   />
                                 ) : null}
-                                {message.linkPreviews.length > 0 ? (
+                                {shouldShowTeamChatLinkPreviews(message) ? (
                                   <KolamChatLinkPreviewList
                                     previews={message.linkPreviews}
                                   />
@@ -6588,6 +6588,16 @@ function KolamChatLinkifiedText({
         );
       })}
     </Text>
+  );
+}
+
+function shouldShowTeamChatLinkPreviews(
+  message: Pick<KolamChatRailDetailMessage, 'body' | 'linkPreviews'>,
+) {
+  // Product-share body already has its own card; URL lines in the share text
+  // are also scraped into linkPreviews by the backend — hide those duplicates.
+  return (
+    message.linkPreviews.length > 0 && !isKolamProductShareBody(message.body)
   );
 }
 
