@@ -3,6 +3,10 @@ import {tryClaimKolamChatLiveAlert} from '../domain/kolam-chat-desktop-toast';
 import {classifyKolamChatLiveEvent} from '../domain/kolam-chat-live-classifier';
 import type {KolamChatLiveStreamKind} from '../domain/kolam-chat-live-contract';
 import {
+  applyKolamTeamChatReadConfirmUnreadZero,
+  noteKolamTeamChatLiveMessageForReadConfirm,
+} from '../domain/kolam-team-chat-read-confirm';
+import {
   type KolamChatLiveEvent,
   useKolamChatLiveStream,
 } from './use-kolam-chat-live-stream';
@@ -232,6 +236,16 @@ export function useKolamChatNotificationHost({
         selectedItemId: visibleSelectedItemIdsRef.current[0] ?? null,
       });
 
+      if (
+        classification.stream === 'team-chat' &&
+        classification.eventName === 'message.created'
+      ) {
+        noteKolamTeamChatLiveMessageForReadConfirm({
+          roomId: classification.targetId,
+          viewingRoomIds: visibleSelectedItemIdsRef.current,
+        });
+      }
+
       if (classification.soundIntent !== 'none') {
         if (
           tryClaimKolamChatLiveAlert({
@@ -278,7 +292,7 @@ async function sumChatUnreadTotal({
 }) {
   const items =
     kind === 'team'
-      ? await getKolamTeamChatRooms()
+      ? applyKolamTeamChatReadConfirmUnreadZero(await getKolamTeamChatRooms())
       : await getKolamChatConversations({
           status: 'open',
           unreadOnly: true,

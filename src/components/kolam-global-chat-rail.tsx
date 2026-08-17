@@ -29,6 +29,10 @@ import { KOLAM_TIKTOK_LOGO_SVG } from '../assets/marketplace/tiktok-logo-svg';
 import { KOLAM_WEBSTORE_LOGO_SVG } from '../assets/marketplace/web-logo-svg';
 import { tryClaimKolamChatLiveAlert } from '../domain/kolam-chat-desktop-toast';
 import {
+  confirmKolamTeamChatRoomRead,
+  noteKolamTeamChatLiveMessageForReadConfirm,
+} from '../domain/kolam-team-chat-read-confirm';
+import {
   buildKolamChatCatalogCardFromProduct,
   buildKolamChatCatalogCardFromSpecies,
   effectiveKolamCatalogStock,
@@ -1109,9 +1113,12 @@ export function KolamGlobalChatRail({
   );
   const handleMarkedRead = React.useCallback(
     (itemId: string) => {
+      if (mode === 'team-chat') {
+        confirmKolamTeamChatRoomRead(itemId);
+      }
       clearUnreadForSelected(itemId);
     },
-    [clearUnreadForSelected],
+    [clearUnreadForSelected, mode],
   );
 
   React.useEffect(() => {
@@ -1331,6 +1338,16 @@ export function KolamGlobalChatRail({
       if (
         mode === 'team-chat' &&
         event.contract.stream === 'team-chat' &&
+        event.contract.eventName === 'message.created'
+      ) {
+        noteKolamTeamChatLiveMessageForReadConfirm({
+          roomId: teamLiveRoomId,
+          viewingRoomIds: viewingUnreadItemIds,
+        });
+      }
+      if (
+        mode === 'team-chat' &&
+        event.contract.stream === 'team-chat' &&
         event.contract.eventName === 'message.created' &&
         liveIdsEqual(teamLiveRoomId, selectedItemId)
       ) {
@@ -1457,6 +1474,7 @@ export function KolamGlobalChatRail({
       selectedItemId,
       soundSettings.webSetting,
       syncFromLiveClassification,
+      viewingUnreadItemIds,
     ],
   );
 

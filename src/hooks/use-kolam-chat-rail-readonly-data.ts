@@ -7,6 +7,7 @@ import {
   type KolamChatConversationListParams,
   type KolamTeamChatRoom,
 } from '../services/kolam-api';
+import {applyKolamTeamChatReadConfirmUnreadZero} from '../domain/kolam-team-chat-read-confirm';
 
 export interface KolamChatRailReadonlyDataState {
   clearItemUnread?: (itemId: string) => number;
@@ -104,9 +105,11 @@ export function useKolamChatRailReadonlyData({
 
     try {
       if (mode === 'team-chat') {
-        const rooms = applyViewingItemUnreadZero(
-          await getKolamTeamChatRooms(),
-          viewingItemIdRef.current,
+        const rooms = applyKolamTeamChatReadConfirmUnreadZero(
+          applyViewingItemUnreadZero(
+            await getKolamTeamChatRooms(),
+            viewingItemIdRef.current,
+          ),
         );
         if (!mountedRef.current) {
           return;
