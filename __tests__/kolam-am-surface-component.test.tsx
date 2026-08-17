@@ -2148,6 +2148,96 @@ describe('KolamAmSurface', () => {
     });
   });
 
+  it('shows WhatsApp QR from whatsapp-qr endpoint even when stderr QR chatter follows qr_code', async () => {
+    setAccessToken('kolam-live-token');
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-wa-qr',
+          platform: 'whatsapp',
+          label: 'WhatsApp QR',
+          deviceId: {
+            _id: 'device-wa-qr',
+            name: 'Browser WA',
+            connectionType: 'browser',
+            tcpAddress: null,
+            udid: null,
+          },
+          status: 'active',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
+      logs: [
+        {
+          ts: '2026-01-01T00:00:00.000Z',
+          level: 'info',
+          message: 'Waiting for QR scan...',
+        },
+        {
+          ts: '2026-01-01T00:00:01.000Z',
+          level: 'stdout',
+          message:
+            '{"event":"qr_code","data":{"qrcodeId":"wa-1710000000000","qrcodeBase64":"data:image/png;base64,AAAA","generatedAt":1710000000000}}',
+        },
+        {
+          ts: '2026-01-01T00:00:02.000Z',
+          level: 'stderr',
+          message: '[whatsapp] QR saved to /tmp/whatsapp-service-wa-qr-qr.png',
+        },
+        {
+          ts: '2026-01-01T00:00:03.000Z',
+          level: 'stderr',
+          message: '[whatsapp] QR emitted to dashboard',
+        },
+      ],
+      processRunning: true,
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValue([
+      {
+        serviceAccountId: 'service-wa-qr',
+        label: 'WhatsApp QR',
+        platform: 'whatsapp',
+        accountNumber: '',
+        serviceStatus: 'active',
+        taskStatus: 'running',
+        processRunning: true,
+        isBanking: false,
+      },
+    ]);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service WhatsApp QR'}).props.onPress();
+    });
+
+    expect(
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service QR Image service-wa-qr'}).props.source,
+    ).toEqual({
+      uri: 'https://frogs.dunia-anura.com/api/device/device-wa-qr/service/whatsapp-qr?t=wa-1710000000000',
+      headers: {
+        Authorization: 'Bearer kolam-live-token',
+        'x-source': 'am',
+      },
+    });
+    const treeText = renderText(renderer!).join(' ');
+    expect(treeText).toMatch(/QR Login\s+WhatsApp/);
+    expect(treeText).toContain('Scan QR ini segera');
+  });
+
   it('sends password-required runtime input through the AM BE password command channel', async () => {
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
