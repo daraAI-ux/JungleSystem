@@ -20,7 +20,6 @@ import {
   useKolamAuthContext,
   useKolamNavigationContext,
 } from '../context/kolam-app-contexts';
-import { KOLAM_CALL_ICON_SVG } from '../assets/icons/call-icon-svg';
 import { KOLAM_DELETE_ROOM_ICON_SVG } from '../assets/icons/delete-room-icon-svg';
 import { KOLAM_ALL_PLATFORM_LOGO_SVG } from '../assets/marketplace/all-logo-svg';
 import { KOLAM_INSTAGRAM_LOGO_SVG } from '../assets/marketplace/instagram-logo-svg';
@@ -57,6 +56,8 @@ import {
   canManageKolamTeamChatCall,
   canMuteKolamTeamChatCallParticipants,
   formatKolamTeamChatCallOnlineLabel,
+  formatKolamTeamChatCallEndedNotice,
+  formatKolamTeamChatCallGatePillLabel,
   formatKolamTeamChatCallMediaStatusLabel,
   formatKolamTeamChatCallParticipantRowLabel,
   getKolamTeamChatCallParticipantUserId,
@@ -5087,19 +5088,17 @@ function KolamChatRailDetailPanel({
             detail.callConfig.enabled &&
             !detail.activeCall ? (
               <KolamPressable
-                accessibilityLabel="Start team chat call"
+                accessibilityLabel="Call grup"
                 disabled={detail.callBusy}
                 onPress={detail.startCall}
                 style={[
-                  styles.detailRoomCallButton,
+                  styles.detailRoomCallTextButton,
                   detail.callBusy && styles.composerIconButtonDisabled,
                 ]}
               >
-                <SvgXml
-                  height="100%"
-                  width="100%"
-                  xml={KOLAM_CALL_ICON_SVG.replace('#df000c', '#374151')}
-                />
+                <Text style={styles.detailRoomCallTextButtonLabel}>
+                  {detail.callBusy ? '…' : 'Call grup'}
+                </Text>
               </KolamPressable>
             ) : null}
             {canDeleteSelectedTeamRoom ? (
@@ -7957,18 +7956,25 @@ function KolamChatCallStrip({
   const countdown = activeCall?.ringExpiresAt
     ? secondsUntilKolamTeamChatCallRing(activeCall.ringExpiresAt)
     : 0;
+  const endedNotice = formatKolamTeamChatCallEndedNotice();
   const primaryLabel = detail.callBusy
     ? 'Memproses...'
     : activeCall
     ? formatKolamTeamChatCallOnlineLabel(activeCall, {
         countdownSeconds: countdown,
+        ringingForMe,
       })
+    : detail.callNoticeMessage === endedNotice
+    ? detail.callNoticeMessage
     : null;
-  const metaLabel =
-    formatKolamTeamChatCallMediaStatusLabel(detail.mediaConnection) ||
-    detail.callErrorMessage ||
-    detail.callNoticeMessage ||
-    null;
+  const metaLabel = activeCall
+    ? formatKolamTeamChatCallMediaStatusLabel(detail.mediaConnection) ||
+      detail.callErrorMessage ||
+      (detail.callNoticeMessage !== endedNotice
+        ? detail.callNoticeMessage
+        : null) ||
+      null
+    : detail.callErrorMessage || null;
   const showCallCopy = Boolean(primaryLabel || metaLabel);
   const myParticipant = activeCall?.participants?.find(
     participant => getCallParticipantUserId(participant) === currentUserId,
@@ -7985,6 +7991,10 @@ function KolamChatCallStrip({
         userId: getCallParticipantUserId(participant),
       }))
       .filter(item => item.userId && item.userId !== currentUserId) ?? [];
+
+  if (!activeCall && !showCallCopy && !detail.callBusy) {
+    return null;
+  }
 
   return (
     <View style={[styles.callStrip, !activeCall && styles.callStripIdle]}>
@@ -11573,6 +11583,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 11,
     backgroundColor: 'transparent',
+  },
+  detailRoomCallTextButton: {
+    alignItems: 'center',
+    backgroundColor: V.colors.primarySoft,
+    borderRadius: 8,
+    flexShrink: 0,
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  detailRoomCallTextButtonLabel: {
+    color: V.colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
   },
   teamRoomTrashIcon: {
     width: 18,

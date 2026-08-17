@@ -326,13 +326,16 @@ export function pickPrimaryKolamTeamChatCall(
   );
 }
 
-/** SoT room strip: `Call · {onlineInCall} online` (+ optional ring countdown). */
+/** SoT room strip: clear active/ringing copy (+ optional ring countdown). */
 export function formatKolamTeamChatCallOnlineLabel(
   call: KolamTeamChatCall | null | undefined,
-  options?: {countdownSeconds?: number},
+  options?: {
+    countdownSeconds?: number;
+    ringingForMe?: boolean;
+  },
 ): string {
   if (!call || call.status === 'ended') {
-    return 'Call';
+    return '';
   }
 
   const online =
@@ -344,11 +347,50 @@ export function formatKolamTeamChatCallOnlineLabel(
             .length ?? 0;
 
   const countdown = options?.countdownSeconds ?? 0;
-  if (countdown > 0) {
-    return `Call · ${online} online · ${countdown}s`;
+
+  if (options?.ringingForMe) {
+    return countdown > 0
+      ? `Panggilan masuk · ${countdown}s`
+      : 'Panggilan masuk';
   }
 
-  return `Call · ${online} online`;
+  if (call.status === 'ringing') {
+    return countdown > 0
+      ? `Memanggil · ${online} online · ${countdown}s`
+      : `Memanggil · ${online} online`;
+  }
+
+  return `Call aktif · ${online} online`;
+}
+
+/** Brief notice after host ends the call (room strip / gate). */
+export function formatKolamTeamChatCallEndedNotice() {
+  return 'Call ditutup';
+}
+
+/** Global floating pill while a call is live (SoT group-call-shell). */
+export function formatKolamTeamChatCallGatePillLabel(
+  call: KolamTeamChatCall | null | undefined,
+  options?: {countdownSeconds?: number},
+): string {
+  if (!call || call.status === 'ended') {
+    return '';
+  }
+
+  const online =
+    typeof call.onlineInCall === 'number'
+      ? call.onlineInCall
+      : typeof call.participantCount === 'number'
+        ? call.participantCount
+        : call.participants?.filter(participant => participant.status === 'joined')
+            .length ?? 0;
+
+  const countdown = options?.countdownSeconds ?? 0;
+  if (call.status === 'ringing' && countdown > 0) {
+    return `Call group aktif · ${online} online · ${countdown}s`;
+  }
+
+  return `Call group aktif · ${online} online`;
 }
 
 export type KolamTeamChatCallMediaConnectionStatus =

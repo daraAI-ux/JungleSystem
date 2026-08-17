@@ -2,6 +2,8 @@ import {
   canManageKolamTeamChatCall,
   canMuteKolamTeamChatCallParticipants,
   canRequestKolamTeamChatCallMediaToken,
+  formatKolamTeamChatCallEndedNotice,
+  formatKolamTeamChatCallGatePillLabel,
   formatKolamTeamChatCallHandoverNotice,
   formatKolamTeamChatCallOnlineLabel,
   getKolamTeamChatCallParticipantUserId,
@@ -234,7 +236,7 @@ describe('kolam-team-chat-call domain', () => {
         participantCount: 9,
         status: 'active',
       }),
-    ).toBe('Call · 4 online');
+    ).toBe('Call aktif · 4 online');
     expect(
       formatKolamTeamChatCallOnlineLabel(
         {
@@ -244,7 +246,25 @@ describe('kolam-team-chat-call domain', () => {
         },
         {countdownSeconds: 12},
       ),
-    ).toBe('Call · 1 online · 12s');
+    ).toBe('Memanggil · 1 online · 12s');
+    expect(
+      formatKolamTeamChatCallOnlineLabel(
+        {
+          _id: 'c-1',
+          onlineInCall: 1,
+          status: 'ringing',
+        },
+        {countdownSeconds: 8, ringingForMe: true},
+      ),
+    ).toBe('Panggilan masuk · 8s');
+    expect(formatKolamTeamChatCallEndedNotice()).toBe('Call ditutup');
+    expect(
+      formatKolamTeamChatCallGatePillLabel({
+        _id: 'c-1',
+        onlineInCall: 3,
+        status: 'active',
+      }),
+    ).toBe('Call group aktif · 3 online');
     expect(formatKolamTeamChatCallHandoverNotice('abcdefghijklmnop')).toBe(
       'Handover token: abcdefghijkl…',
     );

@@ -65,6 +65,7 @@ import {
 import type { KolamChatCatalogCardContent } from '../domain/kolam-chat-catalog-card';
 import { resolveKolamTeamChatBotDisplayName } from '../domain/kolam-team-chat-bot-display';
 import {
+  formatKolamTeamChatCallEndedNotice,
   formatKolamTeamChatCallHandoverNotice,
   getKolamTeamChatCallParticipantUserId,
   isKolamTeamChatCallMediaReady,
@@ -404,7 +405,14 @@ export function useKolamChatRailDetail({
 
       const call = await getKolamRoomActiveTeamChatCall(selectedId);
       const next = call && call.status !== 'ended' ? call : null;
-      setActiveCall(next);
+      setActiveCall(current => {
+        if (current && !next) {
+          Promise.resolve().then(() => {
+            setCallNoticeMessage(formatKolamTeamChatCallEndedNotice());
+          });
+        }
+        return next;
+      });
       if (!next) {
         void stopSharedKolamTeamChatCallMediaSession();
       } else {
@@ -426,6 +434,20 @@ export function useKolamChatRailDetail({
   useEffect(() => {
     void refreshCall();
   }, [refreshCall]);
+
+  useEffect(() => {
+    if (callNoticeMessage !== formatKolamTeamChatCallEndedNotice()) {
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      setCallNoticeMessage(current =>
+        current === formatKolamTeamChatCallEndedNotice() ? undefined : current,
+      );
+    }, 4000);
+    (timer as {unref?: () => void}).unref?.();
+    return () => clearTimeout(timer);
+  }, [callNoticeMessage]);
 
   const postTeamChatPresence = useCallback(
     async (typing: boolean, typingRoomId?: string | null) => {
@@ -1082,6 +1104,7 @@ export function useKolamChatRailDetail({
         const call = await action();
         if (call.status === 'ended') {
           setActiveCall(null);
+          setCallNoticeMessage(formatKolamTeamChatCallEndedNotice());
           void stopSharedKolamTeamChatCallMediaSession();
           return;
         }

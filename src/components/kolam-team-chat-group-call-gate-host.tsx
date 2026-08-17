@@ -4,7 +4,11 @@ import {
   useKolamAuthContext,
   useKolamNavigationContext,
 } from '../context/kolam-app-contexts';
-import {formatKolamTeamChatCallMediaStatusLabel} from '../domain/kolam-team-chat-call';
+import {
+  formatKolamTeamChatCallEndedNotice,
+  formatKolamTeamChatCallGatePillLabel,
+  formatKolamTeamChatCallMediaStatusLabel,
+} from '../domain/kolam-team-chat-call';
 import {useKolamTeamChatGroupCallGate} from '../hooks/use-kolam-team-chat-group-call-gate';
 import {KolamButton} from './kolam-button';
 import {KolamModalDialog} from './kolam-modal-dialog';
@@ -12,7 +16,7 @@ import {KolamPressable} from './kolam-pressable';
 
 /**
  * Global group-call invite overlay (SoT `TeamChatGroupCallGate`).
- * Signaling + LiveKit media after join; pill shows media connection status.
+ * Signaling + LiveKit media after join; pill shows clear active status.
  */
 export function KolamTeamChatGroupCallGateHost() {
   const {authUser} = useKolamAuthContext();
@@ -25,8 +29,29 @@ export function KolamTeamChatGroupCallGateHost() {
     enabled: Boolean(authUser),
     userId,
   });
+  const [endedNotice, setEndedNotice] = React.useState(false);
+  const hadLiveCallRef = React.useRef(false);
 
-  if (!gate.featureEnabled || !gate.liveCall) {
+  React.useEffect(() => {
+    if (gate.liveCall) {
+      hadLiveCallRef.current = true;
+      setEndedNotice(false);
+      return;
+    }
+    if (!hadLiveCallRef.current) {
+      return;
+    }
+    hadLiveCallRef.current = false;
+    setEndedNotice(true);
+    const timer = setTimeout(() => setEndedNotice(false), 4000);
+    return () => clearTimeout(timer);
+  }, [gate.liveCall]);
+
+  if (!gate.featureEnabled) {
+    return null;
+  }
+
+  if (!gate.liveCall && !endedNotice) {
     return null;
   }
 
@@ -41,13 +66,14 @@ export function KolamTeamChatGroupCallGateHost() {
   const mediaLabel = formatKolamTeamChatCallMediaStatusLabel(
     gate.mediaConnection,
   );
-  const pillStatusParts = [
-    `Call · ${gate.online} online`,
-    gate.liveCall.status === 'ringing' && gate.countdown > 0
-      ? `${gate.countdown}s`
-      : null,
-    mediaLabel,
-  ].filter(Boolean);
+  const pillPrimary = gate.liveCall
+    ? formatKolamTeamChatCallGatePillLabel(gate.liveCall, {
+        countdownSeconds: gate.countdown,
+      })
+    : formatKolamTeamChatCallEndedNotice();
+  const pillStatusParts = [pillPrimary, gate.liveCall ? mediaLabel : null].filter(
+    Boolean,
+  );
 
   return (
     <>
@@ -82,11 +108,11 @@ export function KolamTeamChatGroupCallGateHost() {
           void gate.declineCall();
         }}
         title="Panggilan grup"
-        visible={gate.ringingMe}
+        visible={Boolean(gate.liveCall && gate.ringingMe)}
         width={420}
       />
 
-      {!gate.ringingMe ? (
+      {gate.liveCall && !gate.ringingMe ? (
         <View
           accessibilityLabel="Team chat group call active"
           pointerEvents="box-none"
@@ -127,6 +153,20 @@ export function KolamTeamChatGroupCallGateHost() {
           </View>
         </View>
       ) : null}
+
+      {endedNotice && !gate.liveCall ? (
+        <View
+          accessibilityLabel="Team chat group call ended"
+          pointerEvents="none"
+          style={styles.pillAnchor}
+        >
+          <View style={[styles.pill, styles.pillEnded]}>
+            <Text numberOfLines={1} style={styles.pillText}>
+              {formatKolamTeamChatCallEndedNotice()}
+            </Text>
+          </View>
+        </View>
+      ) : null}
     </>
   );
 }
@@ -151,6 +191,10 @@ const styles = StyleSheet.create({
     maxWidth: '92%',
     paddingHorizontal: 10,
     paddingVertical: 8,
+  },
+  pillEnded: {
+    backgroundColor: 'rgba(55, 65, 81, 0.92)',
+    borderColor: 'rgba(156, 163, 175, 0.35)',
   },
   pillLink: {
     alignItems: 'center',
