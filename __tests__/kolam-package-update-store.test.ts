@@ -9,8 +9,8 @@ import {getAccessToken} from '../src/lib/api-client';
 import {fetchKolamPackageLatestRelease} from '../src/services/kolam-package-update-api';
 import {
   downloadKolamWindowsMsix,
-  getKolamWindowsPackageInfo,
   installKolamWindowsMsix,
+  readKolamWindowsPackageInfo,
   restartKolamWindowsApp,
 } from '../src/services/kolam-windows-package-update';
 
@@ -25,6 +25,7 @@ jest.mock('../src/services/kolam-package-update-api', () => ({
 jest.mock('../src/services/kolam-windows-package-update', () => ({
   downloadKolamWindowsMsix: jest.fn(),
   getKolamWindowsPackageInfo: jest.fn(),
+  readKolamWindowsPackageInfo: jest.fn(),
   installKolamWindowsMsix: jest.fn(),
   restartKolamWindowsApp: jest.fn(),
   subscribeKolamWindowsPackageUpdateProgress: () => () => undefined,
@@ -33,8 +34,8 @@ jest.mock('../src/services/kolam-windows-package-update', () => ({
 const mockedFetch = fetchKolamPackageLatestRelease as jest.MockedFunction<
   typeof fetchKolamPackageLatestRelease
 >;
-const mockedInfo = getKolamWindowsPackageInfo as jest.MockedFunction<
-  typeof getKolamWindowsPackageInfo
+const mockedInfo = readKolamWindowsPackageInfo as jest.MockedFunction<
+  typeof readKolamWindowsPackageInfo
 >;
 const mockedDownload = downloadKolamWindowsMsix as jest.MockedFunction<
   typeof downloadKolamWindowsMsix
@@ -68,7 +69,7 @@ describe('kolam package update store', () => {
     mockedRestart.mockReset();
     mockedGetAccessToken.mockReset();
     mockedGetAccessToken.mockReturnValue('test-token');
-    mockedInfo.mockReturnValue({
+    mockedInfo.mockResolvedValue({
       familyName: 'JungleSystem_test',
       name: 'JungleSystem',
       packaged: true,
@@ -137,7 +138,7 @@ describe('kolam package update store', () => {
   });
 
   it('reports Paket tidak terdeteksi when unpackaged', async () => {
-    mockedInfo.mockReturnValue({
+    mockedInfo.mockResolvedValue({
       familyName: '',
       name: 'JungleSystem',
       packaged: false,
@@ -204,7 +205,7 @@ describe('kolam package update store', () => {
   });
 
   it('does not install when the app is unpackaged', async () => {
-    mockedInfo.mockReturnValue({
+    mockedInfo.mockResolvedValue({
       familyName: '',
       name: 'JungleSystem',
       packaged: false,

@@ -25,10 +25,12 @@ export function useKolamPackageUpdateController({
   useEffect(() => subscribeKolamPackageUpdate(() => setState(getKolamPackageUpdateState())), []);
 
   useEffect(() => {
-    hydrateKolamPackageUpdateInfo();
-    if (autoCheck) {
-      void startKolamPackageUpdateAutoCheck();
-    }
+    void (async () => {
+      await hydrateKolamPackageUpdateInfo();
+      if (autoCheck) {
+        await startKolamPackageUpdateAutoCheck();
+      }
+    })();
   }, [autoCheck]);
 
   const busy = state.phase === 'checking' || state.phase === 'downloading' ||

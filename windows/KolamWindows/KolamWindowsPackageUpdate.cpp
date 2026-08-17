@@ -538,6 +538,25 @@ void KolamWindowsPackageUpdate::Initialize(
 }
 
 ::React::JSValueObject KolamWindowsPackageUpdate::getPackageInfo() noexcept {
+  // Prefer WinRT Package.Current() — more reliable than GetCurrentPackageId alone
+  // for packaged MSIX identity used by Settings version + update compare.
+  try {
+    auto package = winrt::Windows::ApplicationModel::Package::Current();
+    auto id = package.Id();
+    auto version = id.Version();
+    return ::React::JSValueObject{
+        {"packaged", true},
+        {"name", WideToUtf8(std::wstring(id.Name().c_str()))},
+        {"publisher", WideToUtf8(std::wstring(id.Publisher().c_str()))},
+        {"familyName", WideToUtf8(std::wstring(id.FamilyName().c_str()))},
+        {"version",
+         FormatFullVersion(version.Major, version.Minor, version.Build, version.Revision)},
+        {"publicVersion", FormatPublicVersion(version.Major, version.Minor, version.Build)},
+    };
+  } catch (...) {
+    // Fall through to AppModel APIs / unpackaged.
+  }
+
   try {
     UINT32 fullNameLength = 0;
     LONG status = GetCurrentPackageFullName(&fullNameLength, nullptr);

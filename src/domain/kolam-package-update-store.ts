@@ -9,8 +9,8 @@ import {
 import {fetchKolamPackageLatestRelease} from '../services/kolam-package-update-api';
 import {
   downloadKolamWindowsMsix,
-  getKolamWindowsPackageInfo,
   installKolamWindowsMsix,
+  readKolamWindowsPackageInfo,
   restartKolamWindowsApp,
   subscribeKolamWindowsPackageUpdateProgress,
 } from '../services/kolam-windows-package-update';
@@ -53,9 +53,9 @@ export function resetKolamPackageUpdateStoreForTests() {
   listeners.clear();
 }
 
-export function hydrateKolamPackageUpdateInfo() {
+export async function hydrateKolamPackageUpdateInfo() {
   try {
-    const info = getKolamWindowsPackageInfo();
+    const info = await readKolamWindowsPackageInfo();
     patchState(packageInfoPatch(info));
     return info;
   } catch {
@@ -78,7 +78,7 @@ export async function startKolamPackageUpdateAutoCheck() {
   }
 
   autoCheckStarted = true;
-  hydrateKolamPackageUpdateInfo();
+  await hydrateKolamPackageUpdateInfo();
   await checkKolamPackageUpdate({silent: true});
 }
 
@@ -113,7 +113,7 @@ export async function installKolamPackageUpdate() {
 }
 
 async function runCheck(silent: boolean) {
-  const info = hydrateKolamPackageUpdateInfo();
+  const info = await hydrateKolamPackageUpdateInfo();
   patchState({
     phase: 'checking',
     errorMessage: silent ? state.errorMessage : '',

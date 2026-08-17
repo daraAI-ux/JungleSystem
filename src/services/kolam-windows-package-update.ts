@@ -5,7 +5,11 @@ import {
   TurboModuleRegistry,
   type TurboModule,
 } from 'react-native';
-import type {KolamPackageInfo} from '../domain/kolam-package-update';
+import {
+  EMPTY_KOLAM_PACKAGE_INFO,
+  normalizeKolamPackageInfo,
+  type KolamPackageInfo,
+} from '../domain/kolam-package-update';
 
 export type KolamPackageDownloadProgress = {
   percent: number;
@@ -27,21 +31,16 @@ type KolamWindowsPackageUpdateNativeBridge = TurboModule & {
     size?: number;
     url: string;
   }) => Promise<{path?: string; sha256?: string; sha512?: string; size?: number}>;
-  getPackageInfo?: () => KolamPackageInfo;
+  getPackageInfo?: () =>
+    | KolamPackageInfo
+    | Promise<KolamPackageInfo>
+    | Record<string, unknown>
+    | Promise<Record<string, unknown>>;
   installMsix?: (options?: {
     path?: string;
   }) => Promise<{fallback?: boolean; ok?: boolean}>;
   removeListeners?: (count: number) => void;
   restartApp?: () => Promise<{ok?: boolean; restarted?: boolean}>;
-};
-
-const EMPTY_PACKAGE_INFO: KolamPackageInfo = {
-  familyName: '',
-  name: 'JungleSystem',
-  packaged: false,
-  publicVersion: '',
-  publisher: '',
-  version: '',
 };
 
 export function getKolamWindowsPackageUpdateBridge():
@@ -72,27 +71,36 @@ export function getKolamWindowsPackageUpdateBridge():
   return null;
 }
 
+/**
+ * Sync snapshot. If native returns a thenable (common on RNW sync methods),
+ * returns empty — use `readKolamWindowsPackageInfo` instead.
+ */
 export function getKolamWindowsPackageInfo(): KolamPackageInfo {
   try {
-    const info = getKolamWindowsPackageUpdateBridge()?.getPackageInfo?.();
-    if (!info) {
-      return EMPTY_PACKAGE_INFO;
+    const bridge = getKolamWindowsPackageUpdateBridge();
+    const raw = bridge?.getPackageInfo?.();
+    if (!raw || isThenable(raw)) {
+      return {...EMPTY_KOLAM_PACKAGE_INFO};
     }
 
-    return {
-      familyName: typeof info.familyName === 'string' ? info.familyName : '',
-      name:
-        typeof info.name === 'string' && info.name.trim()
-          ? info.name
-          : 'JungleSystem',
-      packaged: Boolean(info.packaged),
-      publicVersion:
-        typeof info.publicVersion === 'string' ? info.publicVersion : '',
-      publisher: typeof info.publisher === 'string' ? info.publisher : '',
-      version: typeof info.version === 'string' ? info.version : '',
-    };
+    return normalizeKolamPackageInfo(raw);
   } catch {
-    return EMPTY_PACKAGE_INFO;
+    return {...EMPTY_KOLAM_PACKAGE_INFO};
+  }
+}
+
+/** Await native identity (handles sync methods that actually return Promises). */
+export async function readKolamWindowsPackageInfo(): Promise<KolamPackageInfo> {
+  try {
+    const bridge = getKolamWindowsPackageUpdateBridge();
+    if (!bridge?.getPackageInfo) {
+      return {...EMPTY_KOLAM_PACKAGE_INFO};
+    }
+
+    const raw = await Promise.resolve(bridge.getPackageInfo());
+    return normalizeKolamPackageInfo(raw);
+  } catch {
+    return {...EMPTY_KOLAM_PACKAGE_INFO};
   }
 }
 
@@ -188,4 +196,12 @@ export function subscribeKolamWindowsPackageUpdateProgress(handlers: {
   } catch {
     return () => undefined;
   }
+}
+
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+  return (
+    Boolean(value) &&
+    typeof value === 'object' &&
+    typeof (value as {then?: unknown}).then === 'function'
+  );
 }

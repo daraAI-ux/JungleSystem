@@ -3,6 +3,7 @@ import {
   isKolamPackageUpdateEmptyRelease,
   isKolamPackageUpdateNewer,
   kolamPackageUpdateErrorMessage,
+  normalizeKolamPackageInfo,
   parseKolamPackageReleaseManifest,
   parseKolamPublicVersion,
 } from '../src/domain/kolam-package-update';
@@ -18,6 +19,38 @@ describe('kolam package update domain', () => {
     expect(parseKolamPublicVersion(' 3.1.5 ')).toEqual([3, 1, 5]);
     expect(parseKolamPublicVersion('3.1')).toBeNull();
     expect(parseKolamPublicVersion('')).toBeNull();
+  });
+
+  it('normalizes native package identity payloads', () => {
+    expect(
+      normalizeKolamPackageInfo({
+        packaged: true,
+        name: 'JungleSystem',
+        publisher: 'CN=user',
+        familyName: 'JungleSystem_yzekw4x8qxe1g',
+        version: '3.1.8.0',
+        publicVersion: '3.1.8',
+      }),
+    ).toEqual({
+      packaged: true,
+      name: 'JungleSystem',
+      publisher: 'CN=user',
+      familyName: 'JungleSystem_yzekw4x8qxe1g',
+      version: '3.1.8.0',
+      publicVersion: '3.1.8',
+    });
+
+    expect(
+      normalizeKolamPackageInfo({
+        version: '3.1.8.0',
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        packaged: true,
+        publicVersion: '3.1.8',
+        version: '3.1.8.0',
+      }),
+    );
   });
 
   it('compares public versions newest-wins', () => {

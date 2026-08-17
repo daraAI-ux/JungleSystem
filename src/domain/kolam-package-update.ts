@@ -19,6 +19,60 @@ export type KolamPackageInfo = {
   version: string;
 };
 
+export const EMPTY_KOLAM_PACKAGE_INFO: KolamPackageInfo = {
+  familyName: '',
+  name: 'JungleSystem',
+  packaged: false,
+  publicVersion: '',
+  publisher: '',
+  version: '',
+};
+
+/** Normalize native/bridge package identity payloads (sync or already-resolved). */
+export function normalizeKolamPackageInfo(value: unknown): KolamPackageInfo {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {...EMPTY_KOLAM_PACKAGE_INFO};
+  }
+
+  const record = value as Record<string, unknown>;
+  const version = coerceKolamPackageVersionString(record.version);
+  const publicFromField = coerceKolamPackageVersionString(record.publicVersion);
+  const publicParts =
+    parseKolamPublicVersion(publicFromField) ?? parseKolamPublicVersion(version);
+  const publicVersion = publicParts
+    ? `${publicParts[0]}.${publicParts[1]}.${publicParts[2]}`
+    : '';
+  const packaged =
+    record.packaged === true ||
+    record.packaged === 1 ||
+    record.packaged === 'true' ||
+    Boolean(publicVersion);
+
+  return {
+    familyName:
+      typeof record.familyName === 'string' ? record.familyName.trim() : '',
+    name:
+      typeof record.name === 'string' && record.name.trim()
+        ? record.name.trim()
+        : 'JungleSystem',
+    packaged,
+    publicVersion,
+    publisher:
+      typeof record.publisher === 'string' ? record.publisher.trim() : '',
+    version: version || (publicVersion ? `${publicVersion}.0` : ''),
+  };
+}
+
+function coerceKolamPackageVersionString(value: unknown): string {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  return '';
+}
+
 export type KolamPackageReleaseManifest = {
   appId: string;
   appinstallerUrl?: string;

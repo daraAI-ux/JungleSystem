@@ -2,25 +2,30 @@ import React from 'react';
 import {Text} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamSettingsPackageUpdateActions} from '../src/components/kolam-settings-package-update-actions';
-import {resetKolamPackageUpdateStoreForTests} from '../src/domain/kolam-package-update-store';
-import {checkKolamPackageUpdate} from '../src/domain/kolam-package-update-store';
+import {
+  checkKolamPackageUpdate,
+  resetKolamPackageUpdateStoreForTests,
+} from '../src/domain/kolam-package-update-store';
 import {fetchKolamPackageLatestRelease} from '../src/services/kolam-package-update-api';
-import {getKolamWindowsPackageInfo} from '../src/services/kolam-windows-package-update';
+import {readKolamWindowsPackageInfo} from '../src/services/kolam-windows-package-update';
 
 jest.mock('../src/services/kolam-package-update-api', () => ({
   fetchKolamPackageLatestRelease: jest.fn(),
 }));
 
+const PACKAGE_INFO = {
+  familyName: 'JungleSystem_test',
+  name: 'JungleSystem',
+  packaged: true,
+  publicVersion: '3.1.4',
+  publisher: 'CN=user',
+  version: '3.1.4.0',
+};
+
 jest.mock('../src/services/kolam-windows-package-update', () => ({
   downloadKolamWindowsMsix: jest.fn(),
-  getKolamWindowsPackageInfo: jest.fn(() => ({
-    familyName: 'JungleSystem_test',
-    name: 'JungleSystem',
-    packaged: true,
-    publicVersion: '3.1.4',
-    publisher: 'CN=user',
-    version: '3.1.4.0',
-  })),
+  getKolamWindowsPackageInfo: jest.fn(() => PACKAGE_INFO),
+  readKolamWindowsPackageInfo: jest.fn(async () => PACKAGE_INFO),
   installKolamWindowsMsix: jest.fn(),
   restartKolamWindowsApp: jest.fn(),
   subscribeKolamWindowsPackageUpdateProgress: () => () => undefined,
@@ -29,8 +34,8 @@ jest.mock('../src/services/kolam-windows-package-update', () => ({
 const mockedFetch = fetchKolamPackageLatestRelease as jest.MockedFunction<
   typeof fetchKolamPackageLatestRelease
 >;
-const mockedInfo = getKolamWindowsPackageInfo as jest.MockedFunction<
-  typeof getKolamWindowsPackageInfo
+const mockedInfo = readKolamWindowsPackageInfo as jest.MockedFunction<
+  typeof readKolamWindowsPackageInfo
 >;
 
 function labels(renderer: ReactTestRenderer.ReactTestRenderer) {
@@ -54,14 +59,7 @@ describe('KolamSettingsPackageUpdateActions', () => {
   beforeEach(() => {
     resetKolamPackageUpdateStoreForTests();
     mockedFetch.mockReset();
-    mockedInfo.mockReturnValue({
-      familyName: 'JungleSystem_test',
-      name: 'JungleSystem',
-      packaged: true,
-      publicVersion: '3.1.4',
-      publisher: 'CN=user',
-      version: '3.1.4.0',
-    });
+    mockedInfo.mockResolvedValue({...PACKAGE_INFO});
   });
 
   it('shows current version with Periksa and a disabled Pasang', async () => {
@@ -69,6 +67,7 @@ describe('KolamSettingsPackageUpdateActions', () => {
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(<KolamSettingsPackageUpdateActions />);
+      await Promise.resolve();
       await Promise.resolve();
     });
 
@@ -97,6 +96,7 @@ describe('KolamSettingsPackageUpdateActions', () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(<KolamSettingsPackageUpdateActions />);
+      await Promise.resolve();
       await Promise.resolve();
     });
 
