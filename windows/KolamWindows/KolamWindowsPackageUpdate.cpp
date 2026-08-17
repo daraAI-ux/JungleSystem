@@ -219,7 +219,24 @@ bool PathIsUnderFolder(std::wstring const &path, std::wstring const &folder) {
   if (normalizedFolder.back() != L'\\') {
     normalizedFolder.push_back(L'\\');
   }
+
   return normalizedPath.rfind(normalizedFolder, 0) == 0;
+}
+
+bool RelaunchCurrentAppBestEffort() noexcept {
+  try {
+    auto aumid = ReadAppModelString(GetCurrentApplicationUserModelId);
+    if (aumid.empty()) {
+      return false;
+    }
+
+    auto target = std::wstring(L"shell:AppsFolder\\") + aumid;
+    auto launched = ShellExecuteW(
+        nullptr, L"open", target.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    return reinterpret_cast<INT_PTR>(launched) > 32;
+  } catch (...) {
+    return false;
+  }
 }
 
 winrt::Windows::Foundation::Uri MakeFileUri(std::wstring const &path) {
@@ -470,39 +487,27 @@ winrt::fire_and_forget InstallMsixAsync(
         });
 
     auto deployment = co_await operation;
-    auto errorText = WideToUtf8(deployment.ErrorText().c_str());
-    if (!errorText.empty() && deployment.ExtendedErrorCode() != winrt::hresult{0}) {
-      // Fallback: open the MSIX with the system App Installer UI.
-      auto launched = ShellExecuteW(
-          nullptr, L"open", path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-      if (reinterpret_cast<INT_PTR>(launched) > 32) {
-        result.Resolve(::React::JSValueObject{{"ok", true}, {"fallback", true}});
-        co_return;
+    if (deployment.ExtendedErrorCode() != winrt::hresult{0}) {
+      auto errorText = WideToUtf8(deployment.ErrorText().c_str());
+      if (errorText.empty()) {
+        errorText = "Gagal pasang.";
       }
       result.Reject(errorText.c_str());
       co_return;
     }
 
-    result.Resolve(::React::JSValueObject{{"ok", true}});
+    // Do not open App Installer UI. Relaunch from native because
+    // ForceApplicationShutdown may kill JS before restartApp runs.
+    result.Resolve(::React::JSValueObject{{"ok", true}, {"restarting", true}});
+    RelaunchCurrentAppBestEffort();
+    ExitProcess(0);
   } catch (winrt::hresult_error const &error) {
-    std::wstring path;
-    auto requested = ReadString(options, "path");
-    if (runtime.mutex && runtime.lastDownloadPath) {
-      std::lock_guard<std::mutex> lock(*runtime.mutex);
-      path = *runtime.lastDownloadPath;
+    auto message = winrt::to_string(error.message());
+    if (message.empty()) {
+      result.Reject("Gagal pasang.");
+    } else {
+      result.Reject(message.c_str());
     }
-    if (!requested.empty()) {
-      path = Utf8ToWide(requested);
-    }
-    if (!path.empty()) {
-      auto launched = ShellExecuteW(
-          nullptr, L"open", path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-      if (reinterpret_cast<INT_PTR>(launched) > 32) {
-        result.Resolve(::React::JSValueObject{{"ok", true}, {"fallback", true}});
-        co_return;
-      }
-    }
-    result.Reject(winrt::to_string(error.message()).c_str());
   } catch (...) {
     result.Reject("Gagal pasang.");
   }
@@ -510,16 +515,7 @@ winrt::fire_and_forget InstallMsixAsync(
 
 void RestartApp(::React::ReactPromise<::React::JSValueObject> result) noexcept {
   try {
-    auto aumid = ReadAppModelString(GetCurrentApplicationUserModelId);
-    if (aumid.empty()) {
-      result.Reject("Gagal restart.");
-      return;
-    }
-
-    auto target = std::wstring(L"shell:AppsFolder\\") + aumid;
-    auto launched = ShellExecuteW(
-        nullptr, L"open", target.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-    if (reinterpret_cast<INT_PTR>(launched) <= 32) {
+    if (!RelaunchCurrentAppBestEffort()) {
       result.Reject("Gagal restart.");
       return;
     }

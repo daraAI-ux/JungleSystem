@@ -170,7 +170,7 @@ describe('kolam package update store', () => {
   it('downloads, installs, then restarts only from Pasang', async () => {
     mockedFetch.mockResolvedValue(RELEASE);
     mockedDownload.mockResolvedValue({path: 'C:\\cache\\update.msix'});
-    mockedInstall.mockResolvedValue({});
+    mockedInstall.mockResolvedValue({ok: true});
     mockedRestart.mockResolvedValue(undefined);
 
     await checkKolamPackageUpdate({silent: false});
@@ -187,10 +187,10 @@ describe('kolam package update store', () => {
     expect(mockedRestart).toHaveBeenCalled();
   });
 
-  it('skips restart when install falls back to App Installer', async () => {
+  it('skips JS restart when native already relaunches after install', async () => {
     mockedFetch.mockResolvedValue(RELEASE);
     mockedDownload.mockResolvedValue({path: 'C:\\cache\\update.msix'});
-    mockedInstall.mockResolvedValue({fallback: true});
+    mockedInstall.mockResolvedValue({ok: true, restarting: true});
 
     await checkKolamPackageUpdate({silent: false});
     await installKolamPackageUpdate();
@@ -199,7 +199,25 @@ describe('kolam package update store', () => {
     expect(getKolamPackageUpdateState()).toEqual(
       expect.objectContaining({
         phase: 'idle',
-        errorMessage: 'Lanjut di App Installer',
+        percent: 100,
+        errorMessage: '',
+      }),
+    );
+  });
+
+  it('surfaces install failure instead of App Installer fallback', async () => {
+    mockedFetch.mockResolvedValue(RELEASE);
+    mockedDownload.mockResolvedValue({path: 'C:\\cache\\update.msix'});
+    mockedInstall.mockRejectedValue(new Error('Gagal pasang'));
+
+    await checkKolamPackageUpdate({silent: false});
+    await installKolamPackageUpdate();
+
+    expect(mockedRestart).not.toHaveBeenCalled();
+    expect(getKolamPackageUpdateState()).toEqual(
+      expect.objectContaining({
+        phase: 'error',
+        errorMessage: 'Gagal pasang',
       }),
     );
   });

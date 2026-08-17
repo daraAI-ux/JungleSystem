@@ -38,7 +38,7 @@ type KolamWindowsPackageUpdateNativeBridge = TurboModule & {
     | Promise<Record<string, unknown>>;
   installMsix?: (options?: {
     path?: string;
-  }) => Promise<{fallback?: boolean; ok?: boolean}>;
+  }) => Promise<{fallback?: boolean; ok?: boolean; restarting?: boolean}>;
   removeListeners?: (count: number) => void;
   restartApp?: () => Promise<{ok?: boolean; restarted?: boolean}>;
 };
@@ -136,15 +136,24 @@ export async function downloadKolamWindowsMsix(options: {
 
 export async function installKolamWindowsMsix(
   path?: string,
-): Promise<{fallback?: boolean}> {
+): Promise<{ok: boolean; restarting?: boolean}> {
   const bridge = getKolamWindowsPackageUpdateBridge();
   if (!bridge?.installMsix) {
     throw new Error('Gagal pasang');
   }
 
   const result = await bridge.installMsix(path ? {path} : {});
+  if (!result || typeof result !== 'object' || result.ok === false) {
+    throw new Error('Gagal pasang');
+  }
+  // Legacy native builds may still report App Installer fallback — treat as failure.
+  if (result.fallback) {
+    throw new Error('Gagal pasang');
+  }
+
   return {
-    fallback: Boolean(result && typeof result === 'object' && result.fallback),
+    ok: true,
+    restarting: Boolean(result.restarting),
   };
 }
 

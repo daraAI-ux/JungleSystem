@@ -165,11 +165,7 @@ export function isKolamPackageHttpsUrl(value: string): boolean {
 
 export function isKolamPackageUpdateEmptyRelease(message: string): boolean {
   const trimmed = message.trim();
-  return (
-    trimmed === 'Tidak ada rilis' ||
-    trimmed === 'Terbaru' ||
-    trimmed === 'Lanjut di App Installer'
-  );
+  return trimmed === 'Tidak ada rilis' || trimmed === 'Terbaru';
 }
 
 export function kolamPackageUpdateErrorMessage(

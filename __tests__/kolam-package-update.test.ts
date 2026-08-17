@@ -140,7 +140,7 @@ describe('kolam package update domain', () => {
     expect(isKolamPackageUpdateEmptyRelease('Tidak ada rilis')).toBe(true);
     expect(isKolamPackageUpdateEmptyRelease('Terbaru')).toBe(true);
     expect(isKolamPackageUpdateEmptyRelease('Lanjut di App Installer')).toBe(
-      true,
+      false,
     );
     expect(isKolamPackageUpdateEmptyRelease('Gagal pasang')).toBe(false);
   });

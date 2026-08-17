@@ -189,11 +189,11 @@ async function runInstall(release: KolamPackageReleaseManifest) {
       percent: 0,
     });
     const installed = await installKolamWindowsMsix(downloaded.path);
-    if (installed.fallback) {
+    if (installed.restarting) {
       patchState({
         phase: 'idle',
-        percent: 0,
-        errorMessage: 'Lanjut di App Installer',
+        percent: 100,
+        errorMessage: '',
       });
       return;
     }
