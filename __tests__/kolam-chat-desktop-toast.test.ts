@@ -58,6 +58,43 @@ describe('kolam chat desktop toast', () => {
     });
   });
 
+  it('labels BE system / AI Assistant inbox senders as DARA in toast titles', () => {
+    const classification = classifyKolamChatLiveEvent({
+      contract: contract('inbox', 'message.created'),
+      payload: {
+        conversationId: 'conv-2',
+        message: {
+          direction: 'in',
+          platform: 'whatsapp',
+          senderName: 'System',
+          senderType: 'system',
+          content: {type: 'text', text: 'Mohon beri rating'},
+        },
+      },
+    });
+
+    expect(
+      resolveKolamChatDesktopToast({
+        classification,
+        payload: {
+          conversationId: 'conv-2',
+          message: {
+            direction: 'in',
+            platform: 'whatsapp',
+            senderName: 'System',
+            senderType: 'system',
+            content: {type: 'text', text: 'Mohon beri rating'},
+          },
+        },
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        title: 'WhatsApp · DARA',
+        body: 'Mohon beri rating',
+      }),
+    );
+  });
+
   it('skips toast when classifier says none or the open thread matches', () => {
     const outbound = classifyKolamChatLiveEvent({
       contract: contract('inbox', 'message.created'),

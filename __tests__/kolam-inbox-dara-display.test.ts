@@ -14,6 +14,22 @@ describe('kolam-inbox-dara-display', () => {
     ).toBe('DARA');
   });
 
+  it('shows DARA for BE system outbound (rating / notices), not System', () => {
+    expect(
+      resolveKolamInboxMessageAuthor({
+        direction: 'out',
+        senderType: 'system',
+        senderName: 'System',
+      }),
+    ).toBe('DARA');
+    expect(
+      isKolamInboxAiMessage({
+        senderType: 'system',
+        senderName: 'System',
+      }),
+    ).toBe(true);
+  });
+
   it('keeps staff outbound senderName', () => {
     expect(
       resolveKolamInboxMessageAuthor({

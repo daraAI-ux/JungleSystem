@@ -27,6 +27,7 @@ import { KOLAM_SHOPEE_LOGO_SVG } from '../assets/marketplace/shopee-logo-svg';
 import { KOLAM_TIKTOK_LOGO_SVG } from '../assets/marketplace/tiktok-logo-svg';
 import { KOLAM_WEBSTORE_LOGO_SVG } from '../assets/marketplace/web-logo-svg';
 import { tryClaimKolamChatLiveAlert } from '../domain/kolam-chat-desktop-toast';
+import { resolveKolamInboxSenderDisplayName } from '../domain/kolam-inbox-dara-display';
 import {
   confirmKolamTeamChatRoomRead,
   noteKolamTeamChatLiveMessageForReadConfirm,
@@ -7135,7 +7136,8 @@ function KolamInboxReplyPreview({
   >;
 }) {
   const imageUri = normalizeChatMediaUri(reply.imageUrl);
-  const label = reply.senderName?.trim() || 'Reply';
+  const label =
+    resolveKolamInboxSenderDisplayName(reply.senderName) || 'Reply';
 
   return (
     <View accessibilityLabel={`Reply ${label}`} style={styles.inboxReplyCard}>

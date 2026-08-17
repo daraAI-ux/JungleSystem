@@ -225,7 +225,11 @@ function resolveInboxConversationUpdatedToast(
     resolveUnreadTypePreview(record?.lastMessageType) ||
     'Pesan baru';
   const sender =
-    readInboxContactName(record?.contactId) || readText(record?.senderName);
+    readInboxContactName(record?.contactId) ||
+    resolveInboxToastSenderName({
+      senderName: record?.senderName,
+      senderType: record?.senderType,
+    });
   const platform = formatInboxToastPlatform(readText(record?.platform));
   const titled = [platform, sender].filter(Boolean).join(' · ');
 
@@ -244,9 +248,7 @@ function resolveInboxMessageToast(
 ): KolamChatDesktopToastRequest | null {
   const record = asRecord(payload);
   const message = asRecord(record?.message);
-  const sender =
-    readText(message?.senderName) ||
-    (message?.senderType === 'buyer' ? 'Customer' : '');
+  const sender = resolveInboxToastSenderName(message);
   const platform = formatInboxToastPlatform(
     readText(message?.platform) || readText(record?.platform),
   );
@@ -263,6 +265,29 @@ function resolveInboxMessageToast(
     targetId: conversationId,
     title,
   };
+}
+
+function resolveInboxToastSenderName(message?: Record<string, unknown>) {
+  if (!message) {
+    return '';
+  }
+
+  const senderType = readText(message.senderType).toLowerCase();
+  const senderName = readText(message.senderName);
+  if (
+    senderType === 'ai_agent' ||
+    senderType === 'system' ||
+    senderName.toLowerCase() === 'system' ||
+    senderName.toLowerCase() === 'ai assistant'
+  ) {
+    return 'DARA';
+  }
+
+  if (senderName) {
+    return senderName;
+  }
+
+  return senderType === 'buyer' ? 'Customer' : '';
 }
 
 function formatInboxToastPlatform(platform: string) {

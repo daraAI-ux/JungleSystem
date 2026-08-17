@@ -6,7 +6,13 @@ export function isKolamInboxAiMessage(
     Pick<KolamChatMessage, 'senderType' | 'senderName' | 'daraMeta'>
   > & {daraMeta?: KolamChatDaraMessageMeta | null},
 ) {
-  if (message.senderType === 'ai_agent' || message.daraMeta) {
+  // BE `ai-chat` stores automated DARA outbound as senderType "system" + senderName "System"
+  // (rating, handoff notices, etc.). FE stream treats those as balasan DARA.
+  if (
+    message.senderType === 'ai_agent' ||
+    message.senderType === 'system' ||
+    message.daraMeta
+  ) {
     return true;
   }
 
@@ -17,6 +23,7 @@ export function isKolamInboxAiMessage(
     senderName === 'dara' ||
     senderName.includes('dara') ||
     senderName === 'ai assistant' ||
+    senderName === 'system' ||
     senderName.includes('katak terbang')
   );
 }
@@ -37,4 +44,18 @@ export function resolveKolamInboxMessageAuthor(
   }
 
   return message.senderName || buyerDisplayName || 'Buyer';
+}
+
+/** Map BE labels like "System" / "AI Assistant" when only a name string is available. */
+export function resolveKolamInboxSenderDisplayName(
+  senderName?: string | null,
+): string {
+  const trimmed = String(senderName ?? '').trim();
+  if (!trimmed) {
+    return '';
+  }
+  if (isKolamInboxAiMessage({senderName: trimmed})) {
+    return 'DARA';
+  }
+  return trimmed;
 }
