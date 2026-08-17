@@ -129,6 +129,7 @@ describe('kolam-chat-catalog-card', () => {
       expect.objectContaining({
         name: 'Nemo — Hitam',
         priceLabel: 'Rp85.000',
+        stock: 4,
         imageUrl: 'https://cdn.example/nemo.jpg',
         detailHref: 'https://dunia-anura.com/id/products/nemo',
       }),

@@ -317,6 +317,7 @@ export interface KolamChatLegacyProductShare {
   entityType: KolamChatCatalogEntityType;
   name: string;
   priceLabel?: string;
+  stock?: number;
   imageUrl?: string;
   detailHref?: string;
 }
@@ -381,12 +382,18 @@ export function parseKolamLegacyProductShareText(
 
   const baseName = segments[0];
   let priceLabel: string | undefined;
+  let stock: number | undefined;
   const extraParts: string[] = [];
   for (let i = 1; i < segments.length; i += 1) {
     const seg = segments[i];
+    const stockMatch = seg.match(/^Stok\s+(\d+)/i);
+    if (stockMatch) {
+      stock = Number(stockMatch[1]);
+      continue;
+    }
     if (/^Rp/i.test(seg)) {
       priceLabel = seg;
-    } else if (/(sold|terjual)/i.test(seg) || /^Stok\s+\d+/i.test(seg)) {
+    } else if (/(sold|terjual)/i.test(seg)) {
       continue;
     } else {
       extraParts.push(seg);
@@ -401,6 +408,7 @@ export function parseKolamLegacyProductShareText(
     entityType: 'product',
     name,
     priceLabel,
+    stock: Number.isFinite(stock) ? stock : undefined,
     imageUrl,
     detailHref,
   };

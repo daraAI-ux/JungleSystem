@@ -6616,7 +6616,7 @@ function KolamTeamMessageBody({
         imageUrl: normalizeChatMediaUri(share.imageUrl) ?? undefined,
         kind: share.entityType === 'species' ? 'species' : 'product',
         label: share.entityType === 'species' ? 'Livestock' : 'Product',
-        priceLabel: share.priceLabel,
+        stock: share.stock,
         title: share.name,
       };
       return <KolamInboxProductCard card={card} />;
@@ -7100,8 +7100,6 @@ function KolamInboxReplyPreview({
 }
 
 function KolamInboxProductCard({ card }: { card: KolamInboxResolvedCard }) {
-  const { handleChatRailClose, handleDashboardRouteContext } =
-    useKolamNavigationContext();
   const content = (
     <>
       {card.imageUrl ? (
@@ -7124,45 +7122,20 @@ function KolamInboxProductCard({ card }: { card: KolamInboxResolvedCard }) {
         <Text numberOfLines={2} style={styles.chatPreviewTitle}>
           {card.title}
         </Text>
-        {card.priceLabel ? (
-          <Text numberOfLines={1} style={styles.inboxRichCardStrong}>
-            {card.priceLabel}
-          </Text>
-        ) : null}
-        {card.sku || card.marketplaceId ? (
-          <Text numberOfLines={1} style={styles.chatPreviewDescription}>
-            {[card.sku ? `SKU ${card.sku}` : '', card.marketplaceId]
-              .filter(Boolean)
-              .join(' | ')}
-          </Text>
-        ) : null}
         {typeof card.stock === 'number' ? (
           <Text numberOfLines={1} style={styles.chatPreviewDescription}>
             Stok: {formatMetricNumber(card.stock)}
-          </Text>
-        ) : null}
-        {card.actionUrl ? (
-          <Text numberOfLines={1} style={styles.chatPreviewUrl}>
-            {card.actionUrl}
           </Text>
         ) : null}
       </View>
     </>
   );
 
-  const canOpen = Boolean(
-    card.actionUrl ||
-      ((card.kind === 'product' || card.kind === 'species') && card.entityId),
-  );
-
-  if (canOpen) {
+  if (card.actionUrl) {
     return (
       <KolamPressable
         accessibilityLabel={`Buka card ${card.title}`}
-        onPress={() => openInboxCatalogCard(card, {
-          handleChatRailClose,
-          handleDashboardRouteContext,
-        })}
+        onPress={() => openInboxExternalUrl(card.actionUrl)}
         style={styles.inboxRichCard}
       >
         {content}
@@ -8922,7 +8895,13 @@ function parseInboxLegacyProductText(
 
   const extra: string[] = [];
   let priceLabel: string | undefined;
+  let stock: number | undefined;
   for (const segment of segments.slice(1)) {
+    const stockMatch = segment.match(/^Stok\s+(\d+)/i);
+    if (stockMatch) {
+      stock = Number(stockMatch[1]);
+      continue;
+    }
     if (/^Rp/i.test(segment)) {
       priceLabel = segment;
     } else if (!/(sold|terjual)/i.test(segment)) {
@@ -8945,6 +8924,7 @@ function parseInboxLegacyProductText(
     kind,
     label: getInboxCardLabel(kind, marketplacePlatform),
     priceLabel,
+    stock: Number.isFinite(stock) ? stock : undefined,
     title: extra.length ? `${segments[0]} — ${extra.join(' — ')}` : segments[0],
   };
 }
@@ -9032,30 +9012,6 @@ function openInboxExternalUrl(url?: string | null) {
   }
 
   Linking.openURL(target).catch(() => undefined);
-}
-
-function openInboxCatalogCard(
-  card: KolamInboxResolvedCard,
-  navigation: {
-    handleChatRailClose: () => void;
-    handleDashboardRouteContext: (route: string) => void;
-  },
-) {
-  if (
-    (card.kind === 'product' || card.kind === 'species') &&
-    card.entityId?.trim()
-  ) {
-    const entityId = card.entityId.trim();
-    navigation.handleDashboardRouteContext(
-      card.kind === 'species'
-        ? `/species/${entityId}`
-        : `/products/${entityId}`,
-    );
-    navigation.handleChatRailClose();
-    return;
-  }
-
-  openInboxExternalUrl(card.actionUrl);
 }
 
 function normalizeChatMediaUri(uri?: string | null) {

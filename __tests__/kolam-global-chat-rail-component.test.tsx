@@ -3477,7 +3477,7 @@ describe('KolamGlobalChatRail', () => {
         'Bukti transfer jam 08.10',
       ]),
     );
-    expect(normalizedText).toContain('Rp 175.000');
+    expect(normalizedText).not.toContain('Rp 175.000');
     expect(normalizedText).toContain('Diedit oleh Maya');
 
     const youtubeButton = renderer!.root
@@ -3546,7 +3546,7 @@ describe('KolamGlobalChatRail', () => {
     );
   });
 
-  it('opens in-app product/species routes from catalog cards with entityId', async () => {
+  it('opens marketplace URLs from catalog cards instead of in-app Kolam routes', async () => {
     useReadonlyDataMock.mockReturnValue({
       conversations: [
         {
@@ -3659,23 +3659,22 @@ describe('KolamGlobalChatRail', () => {
     await ReactTestRenderer.act(async () => {
       productCard!.props.onPress();
     });
-    expect(handleDashboardRouteContextMock).toHaveBeenCalledWith(
-      '/products/prod-deeplink-1',
+    expect(openUrlMock).toHaveBeenCalledWith(
+      'https://store.example.test/products/nemo',
     );
-    expect(handleChatRailCloseMock).toHaveBeenCalled();
-    expect(openUrlMock).not.toHaveBeenCalled();
+    expect(handleDashboardRouteContextMock).not.toHaveBeenCalled();
+    expect(handleChatRailCloseMock).not.toHaveBeenCalled();
 
-    handleDashboardRouteContextMock.mockClear();
-    handleChatRailCloseMock.mockClear();
+    openUrlMock.mockClear();
 
     await ReactTestRenderer.act(async () => {
       speciesCard!.props.onPress();
     });
-    expect(handleDashboardRouteContextMock).toHaveBeenCalledWith(
-      '/species/sp-deeplink-1',
+    expect(openUrlMock).toHaveBeenCalledWith(
+      'https://store.example.test/species/anemon',
     );
-    expect(handleChatRailCloseMock).toHaveBeenCalled();
-    expect(openUrlMock).not.toHaveBeenCalled();
+    expect(handleDashboardRouteContextMock).not.toHaveBeenCalled();
+    expect(handleChatRailCloseMock).not.toHaveBeenCalled();
   });
 
   it('renders inbound web, marketplace, youtube, and clickable link cards', async () => {
@@ -3805,9 +3804,10 @@ describe('KolamGlobalChatRail', () => {
       expect.arrayContaining([
         'Tokopedia',
         'LIBERTY Luce',
-        'Rp150.000',
         'Product',
         'Nemo Clownfish',
+        'Stok: ',
+        '4',
         'YouTube',
         'Buka di YouTube',
         'Cek stok di ',
@@ -3815,6 +3815,8 @@ describe('KolamGlobalChatRail', () => {
         ' ya',
       ]),
     );
+    expect(renderText(renderer!).join(' ')).not.toContain('Rp150.000');
+    expect(renderText(renderer!).join(' ')).not.toContain('Rp85.000');
 
     const tokpedCard = renderer!.root
       .findAllByType(KolamPressable)
