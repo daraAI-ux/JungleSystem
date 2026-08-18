@@ -77,7 +77,10 @@ export function KolamTaxonomySurface({
           onRouteChange={onRouteChange}
         />
       ) : (
-        <KolamTaxonomyDetail controller={controller} />
+        <KolamTaxonomyDetail
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       )}
     </KolamTaxonomyShell>
   );
@@ -591,8 +594,10 @@ function KolamTaxonomyActionsMenu({
 
 function KolamTaxonomyDetail({
   controller,
+  onRouteChange,
 }: {
   controller: KolamTaxonomyController;
+  onRouteChange?: (route: string) => void;
 }) {
   const taxonomy = controller.selectedTaxonomy;
   const editable = controller.isEditable;
@@ -691,7 +696,10 @@ function KolamTaxonomyDetail({
           }}
         />
       ) : (
-        <KolamTaxonomyForm controller={controller} />
+        <KolamTaxonomyForm
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       )}
     </View>
   );
@@ -699,8 +707,10 @@ function KolamTaxonomyDetail({
 
 function KolamTaxonomyForm({
   controller,
+  onRouteChange,
 }: {
   controller: KolamTaxonomyController;
+  onRouteChange?: (route: string) => void;
 }) {
   const form = controller.form;
   const editableHierarchy = controller.mode === 'new';
@@ -829,7 +839,11 @@ function KolamTaxonomyForm({
             disabled={controller.saving}
             label={controller.saving ? 'Menyimpan...' : 'Simpan'}
             onPress={() => {
-              void controller.onSave();
+              void controller.onSave().then(taxonomy => {
+                if (taxonomy) {
+                  onRouteChange?.(getTaxonomyRoute(taxonomy));
+                }
+              });
             }}
           />
         </View>

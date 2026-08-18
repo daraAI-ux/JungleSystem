@@ -53,7 +53,7 @@ export interface KolamCustomFieldController {
   onEdit: () => void;
   onPickIcon: () => Promise<void>;
   onRefresh: () => Promise<void>;
-  onSave: () => Promise<void>;
+  onSave: () => Promise<KolamCustomField | null>;
   onSelectField: (field: KolamCustomField) => Promise<void>;
   onSetFieldStatus: (
     field: KolamCustomField,
@@ -280,7 +280,7 @@ export function useKolamCustomFieldController(
     const validationError = validateForm(form);
     if (validationError) {
       setError(validationError);
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -308,8 +308,10 @@ export function useKolamCustomFieldController(
       await writeKolamCustomFieldListCache(upsertField(fields, savedField));
       setDataSource('live');
       void syncCustomFieldIconAssets([savedField]);
+      return savedField;
     } catch (saveError) {
       setError(getErrorMessage(saveError));
+      return null;
     } finally {
       setSaving(false);
     }

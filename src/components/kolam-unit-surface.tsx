@@ -62,7 +62,10 @@ export function KolamUnitSurface({
       {controller.mode === 'list' ? (
         <KolamUnitList controller={controller} onRouteChange={onRouteChange} />
       ) : (
-        <KolamUnitDetail controller={controller} />
+        <KolamUnitDetail
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       )}
     </KolamUnitShell>
   );
@@ -507,7 +510,13 @@ function KolamUnitActionsMenu({
   );
 }
 
-function KolamUnitDetail({ controller }: { controller: KolamUnitController }) {
+function KolamUnitDetail({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamUnitController;
+  onRouteChange?: (route: string) => void;
+}) {
   const unit = controller.selectedUnit;
   const editable = controller.isEditable;
 
@@ -572,13 +581,22 @@ function KolamUnitDetail({ controller }: { controller: KolamUnitController }) {
           title="Ringkasan satuan"
         />
       ) : (
-        <KolamUnitForm controller={controller} />
+        <KolamUnitForm
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       )}
     </View>
   );
 }
 
-function KolamUnitForm({ controller }: { controller: KolamUnitController }) {
+function KolamUnitForm({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamUnitController;
+  onRouteChange?: (route: string) => void;
+}) {
   const form = controller.form;
 
   return (
@@ -619,7 +637,11 @@ function KolamUnitForm({ controller }: { controller: KolamUnitController }) {
             disabled={controller.saving}
             label={controller.saving ? 'Menyimpan...' : 'Simpan'}
             onPress={() => {
-              void controller.onSave();
+              void controller.onSave().then(unit => {
+                if (unit) {
+                  onRouteChange?.(getUnitRoute(unit));
+                }
+              });
             }}
           />
         </View>

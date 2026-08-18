@@ -179,7 +179,7 @@ export interface KolamSpeciesController {
   onReorderVariantPhoto: (variantId: string, index: number, direction: 'up' | 'down') => Promise<boolean>;
   onReorderVariantVideo: (variantId: string, index: number, direction: 'up' | 'down') => Promise<boolean>;
   onReorderVideo: (index: number, direction: 'up' | 'down') => Promise<boolean>;
-  onSave: () => Promise<void>;
+  onSave: () => Promise<KolamSpecies | null>;
   onSearchChange: (search: string) => void;
   onSelectSpecies: (species: KolamSpecies, nextMode?: KolamSpeciesSurfaceMode) => Promise<void>;
   onSyncPrice: (speciesIds?: string[]) => Promise<boolean>;
@@ -936,7 +936,7 @@ export function useKolamSpeciesController(
     const validationError = validateKolamSpeciesFormForSave(form);
     if (validationError) {
       setError(validationError);
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -969,8 +969,10 @@ export function useKolamSpeciesController(
       setForm(createKolamSpeciesFormState(syncedSpecies));
       setMode('detail');
       setDataSource('live');
+      return syncedSpecies;
     } catch (saveError) {
       setError(getErrorMessage(saveError));
+      return null;
     } finally {
       setSaving(false);
     }

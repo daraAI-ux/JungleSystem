@@ -47,7 +47,7 @@ export interface KolamPackingMaterialController {
   onDeleteMaterial: (item: KolamPackingMaterial) => Promise<boolean>;
   onEdit: () => void;
   onRefresh: () => Promise<void>;
-  onSave: () => Promise<void>;
+  onSave: () => Promise<KolamPackingMaterial | null>;
   onSelectMaterial: (item: KolamPackingMaterial) => Promise<void>;
 }
 
@@ -225,12 +225,12 @@ export function useKolamPackingMaterialController(
   const onSave = useCallback(async () => {
     if (!form.name.trim()) {
       setError('Nama bahan kemasan wajib diisi.');
-      return;
+      return null;
     }
 
     if (!form.category.trim()) {
       setError('Kategori wajib dipilih.');
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -253,8 +253,10 @@ export function useKolamPackingMaterialController(
       setMaterials(nextMaterials);
       setMode('detail');
       setDataSource('live');
+      return savedItem;
     } catch (saveError) {
       setError(getErrorMessage(saveError));
+      return null;
     } finally {
       setSaving(false);
     }

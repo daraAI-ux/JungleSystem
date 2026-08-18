@@ -44,7 +44,7 @@ export interface KolamTaxonomyController {
   onDeleteTaxonomy: (taxonomy: KolamTaxonomy) => Promise<boolean>;
   onEdit: () => void;
   onRefresh: () => Promise<void>;
-  onSave: () => Promise<void>;
+  onSave: () => Promise<KolamTaxonomy | null>;
   onSelectTaxonomy: (taxonomy: KolamTaxonomy) => Promise<void>;
 }
 
@@ -206,12 +206,12 @@ export function useKolamTaxonomyController(
   const onSave = useCallback(async () => {
     if (!form.name.trim()) {
       setError('Nama taksonomi wajib diisi.');
-      return;
+      return null;
     }
 
     if (form.level !== 'Kingdom' && !form.parentId.trim() && mode === 'new') {
       setError('Induk taksonomi wajib dipilih untuk level selain Kerajaan.');
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -235,8 +235,10 @@ export function useKolamTaxonomyController(
         upsertTaxonomy(taxonomies, savedTaxonomy),
       );
       setDataSource('live');
+      return savedTaxonomy;
     } catch (saveError) {
       setError(getErrorMessage(saveError));
+      return null;
     } finally {
       setSaving(false);
     }

@@ -131,7 +131,11 @@ function KolamCategoryShell({
                   disabled={controller.saving}
                   label={controller.saving ? 'Menyimpan...' : 'Simpan'}
                   onPress={() => {
-                    void controller.onSave();
+                    void controller.onSave().then(category => {
+                      if (category) {
+                        onRouteChange?.(getCategoryRoute(category));
+                      }
+                    });
                   }}
                 />
               </>

@@ -136,7 +136,11 @@ function KolamCustomFieldShell({
                   disabled={controller.saving}
                   label={controller.saving ? 'Menyimpan...' : 'Simpan'}
                   onPress={() => {
-                    void controller.onSave();
+                    void controller.onSave().then(field => {
+                      if (field) {
+                        onRouteChange?.(getFieldRoute(field));
+                      }
+                    });
                   }}
                 />
               </>

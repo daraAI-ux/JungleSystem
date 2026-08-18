@@ -54,7 +54,7 @@ export interface KolamCategoryController {
   onEdit: () => void;
   onPickIcon: () => Promise<void>;
   onRefresh: () => Promise<void>;
-  onSave: () => Promise<void>;
+  onSave: () => Promise<KolamCategory | null>;
   onSelectCategory: (category: KolamCategory) => Promise<void>;
 }
 
@@ -247,7 +247,7 @@ export function useKolamCategoryController(
   const onSave = useCallback(async () => {
     if (!form.name.trim()) {
       setError('Nama kategori wajib diisi.');
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -277,8 +277,10 @@ export function useKolamCategoryController(
       );
       setDataSource('live');
       void syncCategoryIconAssets([syncedCategory]);
+      return syncedCategory;
     } catch (saveError) {
       setError(getErrorMessage(saveError));
+      return null;
     } finally {
       setSaving(false);
     }

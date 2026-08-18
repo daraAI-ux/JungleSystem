@@ -230,7 +230,11 @@ function KolamSpeciesShell({
                 disabled={controller.saving}
                 label={controller.saving ? 'Menyimpan...' : 'Simpan'}
                 onPress={() => {
-                  void controller.onSave();
+                  void controller.onSave().then(item => {
+                    if (item) {
+                      onRouteChange?.(getSpeciesRoute(item));
+                    }
+                  });
                 }}
               />
             </View>

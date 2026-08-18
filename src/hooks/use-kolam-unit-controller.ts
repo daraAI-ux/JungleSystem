@@ -44,7 +44,7 @@ export interface KolamUnitController {
   onDeleteUnit: (unit: KolamUnit) => Promise<boolean>;
   onEdit: () => void;
   onRefresh: () => Promise<void>;
-  onSave: () => Promise<void>;
+  onSave: () => Promise<KolamUnit | null>;
   onSelectUnit: (unit: KolamUnit) => Promise<void>;
 }
 
@@ -199,12 +199,12 @@ export function useKolamUnitController(route: string): KolamUnitController {
   const onSave = useCallback(async () => {
     if (!form.name.trim()) {
       setError('Nama satuan wajib diisi.');
-      return;
+      return null;
     }
 
     if (!form.initial.trim()) {
       setError('Simbol atau inisial wajib diisi.');
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -226,8 +226,10 @@ export function useKolamUnitController(route: string): KolamUnitController {
       setUnits(current => upsertUnit(current, savedUnit));
       await writeKolamUnitListCache(upsertUnit(units, savedUnit));
       setDataSource('live');
+      return savedUnit;
     } catch (saveError) {
       setError(getErrorMessage(saveError));
+      return null;
     } finally {
       setSaving(false);
     }

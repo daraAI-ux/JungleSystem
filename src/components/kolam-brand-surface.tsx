@@ -133,7 +133,11 @@ function KolamModuleShell({
                   disabled={controller.saving}
                   label={controller.saving ? 'Menyimpan...' : 'Simpan'}
                   onPress={() => {
-                    void controller.onSave();
+                    void controller.onSave().then(brand => {
+                      if (brand) {
+                        onRouteChange?.(getBrandRoute(brand));
+                      }
+                    });
                   }}
                 />
               </>

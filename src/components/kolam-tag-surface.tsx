@@ -127,7 +127,11 @@ function KolamTagShell({
                   disabled={controller.saving}
                   label={controller.saving ? 'Menyimpan...' : 'Simpan'}
                   onPress={() => {
-                    void controller.onSave();
+                    void controller.onSave().then(tag => {
+                      if (tag) {
+                        onRouteChange?.(getTagRoute(tag));
+                      }
+                    });
                   }}
                 />
               </>

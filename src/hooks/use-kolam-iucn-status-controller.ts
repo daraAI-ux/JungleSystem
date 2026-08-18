@@ -47,7 +47,7 @@ export interface KolamIucnStatusController {
   onEdit: () => void;
   onPickImage: () => Promise<void>;
   onRefresh: () => Promise<void>;
-  onSave: () => Promise<void>;
+  onSave: () => Promise<KolamIucnStatus | null>;
   onSelectItem: (item: KolamIucnStatus) => Promise<void>;
 }
 
@@ -227,12 +227,12 @@ export function useKolamIucnStatusController(
   const onSave = useCallback(async () => {
     if (!form.name.trim()) {
       setError('Nama status IUCN wajib diisi.');
-      return;
+      return null;
     }
 
     if (!form.abbreviation.trim()) {
       setError('Singkatan status IUCN wajib diisi.');
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -258,8 +258,10 @@ export function useKolamIucnStatusController(
       await writeKolamIucnStatusListCache(upsertItem(items, syncedItem));
       setDataSource('live');
       void syncIucnImages([syncedItem]);
+      return syncedItem;
     } catch (saveError) {
       setError(getErrorMessage(saveError));
+      return null;
     } finally {
       setSaving(false);
     }

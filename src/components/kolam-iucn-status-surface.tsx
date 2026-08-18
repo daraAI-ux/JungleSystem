@@ -63,7 +63,10 @@ export function KolamIucnStatusSurface({
       {controller.mode === 'list' ? (
         <KolamIucnList controller={controller} onRouteChange={onRouteChange} />
       ) : (
-        <KolamIucnDetail controller={controller} />
+        <KolamIucnDetail
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       )}
     </KolamIucnShell>
   );
@@ -531,8 +534,10 @@ function KolamIucnActionsMenu({
 
 function KolamIucnDetail({
   controller,
+  onRouteChange,
 }: {
   controller: KolamIucnStatusController;
+  onRouteChange?: (route: string) => void;
 }) {
   const item = controller.selectedItem;
   const editable = controller.isEditable;
@@ -551,7 +556,10 @@ function KolamIucnDetail({
       {!editable && item ? (
         <IucnStatusDetailReadOnly item={item} />
       ) : (
-        <KolamIucnForm controller={controller} />
+        <KolamIucnForm
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       )}
     </View>
   );
@@ -674,8 +682,10 @@ function IucnSpeciesCard({ species }: { species: KolamIucnSpeciesUsageItem }) {
 
 function KolamIucnForm({
   controller,
+  onRouteChange,
 }: {
   controller: KolamIucnStatusController;
+  onRouteChange?: (route: string) => void;
 }) {
   const form = controller.form;
 
@@ -759,7 +769,11 @@ function KolamIucnForm({
             disabled={controller.saving}
             label={controller.saving ? 'Menyimpan...' : 'Simpan'}
             onPress={() => {
-              void controller.onSave();
+              void controller.onSave().then(item => {
+                if (item) {
+                  onRouteChange?.(getIucnRoute(item));
+                }
+              });
             }}
           />
         </View>

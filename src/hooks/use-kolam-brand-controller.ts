@@ -53,7 +53,7 @@ export interface KolamBrandController {
   onEdit: () => void;
   onPickLogo: () => Promise<void>;
   onRefresh: () => Promise<void>;
-  onSave: () => Promise<void>;
+  onSave: () => Promise<KolamBrand | null>;
   onSelectBrand: (brand: KolamBrand) => Promise<void>;
 }
 
@@ -238,7 +238,7 @@ export function useKolamBrandController(route: string): KolamBrandController {
   const onSave = useCallback(async () => {
     if (!form.name.trim()) {
       setError('Nama merek wajib diisi.');
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -266,8 +266,10 @@ export function useKolamBrandController(route: string): KolamBrandController {
       await writeKolamBrandListCache(upsertBrand(brands, syncedBrand));
       setDataSource('live');
       void syncBrandLogoAssets([syncedBrand]);
+      return syncedBrand;
     } catch (saveError) {
       setError(getErrorMessage(saveError));
+      return null;
     } finally {
       setSaving(false);
     }

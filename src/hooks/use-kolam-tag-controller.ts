@@ -44,7 +44,7 @@ export interface KolamTagController {
   onDeleteTag: (tag: KolamTag) => Promise<boolean>;
   onEdit: () => void;
   onRefresh: () => Promise<void>;
-  onSave: () => Promise<void>;
+  onSave: () => Promise<KolamTag | null>;
   onSelectTag: (tag: KolamTag) => Promise<void>;
 }
 
@@ -199,7 +199,7 @@ export function useKolamTagController(route: string): KolamTagController {
   const onSave = useCallback(async () => {
     if (!form.name.trim()) {
       setError('Nama tag wajib diisi.');
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -221,8 +221,10 @@ export function useKolamTagController(route: string): KolamTagController {
       setTags(current => upsertTag(current, savedTag));
       await writeKolamTagListCache(upsertTag(tags, savedTag));
       setDataSource('live');
+      return savedTag;
     } catch (saveError) {
       setError(getErrorMessage(saveError));
+      return null;
     } finally {
       setSaving(false);
     }
