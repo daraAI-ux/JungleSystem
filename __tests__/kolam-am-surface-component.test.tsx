@@ -2148,7 +2148,7 @@ describe('KolamAmSurface', () => {
     });
   });
 
-  it('shows WhatsApp QR from whatsapp-qr endpoint even when stderr QR chatter follows qr_code', async () => {
+  it('shows WhatsApp QR barcode above Live even when stderr QR chatter follows qr_code', async () => {
     setAccessToken('kolam-live-token');
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
@@ -2227,15 +2227,11 @@ describe('KolamAmSurface', () => {
     expect(
       renderer!.root.findByProps({accessibilityLabel: 'AM Service QR Image service-wa-qr'}).props.source,
     ).toEqual({
-      uri: 'https://frogs.dunia-anura.com/api/device/device-wa-qr/service/whatsapp-qr?t=wa-1710000000000',
-      headers: {
-        Authorization: 'Bearer kolam-live-token',
-        'x-source': 'am',
-      },
+      uri: 'data:image/png;base64,AAAA',
     });
     const treeText = renderText(renderer!).join(' ');
     expect(treeText).toMatch(/QR Login\s+WhatsApp/);
-    expect(treeText).toContain('Scan QR ini segera');
+    expect(treeText).toContain('Tautkan perangkat dan scan QR ini');
   });
 
   it('sends password-required runtime input through the AM BE password command channel', async () => {

@@ -3128,19 +3128,6 @@ function AmServiceDetailPanel({
   const needsPassword = inputRequirement === 'password';
   const needsInput = inputRequirement !== null && inputRequirementKey !== submittedInputRequirementKey;
   const qrUrl = device?._id ? getAmDeviceServiceQrUrl(device._id, account.platform, qrSignal?.qrcodeId) : null;
-  // AM-FE: WhatsApp (and Shopee) prefer PNG from device endpoint over huge log base64.
-  const preferEndpointQr =
-    (account.platform === 'whatsapp' || account.platform === 'shopee') && !!qrUrl;
-  const qrImageSource = preferEndpointQr
-    ? getAmProtectedImageSource(qrUrl!)
-    : qrSignal?.qrcodeBase64
-      ? {uri: normalizeAmQrImageUri(qrSignal.qrcodeBase64)}
-      : qrUrl
-        ? getAmProtectedImageSource(qrUrl)
-        : null;
-  const qrImageCaption = preferEndpointQr || !qrSignal?.qrcodeBase64
-    ? qrUrl
-    : qrSignal.qrcodeBase64;
   const historyTotalPages = Math.max(1, Math.ceil(historyTotal / Math.max(historyLimit, 1)));
   const historyFrom = historyTotal ? (historyPage - 1) * historyLimit + 1 : 0;
   const historyTo = historyTotal ? Math.min(historyPage * historyLimit, historyTotal) : 0;
@@ -3249,17 +3236,25 @@ function AmServiceDetailPanel({
             <View style={styles.qrPanel}>
               <Text style={styles.formLabel}>QR Login {AM_PLATFORM_LABELS[account.platform] ?? titleCase(account.platform)}</Text>
               <Text style={styles.rowMeta}>{qrSignal.status ? `Status ${qrSignal.status}` : 'Scan QR tersedia.'}</Text>
-              {qrImageSource ? (
+              {qrSignal.qrcodeBase64 ? (
                 <>
                   <Image
                     accessibilityLabel={`AM Service QR Image ${account._id}`}
                     resizeMode="contain"
-                    source={qrImageSource}
+                    source={{uri: normalizeAmQrImageUri(qrSignal.qrcodeBase64)}}
                     style={styles.qrImage}
                   />
-                  {qrImageCaption ? (
-                    <Text style={styles.monoText} numberOfLines={1}>{qrImageCaption}</Text>
-                  ) : null}
+                  <Text style={styles.monoText} numberOfLines={1}>{qrSignal.qrcodeBase64}</Text>
+                </>
+              ) : qrUrl ? (
+                <>
+                  <Image
+                    accessibilityLabel={`AM Service QR Image ${account._id}`}
+                    resizeMode="contain"
+                    source={getAmProtectedImageSource(qrUrl)}
+                    style={styles.qrImage}
+                  />
+                  <Text style={styles.monoText} numberOfLines={1}>{qrUrl}</Text>
                 </>
               ) : (
                 <Text style={styles.rowMeta}>Gambar QR belum tersedia untuk platform ini.</Text>
@@ -8092,53 +8087,57 @@ function cleanDevicePayload(payload: AmDevicePayload): Omit<AmDevicePayload, 'bo
 }
 
 function getQrLoginSignal(logs: AmDeviceServiceLog[]) {
+  let fallback: {qrcodeBase64?: string; qrcodeId?: string; status?: string} | null =
+    null;
+
   for (const log of logs.slice().reverse()) {
     const message = log.message;
-    if (
-      message.includes('"event":"login_success"') ||
-      message.includes('login_success') ||
-      message.includes('Login success')
-    ) {
+    if (message.includes('login_success') || message.includes('Login success')) {
       return null;
     }
-
-    // AM-FE Services: only structured qr_code — never match stderr like "QR emitted…".
-    const isQrCodeEvent = message.includes('"event":"qr_code"');
-    const hasQrPayloadKeys =
-      message.includes('qrcodeId') || message.includes('qrcodeBase64');
-    if (!isQrCodeEvent && !hasQrPayloadKeys) {
+    if (
+      !message.includes('QR') &&
+      !message.includes('qrcode') &&
+      !message.includes('qr_code')
+    ) {
       continue;
     }
 
     const jsonStart = message.indexOf('{');
-    if (jsonStart < 0) {
-      continue;
-    }
-
-    try {
-      const parsed = JSON.parse(message.slice(jsonStart)) as {
-        data?: {
+    if (jsonStart >= 0) {
+      try {
+        const parsed = JSON.parse(message.slice(jsonStart)) as {
+          data?: {
+            qrcodeBase64?: string;
+            qrcodeId?: string;
+            status?: string;
+          };
           qrcodeBase64?: string;
           qrcodeId?: string;
           status?: string;
         };
-        qrcodeBase64?: string;
-        qrcodeId?: string;
-        status?: string;
-      };
-      const qrData = parsed.data ?? parsed;
-      if (qrData.qrcodeBase64 || qrData.qrcodeId) {
-        return {
-          qrcodeBase64: qrData.qrcodeBase64,
-          qrcodeId: qrData.qrcodeId,
-          status: qrData.status,
-        };
+        const qrData = parsed.data ?? parsed;
+        if (qrData.qrcodeBase64 || qrData.qrcodeId) {
+          return qrData;
+        }
+      } catch {
+        // Fall through to pattern extraction below.
       }
-    } catch {
-      // Ignore malformed JSON fragments in log noise.
+    }
+
+    const qrcodeId =
+      message.match(/qrcodeId["':=\s]+([A-Za-z0-9._-]+)/)?.[1] ??
+      message.match(/qr(?:code)?[-_\s]?id["':=\s]+([A-Za-z0-9._-]+)/i)?.[1];
+    const status = message.match(/status["':=\s]+([A-Za-z0-9._-]+)/i)?.[1];
+    if (qrcodeId) {
+      return {qrcodeId, status};
+    }
+    if (!fallback && message.includes('QR')) {
+      fallback = {qrcodeId, status};
     }
   }
-  return null;
+
+  return fallback;
 }
 
 function getServiceLoginStatus(logs: AmDeviceServiceLog[]): 'success' | 'waiting' | string | null {
@@ -8175,9 +8174,8 @@ function getQrLoginInstructions(platform: string): string[] {
   if (platform === 'whatsapp') {
     return [
       'Buka WhatsApp di HP',
-      'Tap menu lalu Perangkat Tertaut',
-      'Tap Tautkan Perangkat',
-      'Scan QR ini segera (token sekitar 20 detik)',
+      'Masuk ke Perangkat Tertaut',
+      'Tautkan perangkat dan scan QR ini',
     ];
   }
   if (platform === 'shopee') {
