@@ -5474,53 +5474,6 @@ function ProductMultiSelectField({
   );
 }
 
-function ProductExternalLinkUrlField({
-  disabled,
-  onChangeText,
-  value,
-}: {
-  disabled: boolean;
-  onChangeText: (value: string) => void;
-  value: string;
-}) {
-  const [boxWidth, setBoxWidth] = React.useState(0);
-  const innerWidth = Math.max(
-    boxWidth,
-    Math.ceil(Math.max(value.length, 16) * 8) + 28,
-  );
-
-  return (
-    <View
-      onLayout={event => {
-        const nextWidth = Math.round(event.nativeEvent.layout.width);
-        setBoxWidth(current => (current === nextWidth ? current : nextWidth));
-      }}
-      style={styles.externalLinkInputShell}
-    >
-      <ScrollView
-        horizontal
-        keyboardShouldPersistTaps="handled"
-        nestedScrollEnabled
-        showsHorizontalScrollIndicator
-        style={styles.externalLinkInputScroll}
-      >
-        <KolamFormTextField
-          editable={!disabled}
-          mode="url"
-          onChangeText={onChangeText}
-          placeholder="https://contoh.com"
-          style={[
-            settingsWebFormStyles.settingsWebFormFieldValue,
-            styles.externalLinkInput,
-            {width: innerWidth},
-          ]}
-          value={value}
-        />
-      </ScrollView>
-    </View>
-  );
-}
-
 function ProductExternalLinksRowsEditor({
   disabled,
   links,
@@ -5558,9 +5511,16 @@ function ProductExternalLinksRowsEditor({
                 value={link.name}
               />
             </View>
-            <ProductExternalLinkUrlField
-              disabled={disabled}
-              onChangeText={nextValue => updateRow(index, {value: nextValue})}
+            <KolamFormTextField
+              editable={!disabled}
+              mode="url"
+              onChangeText={value => updateRow(index, {value})}
+              placeholder="https://contoh.com"
+              selectTextOnFocus
+              style={[
+                settingsWebFormStyles.settingsWebFormFieldValue,
+                styles.externalLinkInput,
+              ]}
               value={link.value}
             />
             <KolamInteractionFrame
@@ -7010,6 +6970,9 @@ function ProductSummaryTab({
               );
             })}
           </View>
+          {product.hasVariants || product.variants.length ? (
+            <ProductVariantSidebarLinks product={product} />
+          ) : null}
 
           <View style={styles.metaBlock}>
             <Text style={styles.metaLabel}>Kategori</Text>
@@ -8752,6 +8715,133 @@ function ProductMiniTile({
       <View style={styles.sidebarMiniContent}>{children}</View>
     </View>
   );
+}
+
+function ProductVariantSidebarLinks({product}: {product: KolamProduct}) {
+  const rows = product.variants
+    .map(variant => ({
+      id: variant.id,
+      label: variant.label || variant.sku || variant.productCode,
+      links: collectVariantSidebarLinks(variant.externalLinks),
+    }))
+    .filter(row => row.links.length);
+
+  if (!rows.length) {
+    return null;
+  }
+
+  return (
+    <View style={styles.variantSidebarLinkBlock}>
+      {rows.map(row => (
+        <View key={row.id} style={styles.variantSidebarLinkRow}>
+          <Text numberOfLines={1} style={styles.variantSidebarLinkLabel}>
+            {row.label}
+          </Text>
+          <View style={styles.variantSidebarLinkButtons}>
+            {row.links.map(link => (
+              <KolamHoverTooltip
+                align="center"
+                key={`${row.id}-${link.id}`}
+                label={link.url}
+                placement="bottom"
+              >
+                <KolamInteractionFrame
+                  accessibilityLabel={`${row.label} ${link.label}`}
+                  onPress={() =>
+                    void Linking.openURL(normalizeProductUrl(link.url))
+                  }
+                  style={styles.variantSidebarLinkButton}
+                >
+                  {link.logo ? (
+                    <Image
+                      resizeMode="cover"
+                      source={link.logo}
+                      style={styles.variantSidebarLinkLogo}
+                    />
+                  ) : (
+                    <Text style={styles.variantSidebarLinkMark}>
+                      {link.mark}
+                    </Text>
+                  )}
+                </KolamInteractionFrame>
+              </KolamHoverTooltip>
+            ))}
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function collectVariantSidebarLinks(links: KolamProduct['externalLinks']) {
+  const seen = new Set<string>();
+  const buttons: Array<{
+    id: string;
+    label: string;
+    logo: typeof SHOPEE_LOGO | typeof TOKOPEDIA_LOGO | null;
+    mark: string;
+    url: string;
+  }> = [];
+
+  for (const link of links) {
+    const url = link.url.trim();
+    if (!url) {
+      continue;
+    }
+    const key = matchProductExternalLinkKey(link.label, url);
+    const id = key || `${link.label}-${url}`;
+    if (seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    buttons.push({
+      id,
+      label:
+        key === 'shopee'
+          ? 'Shopee'
+          : key === 'tokopedia'
+            ? 'Tokopedia'
+            : key === 'website'
+              ? 'Toko Web'
+              : link.label || 'Tautan',
+      logo:
+        key === 'shopee'
+          ? SHOPEE_LOGO
+          : key === 'tokopedia'
+            ? TOKOPEDIA_LOGO
+            : null,
+      mark:
+        key === 'website'
+          ? 'W'
+          : key === 'link_pos'
+            ? 'P'
+            : (link.label || 'L').slice(0, 1).toUpperCase(),
+      url,
+    });
+  }
+
+  return buttons;
+}
+
+function matchProductExternalLinkKey(label: string, url: string) {
+  const haystack = `${label} ${url}`.trim().toLowerCase();
+  if (haystack.includes('shopee')) {
+    return 'shopee';
+  }
+  if (haystack.includes('tokopedia')) {
+    return 'tokopedia';
+  }
+  if (
+    haystack.includes('website') ||
+    haystack.includes('webstore') ||
+    haystack.includes('dunia-anura.com')
+  ) {
+    return 'website';
+  }
+  if (haystack.includes('link_pos') || haystack.includes('pos')) {
+    return 'link_pos';
+  }
+  return '';
 }
 
 function ProductMetaBlock({ label, value }: { label: string; value: string }) {
@@ -11209,16 +11299,8 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     maxWidth: '100%',
   },
-  externalLinkInputShell: {
-    flex: 1,
-    minWidth: 0,
-  },
-  externalLinkInputScroll: {
-    maxHeight: V.control.inputHeight + 14,
-    minWidth: 0,
-    width: '100%',
-  },
   externalLinkInput: {
+    flex: 1,
     minWidth: 0,
   },
   externalLinkRemoveButton: {
@@ -12136,6 +12218,54 @@ const styles = StyleSheet.create({
     color: '#16a34a',
     fontSize: 14,
     fontWeight: '900',
+  },
+  variantSidebarLinkBlock: {
+    alignSelf: 'stretch',
+    gap: 6,
+    minWidth: 0,
+    width: '100%',
+  },
+  variantSidebarLinkRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    minWidth: 0,
+  },
+  variantSidebarLinkLabel: {
+    color: V.colors.mutedFg,
+    flexShrink: 1,
+    fontSize: 10,
+    fontWeight: '800',
+    lineHeight: 13,
+    maxWidth: 72,
+  },
+  variantSidebarLinkButtons: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  variantSidebarLinkButton: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 4,
+    borderWidth: 1,
+    height: 18,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 18,
+  },
+  variantSidebarLinkLogo: {
+    height: '100%',
+    width: '100%',
+  },
+  variantSidebarLinkMark: {
+    color: V.colors.fg,
+    fontSize: 8,
+    fontWeight: '900',
+    lineHeight: 10,
   },
   metaBlock: {
     backgroundColor: V.colors.bg,
