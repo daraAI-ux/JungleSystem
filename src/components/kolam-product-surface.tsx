@@ -8708,7 +8708,7 @@ function ProductSidebarLinkColumn({
       <View style={styles.externalTilePressable}>
         <ProductMiniTile label={channel.label}>
           {variantButtons.length ? (
-            <View style={styles.variantSidebarLinkButtons}>
+            <View style={styles.variantSidebarLinkList}>
               {variantButtons.map(button => (
                 <KolamHoverTooltip
                   align="center"
@@ -8721,7 +8721,7 @@ function ProductSidebarLinkColumn({
                     onPress={() =>
                       void Linking.openURL(normalizeProductUrl(button.url))
                     }
-                    style={styles.variantSidebarLinkButton}
+                    style={styles.variantSidebarLinkChip}
                   >
                     {channel.logo ? (
                       <Image
@@ -8734,6 +8734,9 @@ function ProductSidebarLinkColumn({
                         {channel.mark}
                       </Text>
                     )}
+                    <Text numberOfLines={1} style={styles.variantSidebarLinkName}>
+                      {button.label}
+                    </Text>
                   </KolamInteractionFrame>
                 </KolamHoverTooltip>
               ))}
@@ -12194,34 +12197,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '900',
   },
-  variantSidebarLinkButtons: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    justifyContent: 'center',
-    maxWidth: 78,
+  variantSidebarLinkList: {
+    alignItems: 'stretch',
+    alignSelf: 'stretch',
+    gap: 3,
+    minWidth: 0,
+    width: '100%',
   },
-  variantSidebarLinkButton: {
+  variantSidebarLinkChip: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 4,
     borderWidth: 1,
-    height: 18,
-    justifyContent: 'center',
-    overflow: 'hidden',
-    width: 18,
+    flexDirection: 'row',
+    gap: 4,
+    minHeight: 18,
+    minWidth: 0,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
   },
   variantSidebarLinkLogo: {
-    height: '100%',
-    width: '100%',
+    borderRadius: 2,
+    height: 12,
+    width: 12,
   },
   variantSidebarLinkMark: {
     color: V.colors.fg,
     fontSize: 8,
     fontWeight: '900',
     lineHeight: 10,
+  },
+  variantSidebarLinkName: {
+    color: V.colors.fg,
+    flex: 1,
+    fontSize: 9,
+    fontWeight: '800',
+    lineHeight: 12,
+    minWidth: 0,
   },
   metaBlock: {
     backgroundColor: V.colors.bg,
