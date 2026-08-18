@@ -14,7 +14,7 @@ describe('runtime identity surface', () => {
           id: 'native-client',
           value: appConfig.nativeUserAgent,
           detail:
-            'Origin: app://kolamwindows / User-Agent: KolamWindows/3.1.8 / x-da-client: kolam-windows / x-da-client-version: 3.1.8 / x-source: pos',
+            'Origin: app://kolamwindows / User-Agent: KolamWindows/3.1.9 / x-da-client: kolam-windows / x-da-client-version: 3.1.9 / x-source: pos',
           status: 'ready',
         }),
         expect.objectContaining({

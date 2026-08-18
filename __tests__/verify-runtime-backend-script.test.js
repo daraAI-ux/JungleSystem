@@ -17,6 +17,6 @@ describe('verify-runtime-backend script', () => {
     expect(result.stdout).toContain('appConfig amApiBaseUrl: frogs.dunia-anura.com/api');
     expect(result.stdout).toContain('appConfig nativeClientId: kolam-windows');
     expect(result.stdout).toContain('appConfig nativeOrigin: app://kolamwindows');
-    expect(result.stdout).toContain('appConfig nativeUserAgent: KolamWindows/3.1.8');
+    expect(result.stdout).toContain('appConfig nativeUserAgent: KolamWindows/3.1.9');
   });
 });
