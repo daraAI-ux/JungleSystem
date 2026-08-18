@@ -257,6 +257,14 @@ export function KolamProductSurface({
     React.useState<PendingProductAction | null>(null);
   const [syncStockSelection, setSyncStockSelection] =
     React.useState<SyncStockSelection | null>(null);
+  const [saveHandoff, setSaveHandoff] = React.useState<{
+    active: boolean;
+    productId: string | null;
+  }>({active: false, productId: null});
+  const [editHandoff, setEditHandoff] = React.useState<{
+    active: boolean;
+    productId: string | null;
+  }>({active: false, productId: null});
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<ProductListFilterPanel | null>(null);
   const [filterPanelQuery, setFilterPanelQuery] = React.useState('');
@@ -392,6 +400,17 @@ export function KolamProductSurface({
     }
     requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
   }, [activeFilterPanel, anchorFilterPanel]);
+
+  const handleProductSave = React.useCallback(async () => {
+    setSaveHandoff({active: true, productId: null});
+    const savedProduct = await controller.onSave();
+    if (!savedProduct) {
+      setSaveHandoff({active: false, productId: null});
+      return;
+    }
+    setSaveHandoff({active: true, productId: savedProduct.id});
+  }, [controller]);
+
   React.useEffect(() => {
     const routePath = route.split('?')[0];
     const shouldSyncDetailRoute =
@@ -419,34 +438,135 @@ export function KolamProductSurface({
     });
     return () => cancelAnimationFrame(frame);
   }, [controller.mode, controller.selectedProduct, onRouteChange, route]);
+
+  React.useEffect(() => {
+    if (!saveHandoff.active) {
+      return;
+    }
+
+    if (controller.error && !controller.saving) {
+      setSaveHandoff({active: false, productId: null});
+      return;
+    }
+
+    const routePath = route.split('?')[0];
+    const routeStillLeavingForm =
+      routePath.endsWith('/edit') ||
+      routePath === '/products/create' ||
+      routePath === '/products/baru' ||
+      routePath === '/raw-materials/create' ||
+      routePath === '/raw-materials/baru';
+    const selectedProductReady =
+      !saveHandoff.productId ||
+      controller.selectedProduct?.id === saveHandoff.productId;
+    const detailReady =
+      controller.mode === 'detail' &&
+      selectedProductReady &&
+      !controller.saving &&
+      !controller.loading &&
+      !routeStillLeavingForm;
+
+    if (!detailReady) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setSaveHandoff({active: false, productId: null});
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [
+    controller.error,
+    controller.loading,
+    controller.mode,
+    controller.saving,
+    controller.selectedProduct?.id,
+    route,
+    saveHandoff.active,
+    saveHandoff.productId,
+  ]);
+
+  React.useEffect(() => {
+    if (!editHandoff.active) {
+      return;
+    }
+
+    if (controller.error && !controller.loading) {
+      setEditHandoff({active: false, productId: null});
+      return;
+    }
+
+    const routePath = route.split('?')[0];
+    const selectedProductReady =
+      !editHandoff.productId ||
+      controller.selectedProduct?.id === editHandoff.productId;
+    const editReady =
+      routePath.endsWith('/edit') &&
+      controller.mode === 'edit' &&
+      Boolean(controller.form) &&
+      selectedProductReady &&
+      !controller.loading;
+
+    if (!editReady) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setEditHandoff({active: false, productId: null});
+    }, 180);
+    return () => clearTimeout(timer);
+  }, [
+    controller.error,
+    controller.form,
+    controller.loading,
+    controller.mode,
+    controller.selectedProduct?.id,
+    editHandoff.active,
+    editHandoff.productId,
+    route,
+  ]);
+
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
   if (controller.mode !== 'list') {
     return (
-      <KolamProductDetailView
-        controller={controller}
-        isRawCatalog={isRawCatalog}
-        onArchive={product => setPendingAction({ type: 'archive', product })}
-        onBack={() => {
-          controller.onBackToList();
-          onRouteChange?.(listRoute);
-        }}
-        onCancelEdit={product => {
-          void controller.onSelectProduct(product);
-          onRouteChange?.(getProductDetailRoute(product));
-        }}
-        onDelete={product => setPendingAction({ type: 'delete', product })}
-        onEdit={product => {
-          void controller.onSelectProduct(product, 'edit');
-          onRouteChange?.(`${getProductDetailRoute(product)}/edit`);
-        }}
-        onPrintBarcode={product => {
-          setBarcodeDialogItems(createBarcodeItems([product]));
-          setBarcodeOpen(true);
-        }}
-        onRouteChange={onRouteChange}
-        onRestore={product => void controller.onRestoreProduct(product)}
-      />
+      <View style={styles.productWorkspaceShell}>
+        <KolamProductDetailView
+          controller={controller}
+          isRawCatalog={isRawCatalog}
+          onArchive={product => setPendingAction({ type: 'archive', product })}
+          onBack={() => {
+            controller.onBackToList();
+            onRouteChange?.(listRoute);
+          }}
+          onCancelEdit={product => {
+            void controller.onSelectProduct(product);
+            onRouteChange?.(getProductDetailRoute(product));
+          }}
+          onDelete={product => setPendingAction({ type: 'delete', product })}
+          onEdit={product => {
+            setEditHandoff({active: true, productId: product.id});
+            void controller.onSelectProduct(product, 'edit');
+            onRouteChange?.(`${getProductDetailRoute(product)}/edit`);
+          }}
+          onPrintBarcode={product => {
+            setBarcodeDialogItems(createBarcodeItems([product]));
+            setBarcodeOpen(true);
+          }}
+          onRestore={product => void controller.onRestoreProduct(product)}
+          onRouteChange={onRouteChange}
+          onSave={handleProductSave}
+        />
+        <KolamSavingOverlay
+          label={
+            controller.saving || saveHandoff.active
+              ? 'Menyimpan...'
+              : 'Memuat...'
+          }
+          visible={
+            controller.saving || saveHandoff.active || editHandoff.active
+          }
+        />
+      </View>
     );
   }
 
@@ -1377,6 +1497,7 @@ function KolamProductDetailView({
   onPrintBarcode,
   onRestore,
   onRouteChange,
+  onSave,
 }: {
   controller: ReturnType<typeof useKolamProductController>;
   isRawCatalog: boolean;
@@ -1388,6 +1509,7 @@ function KolamProductDetailView({
   onPrintBarcode: (product: KolamProduct) => void;
   onRestore: (product: KolamProduct) => void;
   onRouteChange?: (route: string) => void;
+  onSave: () => void;
 }) {
   const [activeTab, setActiveTab] = React.useState('overview');
   const product = React.useMemo(
@@ -1411,7 +1533,13 @@ function KolamProductDetailView({
   );
 
   if (controller.mode === 'new') {
-    return <ProductEditFormPage controller={controller} onCancel={onBack} />;
+    return (
+      <ProductEditFormPage
+        controller={controller}
+        onCancel={onBack}
+        onSave={onSave}
+      />
+    );
   }
 
   if (!product) {
@@ -1453,6 +1581,7 @@ function KolamProductDetailView({
       <ProductEditFormPage
         controller={controller}
         onCancel={() => onCancelEdit(product)}
+        onSave={onSave}
       />
     );
   }
@@ -1594,9 +1723,11 @@ function KolamProductDetailView({
 function ProductEditFormPage({
   controller,
   onCancel,
+  onSave,
 }: {
   controller: ReturnType<typeof useKolamProductController>;
   onCancel: () => void;
+  onSave: () => void;
 }) {
   const form = controller.form;
   const [deleteMediaTarget, setDeleteMediaTarget] =
@@ -1605,8 +1736,8 @@ function ProductEditFormPage({
     form?.productType === 'raw' || controller.selectedProduct?.type === 'raw',
   );
   const handleSave = React.useCallback(() => {
-    void controller.onSave();
-  }, [controller]);
+    onSave();
+  }, [onSave]);
 
   if (!form) {
     return (
@@ -2158,7 +2289,6 @@ function ProductEditFormPage({
           }}
           visible={Boolean(deleteMediaTarget)}
         />
-        <KolamSavingOverlay visible={controller.saving} />
       </KolamDetailScrollSurface>
     );
   }
@@ -2608,7 +2738,6 @@ function ProductEditFormPage({
         }}
         visible={Boolean(deleteMediaTarget)}
       />
-      <KolamSavingOverlay visible={controller.saving} />
     </KolamDetailScrollSurface>
   );
 }
@@ -10342,6 +10471,13 @@ const styles = StyleSheet.create({
   surface: {
     alignSelf: 'stretch',
     gap: 16,
+    width: '100%',
+  },
+  productWorkspaceShell: {
+    alignSelf: 'stretch',
+    flex: 1,
+    minHeight: 0,
+    position: 'relative',
     width: '100%',
   },
   listSurface: {
