@@ -141,6 +141,7 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamGrocerPricingTiersEditor } from './kolam-grocer-pricing-tiers-editor';
 import {KolamNotesField} from './kolam-notes-field';
 import { KolamSearchField } from './kolam-search-field';
+import {KolamSavingOverlay} from './kolam-saving-overlay';
 import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -2157,6 +2158,7 @@ function ProductEditFormPage({
           }}
           visible={Boolean(deleteMediaTarget)}
         />
+        <KolamSavingOverlay visible={controller.saving} />
       </KolamDetailScrollSurface>
     );
   }
@@ -2606,6 +2608,7 @@ function ProductEditFormPage({
         }}
         visible={Boolean(deleteMediaTarget)}
       />
+      <KolamSavingOverlay visible={controller.saving} />
     </KolamDetailScrollSurface>
   );
 }
