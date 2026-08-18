@@ -6931,48 +6931,14 @@ function ProductSummaryTab({
           </View>
 
           <View style={styles.externalTileGrid}>
-            {sidebarLinks.map(link => {
-              const content = (
-                <ProductMiniTile label={link.label}>
-                  {link.url ? (
-                    <View style={styles.externalTileMarketIcon}>
-                      {link.logo ? (
-                        <Image
-                          resizeMode="cover"
-                          source={link.logo}
-                          style={styles.externalTileLogo}
-                        />
-                      ) : (
-                        <Text style={styles.externalTileMark}>{link.mark}</Text>
-                      )}
-                    </View>
-                  ) : (
-                    <Text style={styles.miniMutedValue}>-</Text>
-                  )}
-                </ProductMiniTile>
-              );
-
-              return link.url ? (
-                <KolamInteractionFrame
-                  accessibilityLabel={`Buka ${link.label}`}
-                  key={link.id}
-                  onPress={() =>
-                    void Linking.openURL(normalizeProductUrl(link.url))
-                  }
-                  style={styles.externalTilePressable}
-                >
-                  {content}
-                </KolamInteractionFrame>
-              ) : (
-                <View key={link.id} style={styles.externalTilePressable}>
-                  {content}
-                </View>
-              );
-            })}
+            {sidebarLinks.map(link => (
+              <ProductSidebarLinkColumn
+                key={link.id}
+                channel={link}
+                product={product}
+              />
+            ))}
           </View>
-          {product.hasVariants || product.variants.length ? (
-            <ProductVariantSidebarLinks product={product} />
-          ) : null}
 
           <View style={styles.metaBlock}>
             <Text style={styles.metaLabel}>Kategori</Text>
@@ -8717,131 +8683,140 @@ function ProductMiniTile({
   );
 }
 
-function ProductVariantSidebarLinks({product}: {product: KolamProduct}) {
-  const rows = product.variants
-    .map(variant => ({
-      id: variant.id,
-      label: variant.label || variant.sku || variant.productCode,
-      links: collectVariantSidebarLinks(variant.externalLinks),
-    }))
-    .filter(row => row.links.length);
+type ProductSidebarChannel = {
+  id: 'shopee' | 'tokopedia' | 'webstore';
+  label: string;
+  logo: typeof SHOPEE_LOGO | typeof TOKOPEDIA_LOGO | null;
+  mark: string;
+  url: string;
+};
 
-  if (!rows.length) {
-    return null;
+function ProductSidebarLinkColumn({
+  channel,
+  product,
+}: {
+  channel: ProductSidebarChannel;
+  product: KolamProduct;
+}) {
+  const hasVariants = product.hasVariants || product.variants.length > 0;
+  const variantButtons = hasVariants
+    ? collectChannelVariantButtons(product, channel.id)
+    : [];
+
+  if (hasVariants) {
+    return (
+      <View style={styles.externalTilePressable}>
+        <ProductMiniTile label={channel.label}>
+          {variantButtons.length ? (
+            <View style={styles.variantSidebarLinkButtons}>
+              {variantButtons.map(button => (
+                <KolamHoverTooltip
+                  align="center"
+                  key={button.id}
+                  label={button.url}
+                  placement="bottom"
+                >
+                  <KolamInteractionFrame
+                    accessibilityLabel={`${button.label} ${channel.label}`}
+                    onPress={() =>
+                      void Linking.openURL(normalizeProductUrl(button.url))
+                    }
+                    style={styles.variantSidebarLinkButton}
+                  >
+                    {channel.logo ? (
+                      <Image
+                        resizeMode="cover"
+                        source={channel.logo}
+                        style={styles.variantSidebarLinkLogo}
+                      />
+                    ) : (
+                      <Text style={styles.variantSidebarLinkMark}>
+                        {channel.mark}
+                      </Text>
+                    )}
+                  </KolamInteractionFrame>
+                </KolamHoverTooltip>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.miniMutedValue}>-</Text>
+          )}
+        </ProductMiniTile>
+      </View>
+    );
   }
 
-  return (
-    <View style={styles.variantSidebarLinkBlock}>
-      {rows.map(row => (
-        <View key={row.id} style={styles.variantSidebarLinkRow}>
-          <Text numberOfLines={1} style={styles.variantSidebarLinkLabel}>
-            {row.label}
-          </Text>
-          <View style={styles.variantSidebarLinkButtons}>
-            {row.links.map(link => (
-              <KolamHoverTooltip
-                align="center"
-                key={`${row.id}-${link.id}`}
-                label={link.url}
-                placement="bottom"
-              >
-                <KolamInteractionFrame
-                  accessibilityLabel={`${row.label} ${link.label}`}
-                  onPress={() =>
-                    void Linking.openURL(normalizeProductUrl(link.url))
-                  }
-                  style={styles.variantSidebarLinkButton}
-                >
-                  {link.logo ? (
-                    <Image
-                      resizeMode="cover"
-                      source={link.logo}
-                      style={styles.variantSidebarLinkLogo}
-                    />
-                  ) : (
-                    <Text style={styles.variantSidebarLinkMark}>
-                      {link.mark}
-                    </Text>
-                  )}
-                </KolamInteractionFrame>
-              </KolamHoverTooltip>
-            ))}
-          </View>
+  const content = (
+    <ProductMiniTile label={channel.label}>
+      {channel.url ? (
+        <View style={styles.externalTileMarketIcon}>
+          {channel.logo ? (
+            <Image
+              resizeMode="cover"
+              source={channel.logo}
+              style={styles.externalTileLogo}
+            />
+          ) : (
+            <Text style={styles.externalTileMark}>{channel.mark}</Text>
+          )}
         </View>
-      ))}
-    </View>
+      ) : (
+        <Text style={styles.miniMutedValue}>-</Text>
+      )}
+    </ProductMiniTile>
+  );
+
+  return channel.url ? (
+    <KolamInteractionFrame
+      accessibilityLabel={`Buka ${channel.label}`}
+      onPress={() => void Linking.openURL(normalizeProductUrl(channel.url))}
+      style={styles.externalTilePressable}
+    >
+      {content}
+    </KolamInteractionFrame>
+  ) : (
+    <View style={styles.externalTilePressable}>{content}</View>
   );
 }
 
-function collectVariantSidebarLinks(links: KolamProduct['externalLinks']) {
-  const seen = new Set<string>();
-  const buttons: Array<{
-    id: string;
-    label: string;
-    logo: typeof SHOPEE_LOGO | typeof TOKOPEDIA_LOGO | null;
-    mark: string;
-    url: string;
-  }> = [];
-
-  for (const link of links) {
-    const url = link.url.trim();
+function collectChannelVariantButtons(
+  product: KolamProduct,
+  channelId: ProductSidebarChannel['id'],
+) {
+  return product.variants.flatMap(variant => {
+    const url =
+      channelId === 'webstore'
+        ? findVariantChannelUrl(variant.externalLinks, 'website')
+        : findVariantChannelUrl(variant.externalLinks, channelId);
     if (!url) {
-      continue;
+      return [];
     }
-    const key = matchProductExternalLinkKey(link.label, url);
-    const id = key || `${link.label}-${url}`;
-    if (seen.has(id)) {
-      continue;
-    }
-    seen.add(id);
-    buttons.push({
-      id,
-      label:
-        key === 'shopee'
-          ? 'Shopee'
-          : key === 'tokopedia'
-            ? 'Tokopedia'
-            : key === 'website'
-              ? 'Toko Web'
-              : link.label || 'Tautan',
-      logo:
-        key === 'shopee'
-          ? SHOPEE_LOGO
-          : key === 'tokopedia'
-            ? TOKOPEDIA_LOGO
-            : null,
-      mark:
-        key === 'website'
-          ? 'W'
-          : key === 'link_pos'
-            ? 'P'
-            : (link.label || 'L').slice(0, 1).toUpperCase(),
-      url,
-    });
-  }
-
-  return buttons;
+    return [
+      {
+        id: `${variant.id}-${channelId}`,
+        label: variant.label || variant.sku || variant.productCode,
+        url,
+      },
+    ];
+  });
 }
 
-function matchProductExternalLinkKey(label: string, url: string) {
-  const haystack = `${label} ${url}`.trim().toLowerCase();
-  if (haystack.includes('shopee')) {
-    return 'shopee';
-  }
-  if (haystack.includes('tokopedia')) {
-    return 'tokopedia';
-  }
-  if (
-    haystack.includes('website') ||
-    haystack.includes('webstore') ||
-    haystack.includes('dunia-anura.com')
-  ) {
-    return 'website';
-  }
-  if (haystack.includes('link_pos') || haystack.includes('pos')) {
-    return 'link_pos';
-  }
-  return '';
+function findVariantChannelUrl(
+  links: KolamProduct['externalLinks'],
+  key: 'shopee' | 'tokopedia' | 'website',
+) {
+  const match = links.find(link => {
+    const haystack = `${link.label} ${link.url}`.trim().toLowerCase();
+    if (key === 'website') {
+      return (
+        haystack.includes('website') ||
+        haystack.includes('webstore') ||
+        haystack.includes('dunia-anura.com')
+      );
+    }
+    return haystack.includes(key);
+  });
+  return match?.url.trim() || '';
 }
 
 function ProductMetaBlock({ label, value }: { label: string; value: string }) {
@@ -8853,7 +8828,7 @@ function ProductMetaBlock({ label, value }: { label: string; value: string }) {
   );
 }
 
-function createProductSidebarLinks(product: KolamProduct) {
+function createProductSidebarLinks(product: KolamProduct): ProductSidebarChannel[] {
   const shopee = findProductExternalLink(product, 'shopee');
   const tokopedia = findProductExternalLink(product, 'tokopedia');
   const webstoreUrl = createProductWebstoreUrl(product);
@@ -12219,32 +12194,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '900',
   },
-  variantSidebarLinkBlock: {
-    alignSelf: 'stretch',
-    gap: 6,
-    minWidth: 0,
-    width: '100%',
-  },
-  variantSidebarLinkRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-    minWidth: 0,
-  },
-  variantSidebarLinkLabel: {
-    color: V.colors.mutedFg,
-    flexShrink: 1,
-    fontSize: 10,
-    fontWeight: '800',
-    lineHeight: 13,
-    maxWidth: 72,
-  },
   variantSidebarLinkButtons: {
     alignItems: 'center',
     flexDirection: 'row',
-    flexShrink: 0,
     flexWrap: 'wrap',
     gap: 4,
+    justifyContent: 'center',
+    maxWidth: 78,
   },
   variantSidebarLinkButton: {
     alignItems: 'center',
