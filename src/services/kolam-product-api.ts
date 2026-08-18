@@ -8,6 +8,10 @@ import {
   type KolamProductListResult,
 } from '../domain/kolam-product';
 import {
+  normalizeWysiwygUnitConfig,
+  type WysiwygUnitConfig,
+} from '../domain/kolam-wysiwyg';
+import {
   normalizeKolamPackingCatalogUsageList,
   type KolamPackingCatalogUsageRow,
 } from '../domain/kolam-packing-option';
@@ -97,6 +101,24 @@ export async function createKolamProduct(
   });
 
   return normalizeKolamProductDetail(response);
+}
+
+export async function skipKolamProductWysiwyg(
+  productId: string,
+  variantId?: string,
+): Promise<WysiwygUnitConfig> {
+  const response = await kolamRequest<{success?: boolean; data?: unknown}>(
+    `/products/${encodeURIComponent(productId)}/wysiwyg/skip`,
+    {
+      method: 'POST',
+      body: variantId ? {variantId} : {},
+    },
+  );
+  const payload =
+    response && typeof response === 'object' && 'data' in response
+      ? response.data
+      : response;
+  return normalizeWysiwygUnitConfig(payload);
 }
 
 export async function updateKolamProduct(

@@ -15,6 +15,10 @@ import {
   type KolamSpeciesStockStatus,
   type KolamSpeciesStatus,
 } from '../domain/kolam-species';
+import {
+  normalizeWysiwygUnitConfig,
+  type WysiwygUnitConfig,
+} from '../domain/kolam-wysiwyg';
 import { apiRequest } from '../lib/api-client';
 
 interface DataResponse<T> {
@@ -198,6 +202,24 @@ export async function createKolamSpecies(
   });
 
   return normalizeKolamSpeciesDetail(response);
+}
+
+export async function skipKolamSpeciesWysiwyg(
+  id: string,
+  variantId?: string,
+): Promise<WysiwygUnitConfig> {
+  const response = await kolamRequest<{success?: boolean; data?: unknown}>(
+    `/species/${encodeURIComponent(id)}/wysiwyg/skip`,
+    {
+      method: 'POST',
+      body: variantId ? {variantId} : {},
+    },
+  );
+  const payload =
+    response && typeof response === 'object' && 'data' in response
+      ? response.data
+      : response;
+  return normalizeWysiwygUnitConfig(payload);
 }
 
 export async function updateKolamSpecies(

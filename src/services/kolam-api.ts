@@ -1256,6 +1256,7 @@ export interface KolamWebSetting {
   daraOwnerDigestWaEnabled?: boolean;
   daraOwnerDigestFcmEnabled?: boolean;
   daraOwnerFcmUrgentEnabled?: boolean;
+  wysiwyg?: import('../domain/kolam-wysiwyg').WysiwygSettings;
   updatedAt?: string;
   createdAt?: string;
   [key: string]: unknown;
@@ -1457,6 +1458,7 @@ export interface UpdateKolamWebSettingBody
       | 'daraOwnerDigestWaEnabled'
       | 'daraOwnerDigestFcmEnabled'
       | 'daraOwnerFcmUrgentEnabled'
+      | 'wysiwyg'
     >
   > {
   [key: string]: unknown;

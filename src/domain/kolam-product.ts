@@ -9,6 +9,12 @@ import {
   type KolamCatalogLocale,
   type KolamCatalogTranslationsMap,
 } from './kolam-catalog-locale';
+import {
+  EMPTY_WYSIWYG_UNIT,
+  createWysiwygUnitSavePayload,
+  normalizeWysiwygUnitConfig,
+  type WysiwygUnitConfig,
+} from './kolam-wysiwyg';
 
 export type KolamProductSyncStatus =
   | 'pending'
@@ -215,6 +221,7 @@ export interface KolamProductVariant {
   componentOverrides: KolamProductComponentLine[];
   customFields: KolamProductCustomFieldDisplay[];
   externalLinks: KolamProductExternalLink[];
+  wysiwyg: WysiwygUnitConfig;
   raw: unknown;
 }
 
@@ -288,6 +295,7 @@ export interface KolamProductVariantFormRow {
   dimensionUnitId: string;
   memberPointsEnabled: boolean;
   memberPoints: string;
+  wysiwyg: WysiwygUnitConfig;
   raw: unknown;
 }
 
@@ -352,6 +360,7 @@ export interface KolamProduct {
   marketplaceSync: KolamProductMarketplaceSync;
   createdAt: string;
   updatedAt: string;
+  wysiwyg: WysiwygUnitConfig;
   raw: unknown;
 }
 
@@ -412,6 +421,7 @@ export interface KolamProductFormState {
   selectedVariantId: string;
   variantPhotoLocalUri: string;
   variantVideoLocalUri: string;
+  wysiwyg: WysiwygUnitConfig;
 }
 
 export type KolamProductSurfaceMode = 'list' | 'detail' | 'edit' | 'new';
@@ -669,6 +679,7 @@ export function createEmptyKolamProductFormState(
     selectedVariantId: '',
     variantPhotoLocalUri: '',
     variantVideoLocalUri: '',
+    wysiwyg: {...EMPTY_WYSIWYG_UNIT},
   };
 }
 
@@ -754,6 +765,7 @@ export function createKolamProductFormState(product: KolamProduct): KolamProduct
     selectedVariantId: '',
     variantPhotoLocalUri: '',
     variantVideoLocalUri: '',
+    wysiwyg: normalizeWysiwygUnitConfig(raw.wysiwyg ?? product.wysiwyg),
   };
 }
 
@@ -842,6 +854,9 @@ export function createKolamProductSavePayload(form: KolamProductFormState) {
         }
       : {}),
     tags: form.tagIds,
+    ...(hasVariants
+      ? {}
+      : {wysiwyg: createWysiwygUnitSavePayload(form.wysiwyg)}),
   };
 }
 
@@ -900,6 +915,7 @@ function createKolamProductVariantFormRow(value: unknown): KolamProductVariantFo
     dimensionUnitId: getObjectIdString(dimension.unit),
     memberPointsEnabled: getBoolean(memberPoints, 'enabled') ?? false,
     memberPoints: String(getNumber(memberPoints, 'points') ?? 0),
+    wysiwyg: normalizeWysiwygUnitConfig(variant.wysiwyg),
     raw: value,
   };
 }
@@ -940,6 +956,7 @@ function createKolamProductVariantPayload(
     },
     grocerPricingTiers: createKolamProductGrocerPricingTierPayload(row.grocerPricingTiers),
     customFieldValues: row.customFieldValues,
+    wysiwyg: createWysiwygUnitSavePayload(row.wysiwyg),
   };
   const raw = asRecord(row.raw);
   const photos = Array.isArray(raw.photos) ? raw.photos : [];
@@ -1408,6 +1425,7 @@ function normalizeKolamProduct(payload: unknown): KolamProduct {
       getString(record, 'updatedAt') ||
       getString(record, 'lastModifiedAt') ||
       getString(record, 'createdAt'),
+    wysiwyg: normalizeWysiwygUnitConfig(record.wysiwyg),
     raw: payload,
   };
 }
@@ -1529,6 +1547,7 @@ function normalizeVariants(record: Record<string, unknown>): KolamProductVariant
       componentOverrides: normalizeProductComponents(variant.componentOverrides),
       customFields: normalizeCustomFieldValueList(variant.customFieldValues ?? variant.customFields),
       externalLinks: normalizeExternalLinks(variant),
+      wysiwyg: normalizeWysiwygUnitConfig(variant.wysiwyg),
       raw: entry,
     };
   });

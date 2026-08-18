@@ -8,6 +8,12 @@ import {
   type KolamSpeciesLocaleFields,
 } from './kolam-catalog-locale';
 import { getKolamFileUrl } from '../lib/file-url';
+import {
+  EMPTY_WYSIWYG_UNIT,
+  createWysiwygUnitSavePayload,
+  normalizeWysiwygUnitConfig,
+  type WysiwygUnitConfig,
+} from './kolam-wysiwyg';
 
 export type KolamSpeciesStatus = 'active' | 'inactive' | 'draft';
 export type KolamSpeciesSellableFilter = 'all' | 'sellable' | 'not-sellable';
@@ -283,6 +289,7 @@ export interface KolamSpeciesVariantMedia {
   videoUris: string[];
   customFieldValues: KolamSpeciesCustomFieldValue[];
   links: KolamSpeciesExternalLink[];
+  wysiwyg: WysiwygUnitConfig;
   raw: unknown;
 }
 
@@ -315,6 +322,7 @@ export interface KolamSpeciesVariantFormRow {
   vendorPrices: KolamSpeciesVendorPriceFormRow[];
   externalLinks: KolamSpeciesExternalLinkFormRow[];
   customFieldValues: KolamSpeciesCustomFieldValue[];
+  wysiwyg: WysiwygUnitConfig;
   raw: unknown;
 }
 
@@ -377,6 +385,7 @@ export interface KolamSpecies {
   distribution: string;
   createdAt?: string;
   updatedAt?: string;
+  wysiwyg: WysiwygUnitConfig;
   raw: unknown;
 }
 
@@ -427,6 +436,7 @@ export interface KolamSpeciesFormState {
   habitat: string;
   distribution: string;
   translations: KolamCatalogTranslationsMap<KolamSpeciesLocaleFields>;
+  wysiwyg: WysiwygUnitConfig;
   thumbnailLocalUri: string;
   photoLocalUri: string;
   videoLocalUri: string;
@@ -545,6 +555,7 @@ export function createEmptyKolamSpeciesFormState(): KolamSpeciesFormState {
     variantsTouched: false,
     externalLinks: [],
     packingLinks: [],
+    wysiwyg: {...EMPTY_WYSIWYG_UNIT},
   };
 }
 
@@ -657,6 +668,7 @@ export function createKolamSpeciesFormState(
       value: link.value,
     })),
     packingLinks: packings.map(createKolamSpeciesPackingLinkFormRow),
+    wysiwyg: normalizeWysiwygUnitConfig(species.wysiwyg ?? raw.wysiwyg),
   };
 }
 
@@ -729,6 +741,9 @@ export function createKolamSpeciesSavePayload(form: KolamSpeciesFormState) {
     habitat: form.habitat,
     distribution: form.distribution.trim(),
     translations: normalizeKolamTranslationsForSave(form.translations) ?? {},
+    ...(form.variants.length
+      ? {}
+      : {wysiwyg: createWysiwygUnitSavePayload(form.wysiwyg)}),
     ...(form.variantsTouched
       ? {
           variantConfig: createKolamSpeciesVariantConfigPayload(form),
@@ -816,6 +831,7 @@ export function createEmptyKolamSpeciesVariantFormRow(): KolamSpeciesVariantForm
     vendorPrices: [],
     externalLinks: [],
     customFieldValues: [],
+    wysiwyg: {...EMPTY_WYSIWYG_UNIT},
     raw: null,
   };
 }
@@ -876,6 +892,7 @@ function createKolamSpeciesVariantFormRow(
       value: link.value,
     })),
     customFieldValues: variant.customFieldValues,
+    wysiwyg: normalizeWysiwygUnitConfig(variant.wysiwyg),
     raw: variant.raw,
   };
 }
@@ -929,6 +946,7 @@ function createKolamSpeciesVariantPayload(row: KolamSpeciesVariantFormRow) {
     customFieldValues: createKolamSpeciesCustomFieldValuePayload(
       row.customFieldValues,
     ),
+    wysiwyg: createWysiwygUnitSavePayload(row.wysiwyg),
   };
 
   if (isMongoObjectId(row.id)) {
@@ -1544,6 +1562,7 @@ export function normalizeKolamSpecies(payload: unknown): KolamSpecies {
     distribution: getString(record, 'distribution'),
     createdAt: getString(record, 'createdAt') || undefined,
     updatedAt: getString(record, 'updatedAt') || undefined,
+    wysiwyg: normalizeWysiwygUnitConfig(record.wysiwyg),
     raw: payload,
   };
 }
@@ -2326,6 +2345,7 @@ function normalizeVariantMediaList(value: unknown): KolamSpeciesVariantMedia[] {
         record.customFieldValues,
       ),
       links: normalizeSpeciesLinks(record.link),
+      wysiwyg: normalizeWysiwygUnitConfig(record.wysiwyg),
       raw: item,
     };
   });

@@ -36,6 +36,7 @@ import { KolamRowFrame } from './kolam-row-frame';
 import { KolamSettingsWebFormFields } from './kolam-settings-web-form-fields';
 import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-section-header';
 import { KolamSettingsWebFormSections } from './kolam-settings-web-widgets';
+import { KolamSettingsWebWysiwygPanel } from './kolam-settings-web-wysiwyg-panel';
 import { KolamTextFieldRow } from './kolam-text-field-row';
 import { KolamTextFieldRowCopy } from './kolam-text-field-row-copy';
 import { KolamSettingsPackageUpdateActions } from './kolam-settings-package-update-actions';
@@ -3730,6 +3731,9 @@ export function KolamSettingsWebConfigSurface({
               }}
               placeholder="3"
             />
+          </View>
+          <View style={styles.settingsTabCardSpacing}>
+            <KolamSettingsWebWysiwygPanel canManage={!readOnly} />
           </View>
         </>
       ) : null}

@@ -39,6 +39,12 @@ import type {
   KolamProductVendorPriceFormRow,
   KolamProductVariantFormRow,
 } from '../domain/kolam-product';
+import {
+  catalogHasWysiwygDue,
+  EMPTY_WYSIWYG_UNIT,
+  isWysiwygDue,
+  isWysiwygMongoId,
+} from '../domain/kolam-wysiwyg';
 import type { KolamMarketplacePlatform } from '../services/kolam-marketplace-sync-api';
 import type { KolamUnit } from '../domain/kolam-unit';
 import {
@@ -137,6 +143,9 @@ import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
+import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import { KolamUploadCameraIcon } from './kolam-upload-camera-icon';
+import { KolamWysiwygCycleFields } from './kolam-wysiwyg-cycle-fields';
 import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
@@ -2012,6 +2021,29 @@ function ProductEditFormPage({
 
               {!hasVariants ? (
                 <ProductEditSection
+                  description="Siklus foto terkini dan kenaikan harga. Skip = harga tidak berubah."
+                  title="WYSIWYG"
+                >
+                  <View style={styles.productBasicInfoCard}>
+                    <KolamWysiwygCycleFields
+                      disabled={disabled}
+                      onChange={wysiwyg => controller.onChangeForm({wysiwyg})}
+                      onSkip={
+                        form.id
+                          ? () => {
+                              void controller.onSkipWysiwyg();
+                            }
+                          : undefined
+                      }
+                      skipPending={controller.wysiwygSkipping}
+                      value={form.wysiwyg}
+                    />
+                  </View>
+                </ProductEditSection>
+              ) : null}
+
+              {!hasVariants ? (
+                <ProductEditSection
                   description="Komponen produksi untuk bahan baku tanpa varian."
                   title="Bahan Penyusun"
                 >
@@ -2403,6 +2435,29 @@ function ProductEditFormPage({
                     controller={controller}
                     disabled={disabled}
                     hasVariants={hasVariants}
+                  />
+                </View>
+              </ProductEditSection>
+            ) : null}
+
+            {!hasVariants ? (
+              <ProductEditSection
+                description="Siklus foto terkini dan kenaikan harga. Skip = harga tidak berubah."
+                title="WYSIWYG"
+              >
+                <View style={styles.productBasicInfoCard}>
+                  <KolamWysiwygCycleFields
+                    disabled={disabled}
+                    onChange={wysiwyg => controller.onChangeForm({wysiwyg})}
+                    onSkip={
+                      form.id
+                        ? () => {
+                            void controller.onSkipWysiwyg();
+                          }
+                        : undefined
+                    }
+                    skipPending={controller.wysiwygSkipping}
+                    value={form.wysiwyg}
                   />
                 </View>
               </ProductEditSection>
@@ -4026,6 +4081,22 @@ function ProductVariantFormCard({
                   rows={variant.grocerPricingTiers}
                 />
               </ProductPricingFieldPanel>
+              <KolamWysiwygCycleFields
+                compact
+                disabled={controller.saving}
+                onChange={wysiwyg =>
+                  updateProductVariantRow(controller, variant.id, {wysiwyg})
+                }
+                onSkip={
+                  isWysiwygMongoId(variant.id)
+                    ? () => {
+                        void controller.onSkipWysiwyg(variant.id);
+                      }
+                    : undefined
+                }
+                skipPending={controller.wysiwygSkipping}
+                value={variant.wysiwyg}
+              />
             </View>
           ) : null}
 
@@ -4335,6 +4406,18 @@ function ProductMediaEditPanel({
       ) : null}
 
       <View style={styles.mediaUploadSection}>
+        {isWysiwygDue(controller.form?.wysiwyg) &&
+        !(controller.form?.hasVariants || controller.form?.variants.length) ? (
+          <KolamCopyStack
+            items={[
+              {
+                id: 'wysiwyg-photo-due',
+                text: 'Upload foto baru.',
+                style: styles.mutedText,
+              },
+            ]}
+          />
+        ) : null}
         <KolamSettingsWebFileField
           accessibilityLabel="Foto produk"
           actionLabel="Pilih file"
@@ -5136,6 +5219,7 @@ function createEmptyProductVariantFormRow(): KolamProductVariantFormRow {
     dimensionUnitId: '',
     memberPointsEnabled: false,
     memberPoints: '0',
+    wysiwyg: {...EMPTY_WYSIWYG_UNIT},
     raw: null,
   };
 }
@@ -9400,8 +9484,16 @@ function renderPriceSyncCell(product: KolamProduct) {
 }
 
 function renderInfoBadges(product: KolamProduct) {
+  const wysiwygDue = catalogHasWysiwygDue(product);
   return (
     <View style={styles.infoBadges}>
+      {wysiwygDue ? (
+        <KolamHoverTooltip label="WYSIWYG: butuh foto terkini">
+          <View style={styles.infoWysiwygBadge}>
+            <KolamUploadCameraIcon size={12} />
+          </View>
+        </KolamHoverTooltip>
+      ) : null}
       <KolamBadge intent="outline" label={product.hasVariants ? 'V' : 'S'} />
       {product.sellable ? <KolamBadge intent="success" label="Jual" /> : null}
       {product.isPinned ? <KolamBadge intent="info" label="Pin" /> : null}
@@ -11435,6 +11527,15 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     minWidth: 0,
     overflow: 'hidden',
+  },
+  infoWysiwygBadge: {
+    alignItems: 'center',
+    borderColor: V.colors.warning,
+    borderRadius: 4,
+    borderWidth: 1,
+    height: 24,
+    justifyContent: 'center',
+    width: 24,
   },
   actionCell: {
     alignItems: 'flex-end',

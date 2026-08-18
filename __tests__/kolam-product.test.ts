@@ -350,6 +350,16 @@ describe('Kolam product domain contract', () => {
         minimum_price_to_sales: 300000,
         minimumOrderQty: 2,
         tags: ['tag-1'],
+        wysiwyg: {
+          enabled: false,
+          useDefaults: true,
+          intervalValue: 1,
+          intervalUnit: 'month',
+          priceMode: 'percent',
+          priceAmount: 0,
+          priceCap: 0,
+          paused: false,
+        },
       }),
     );
     expect(payload).toEqual(

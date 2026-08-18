@@ -61,6 +61,7 @@ import {
   linkKolamSpeciesPackings,
   removeKolamSpeciesAttachedItem,
   reorderKolamSpeciesMedia,
+  skipKolamSpeciesWysiwyg,
   updateKolamSpecies,
   updateKolamSpeciesPartial,
   updateKolamSpeciesSeo,
@@ -182,7 +183,9 @@ export interface KolamSpeciesController {
   onSearchChange: (search: string) => void;
   onSelectSpecies: (species: KolamSpecies, nextMode?: KolamSpeciesSurfaceMode) => Promise<void>;
   onSyncPrice: (speciesIds?: string[]) => Promise<boolean>;
+  onSkipWysiwyg: (variantId?: string) => Promise<boolean>;
   onTogglePin: (species: KolamSpecies) => Promise<boolean>;
+  wysiwygSkipping: boolean;
 }
 
 const DEFAULT_SPECIES_PAGINATION: KolamSpeciesPagination = {
@@ -234,6 +237,7 @@ export function useKolamSpeciesController(
   const [syncPriceMessage, setSyncPriceMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<KolamSpeciesDataSource>('idle');
+  const [wysiwygSkipping, setWysiwygSkipping] = useState(false);
 
   const refreshOptions = useCallback(async () => {
     const cachedCustomFields = await readKolamCustomFieldListCache();
@@ -1047,6 +1051,31 @@ export function useKolamSpeciesController(
     }
   }, [pagination, selectedSpecies?.id, species]);
 
+  const onSkipWysiwyg = useCallback(
+    async (variantId?: string) => {
+      const item = selectedSpecies;
+      if (!item) {
+        setError('Simpan spesies terlebih dahulu.');
+        return false;
+      }
+
+      setWysiwygSkipping(true);
+      setError(null);
+      try {
+        await skipKolamSpeciesWysiwyg(item.id, variantId);
+        const live = await getKolamSpecies(item.id);
+        await applyLiveSpecies(live);
+        return true;
+      } catch (skipError) {
+        setError(getErrorMessage(skipError));
+        return false;
+      } finally {
+        setWysiwygSkipping(false);
+      }
+    },
+    [applyLiveSpecies, selectedSpecies],
+  );
+
   const onSyncPrice = useCallback(async (speciesIds?: string[]) => {
     setSyncingPrice(true);
     setSyncPriceMessage(null);
@@ -1121,6 +1150,7 @@ export function useKolamSpeciesController(
     taxonomies,
     units,
     vendors,
+    wysiwygSkipping,
     onAddAttachedItem,
     onApplySpecies: applyLiveSpecies,
     onBackToList,
@@ -1153,6 +1183,7 @@ export function useKolamSpeciesController(
     onSave,
     onSearchChange,
     onSelectSpecies,
+    onSkipWysiwyg,
     onSyncPrice,
     onTogglePin,
   };

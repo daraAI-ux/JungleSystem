@@ -34,6 +34,7 @@ import {
 import type { KolamTag } from '../domain/kolam-tag';
 import type { KolamUnit } from '../domain/kolam-unit';
 import type { KolamVendor } from '../domain/kolam-vendor';
+import { EMPTY_WYSIWYG_UNIT } from '../domain/kolam-wysiwyg';
 import {
   addKolamProductAttachedItem,
   archiveKolamProduct,
@@ -50,6 +51,7 @@ import {
   reorderKolamProductMedia,
   removeKolamProductAttachedItem,
   restoreKolamProduct,
+  skipKolamProductWysiwyg,
   updateKolamProduct,
   updateKolamProductPartial,
   updateKolamProductSeo,
@@ -184,6 +186,8 @@ export interface KolamProductController {
     product: KolamProduct,
     nextMode?: KolamProductSurfaceMode,
   ) => Promise<void>;
+  onSkipWysiwyg: (variantId?: string) => Promise<boolean>;
+  wysiwygSkipping: boolean;
 }
 
 const DEFAULT_PAGINATION: KolamProductPagination = {
@@ -228,6 +232,7 @@ export function useKolamProductController(
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<KolamProductDataSource>('idle');
+  const [wysiwygSkipping, setWysiwygSkipping] = useState(false);
 
   const refreshOptions = useCallback(async () => {
     const cachedBrands = await readKolamBrandListCache();
@@ -974,6 +979,31 @@ export function useKolamProductController(
     [pagination, products, selectedProduct],
   );
 
+  const onSkipWysiwyg = useCallback(
+    async (variantId?: string) => {
+      const product = selectedProduct;
+      if (!product) {
+        setError('Simpan produk terlebih dahulu.');
+        return false;
+      }
+
+      setWysiwygSkipping(true);
+      setError(null);
+      try {
+        await skipKolamProductWysiwyg(product.id, variantId);
+        const live = await getKolamProductDetail(product.id, {forEdit: true});
+        await applyLiveProduct(live);
+        return true;
+      } catch (skipError) {
+        setError(getErrorMessage(skipError));
+        return false;
+      } finally {
+        setWysiwygSkipping(false);
+      }
+    },
+    [applyLiveProduct, selectedProduct],
+  );
+
   const onSave = useCallback(async () => {
     if (!form) {
       setError('Form produk belum siap.');
@@ -1064,6 +1094,7 @@ export function useKolamProductController(
     vendors,
     variantPhotoLocalUris,
     warrantyTermsTemplates,
+    wysiwygSkipping,
     onAddAttachedItem,
     onBackToList,
     onChangeForm,
@@ -1092,6 +1123,7 @@ export function useKolamProductController(
     onSearchChange,
     onTogglePin,
     onSelectProduct,
+    onSkipWysiwyg,
   };
 }
 
@@ -1465,6 +1497,7 @@ function createRouteProductStub(key: string): KolamProduct {
     },
     createdAt: '',
     updatedAt: '',
+    wysiwyg: {...EMPTY_WYSIWYG_UNIT},
     raw: {},
   };
 }

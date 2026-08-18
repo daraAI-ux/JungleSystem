@@ -26,6 +26,11 @@ import {
   type KolamSpeciesVariantFormRow,
   type KolamSpeciesVendorPriceFormRow,
 } from '../domain/kolam-species';
+import {
+  catalogHasWysiwygDue,
+  isWysiwygDue,
+  isWysiwygMongoId,
+} from '../domain/kolam-wysiwyg';
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { copyTextToClipboard } from '../lib/native-clipboard';
@@ -103,7 +108,9 @@ import {
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import {KolamUploadButton} from './kolam-upload-button';
+import { KolamUploadCameraIcon } from './kolam-upload-camera-icon';
 import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
+import { KolamWysiwygCycleFields } from './kolam-wysiwyg-cycle-fields';
 
 type SpeciesListFilterPanel = 'taxonomy' | 'category' | 'stock';
 
@@ -891,6 +898,7 @@ function buildSpeciesListColumns(): Array<KolamListTableColumn<KolamSpecies>> {
             (Array.isArray(item.variants) && item.variants.length > 0)
           }
           sellable={item.sellable}
+          wysiwygDue={catalogHasWysiwygDue(item)}
         />
       ),
     },
@@ -1037,12 +1045,24 @@ function KolamSpeciesActionsMenu({
 function SpeciesListInfoBadges({
   hasVariants,
   sellable,
+  wysiwygDue,
 }: {
   hasVariants: boolean;
   sellable: boolean;
+  wysiwygDue: boolean;
 }) {
   return (
     <View style={styles.infoBadgeRow}>
+      {wysiwygDue ? (
+        <KolamHoverTooltip
+          containerStyle={styles.infoTooltipWrap}
+          label="WYSIWYG: butuh foto terkini"
+        >
+          <View style={styles.infoWysiwygBadge}>
+            <KolamUploadCameraIcon size={12} />
+          </View>
+        </KolamHoverTooltip>
+      ) : null}
       <KolamHoverTooltip
         containerStyle={styles.infoTooltipWrap}
         label={hasVariants ? 'Memiliki varian' : 'Standard'}
@@ -1597,6 +1617,34 @@ function KolamSpeciesForm({
               </SpeciesEditSection>
             ) : null}
 
+            {!hasVariants ? (
+              <SpeciesEditSection
+                description="Siklus foto terkini dan kenaikan harga. Skip = harga tidak berubah."
+                title="WYSIWYG"
+              >
+                <View
+                  style={[
+                    styles.speciesBasicInfoCard,
+                    styles.customFieldSettingsCard,
+                  ]}
+                >
+                  <KolamWysiwygCycleFields
+                    disabled={controller.saving}
+                    onChange={wysiwyg => controller.onChangeForm({wysiwyg})}
+                    onSkip={
+                      form.id
+                        ? () => {
+                            void controller.onSkipWysiwyg();
+                          }
+                        : undefined
+                    }
+                    skipPending={controller.wysiwygSkipping}
+                    value={form.wysiwyg}
+                  />
+                </View>
+              </SpeciesEditSection>
+            ) : null}
+
             {hasVariants ? (
               <SpeciesEditSection
                 description="Komisi transaksi spesies."
@@ -1957,6 +2005,18 @@ function SpeciesMediaEditPanel({
         ) : null}
       </View>
       <View style={styles.mediaUploadSection}>
+        {isWysiwygDue(controller.form.wysiwyg) &&
+        !controller.form.variants.length ? (
+          <KolamCopyStack
+            items={[
+              {
+                id: 'wysiwyg-photo-due',
+                style: styles.fieldHint,
+                text: 'Upload foto baru.',
+              },
+            ]}
+          />
+        ) : null}
         <KolamSettingsWebFileField
           accessibilityLabel="Foto spesies"
           actionLabel="Pilih file"
@@ -4564,6 +4624,22 @@ function SpeciesVariantFormCard({
                 rows={variant.grocerPricingTiers}
                 title="Harga Bertingkat / Grosir Varian"
               />
+              <KolamWysiwygCycleFields
+                compact
+                disabled={controller.saving}
+                onChange={wysiwyg =>
+                  updateSpeciesVariantRow(controller, variant.id, {wysiwyg})
+                }
+                onSkip={
+                  isWysiwygMongoId(variant.id)
+                    ? () => {
+                        void controller.onSkipWysiwyg(variant.id);
+                      }
+                    : undefined
+                }
+                skipPending={controller.wysiwygSkipping}
+                value={variant.wysiwyg}
+              />
             </View>
           ) : null}
 
@@ -5590,6 +5666,17 @@ function SpeciesVariantMediaPanel({
           searchPlaceholder="Cari varian..."
           showLabelInTrigger={false}
           value={activeVariantId}
+        />
+      ) : null}
+      {isWysiwygDue(formVariant?.wysiwyg) ? (
+        <KolamCopyStack
+          items={[
+            {
+              id: 'wysiwyg-variant-photo-due',
+              style: styles.fieldHint,
+              text: 'Upload foto baru.',
+            },
+          ]}
         />
       ) : null}
       <View style={styles.mediaPickerRow}>
@@ -7675,6 +7762,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
     textAlign: 'center',
+  },
+  infoWysiwygBadge: {
+    alignItems: 'center',
+    borderColor: V.colors.warning,
+    borderRadius: 4,
+    borderWidth: 1,
+    height: 24,
+    justifyContent: 'center',
+    width: 24,
   },
   infoSellableBadge: {
     fontSize: 11,
