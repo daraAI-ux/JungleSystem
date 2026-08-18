@@ -45,6 +45,7 @@ import {
   isWysiwygDue,
   isWysiwygMongoId,
 } from '../domain/kolam-wysiwyg';
+import {marketplaceProductUrl} from '../domain/kolam-chat-catalog-card';
 import type { KolamMarketplacePlatform } from '../services/kolam-marketplace-sync-api';
 import type { KolamUnit } from '../domain/kolam-unit';
 import {
@@ -8783,7 +8784,14 @@ function collectChannelVariantButtons(
   return product.variants.flatMap(variant => {
     const url =
       channelId === 'webstore'
-        ? findVariantChannelUrl(variant.externalLinks, 'website')
+        ? findVariantChannelUrl(variant.externalLinks, 'website') ||
+          marketplaceProductUrl(product.name, product.id, {
+            id: variant.id,
+            productCode: variant.productCode,
+            sku: variant.sku,
+            tier1Value: variant.tier1Value,
+            tier2Value: variant.tier2Value,
+          })
         : findVariantChannelUrl(variant.externalLinks, channelId);
     if (!url) {
       return [];
@@ -8868,18 +8876,11 @@ function findProductExternalLink(
 
 function createProductWebstoreUrl(product: KolamProduct) {
   const slug = product.slug?.trim();
-  if (!slug) {
-    return findWebsiteProductExternalLink(product)?.url || '';
+  if (slug) {
+    return `https://dunia-anura.com/id/products/${slug}`;
   }
 
-  return `https://dunia-anura.com/id/products/${encodeURIComponent(slug)}`;
-}
-
-function findWebsiteProductExternalLink(product: KolamProduct) {
-  return product.externalLinks.find(link => {
-    const label = link.label.trim().toLowerCase();
-    return label.includes('website') || label.includes('webstore');
-  });
+  return marketplaceProductUrl(product.name, product.id);
 }
 
 function normalizeProductUrl(value: string) {
