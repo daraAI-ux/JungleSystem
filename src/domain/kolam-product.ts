@@ -802,7 +802,9 @@ export function createKolamProductSavePayload(form: KolamProductFormState) {
     productCode: productType === 'raw' ? cleanProductCode : '-',
     sellable: form.sellable,
     type: productType,
-    customFieldValues: form.customFieldValues,
+    customFieldValues: sanitizeKolamProductCustomFieldValuesForSave(
+      form.customFieldValues,
+    ),
     components:
       !hasVariants && form.componentRows.some(row => row.productId.trim())
         ? createKolamProductComponentPayload(form.componentRows)
@@ -955,7 +957,9 @@ function createKolamProductVariantPayload(
       points: row.memberPointsEnabled ? toNonNegativeNumber(row.memberPoints) : 0,
     },
     grocerPricingTiers: createKolamProductGrocerPricingTierPayload(row.grocerPricingTiers),
-    customFieldValues: row.customFieldValues,
+    customFieldValues: sanitizeKolamProductCustomFieldValuesForSave(
+      row.customFieldValues,
+    ),
     wysiwyg: createWysiwygUnitSavePayload(row.wysiwyg),
   };
   const raw = asRecord(row.raw);
@@ -964,6 +968,64 @@ function createKolamProductVariantPayload(
     return { ...payload, photos };
   }
   return payload;
+}
+
+function sanitizeKolamProductCustomFieldValuesForSave(rows: unknown[]) {
+  return rows
+    .map(row => {
+      const raw = asRecord(row);
+      const field = asRecord(raw.field);
+      const fieldType = (
+        getString(field, 'fieldType') || getString(raw, 'fieldType')
+      ).toLowerCase();
+      const fieldId =
+        getString(field, '_id') ||
+        getString(field, 'id') ||
+        getString(raw, 'fieldId') ||
+        getString(raw, 'field');
+      const fieldKey =
+        getString(field, 'fieldKey') || getString(raw, 'fieldKey');
+      const unit =
+        getString(asRecord(raw.unit), '_id') ||
+        getString(asRecord(raw.unit), 'id') ||
+        getString(raw, 'unit');
+      const value = raw.value;
+      const minValue = raw.minValue;
+      const maxValue = raw.maxValue;
+      const payload: Record<string, unknown> = {};
+
+      if (fieldId) {
+        payload.field = fieldId;
+      }
+      if (fieldKey) {
+        payload.fieldKey = fieldKey;
+      }
+      if (unit && (!fieldType || fieldType === 'number' || fieldType === 'range')) {
+        payload.unit = unit;
+      }
+
+      if (fieldType === 'range') {
+        if (minValue !== undefined && minValue !== null && minValue !== '') {
+          payload.minValue = minValue;
+        }
+        if (maxValue !== undefined && maxValue !== null && maxValue !== '') {
+          payload.maxValue = maxValue;
+        }
+      } else if (value !== undefined && value !== null && value !== '') {
+        payload.value = value;
+      }
+
+      const hasIdentity = Boolean(payload.field || payload.fieldKey);
+      const hasValue =
+        payload.value !== undefined ||
+        payload.minValue !== undefined ||
+        payload.maxValue !== undefined;
+
+      return hasIdentity && (hasValue || Boolean(payload.unit))
+        ? payload
+        : null;
+    })
+    .filter(Boolean) as Record<string, unknown>[];
 }
 
 function createKolamProductVariantConfigPayload(form: KolamProductFormState) {
@@ -2576,9 +2638,6 @@ function createStableHash(value: unknown) {
 
   return String(hash);
 }
-
-
-
 
 
 

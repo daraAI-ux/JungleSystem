@@ -404,4 +404,41 @@ describe('Kolam product domain contract', () => {
       '/products/689a4ca70bb4670565ac062d/edit',
     );
   });
+
+  it('strips stale range fields from string custom field payloads', () => {
+    const product = normalizeKolamProductDetail({
+      data: {
+        _id: 'product-1',
+        name: 'Filter Canister',
+        sku: 'FLT-001',
+        priceToSell: 325000,
+        marketPrice: 350000,
+        onlinePrice: 330000,
+        minimum_price_to_sales: 300000,
+        customFieldValues: [
+          {
+            field: {
+              _id: 'field-quality',
+              fieldKey: 'quality',
+              fieldLabel: 'Quality',
+              fieldType: 'string',
+            },
+            value: 'Bagus',
+            minValue: null,
+            maxValue: null,
+          },
+        ],
+      },
+    });
+    const form = createKolamProductFormState(product);
+    const payload = createKolamProductSavePayload(form);
+
+    expect(payload.customFieldValues).toEqual([
+      {
+        field: 'field-quality',
+        fieldKey: 'quality',
+        value: 'Bagus',
+      },
+    ]);
+  });
 });
