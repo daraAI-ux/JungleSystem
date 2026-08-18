@@ -10475,8 +10475,7 @@ const styles = StyleSheet.create({
   },
   productWorkspaceShell: {
     alignSelf: 'stretch',
-    flex: 1,
-    minHeight: 0,
+    flexGrow: 1,
     position: 'relative',
     width: '100%',
   },
