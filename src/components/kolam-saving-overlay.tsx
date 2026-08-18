@@ -69,10 +69,10 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.72)',
-    justifyContent: 'flex-start',
-    paddingTop: 72,
-    zIndex: 20,
+    backgroundColor: V.colors.bg,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    zIndex: 50,
   },
   panel: {
     alignItems: 'center',
