@@ -12,6 +12,7 @@ type EditorMessage =
   | {type: 'pick-image'};
 
 const KolamWebView = WebView as unknown as React.ComponentType<any>;
+const TIPTAP_EDITOR_HEIGHT = 560;
 
 export function KolamTipTapRichTextEditor({
   editable = true,
@@ -277,6 +278,7 @@ function createEditorHtml({
     * { box-sizing: border-box; }
     html, body {
       width: 100%;
+      height: 100%;
       min-height: 100%;
       margin: 0;
       background: var(--bg) !important;
@@ -287,6 +289,9 @@ function createEditorHtml({
     }
     button, select { font-family: inherit; }
     .shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
       min-height: 386px;
       border: 1px solid var(--input);
       border-radius: var(--radius);
@@ -363,13 +368,13 @@ function createEditorHtml({
     }
     .divider { width: 1px; height: 24px; margin: 0 2px; background: var(--border); }
     #editor-root {
-      min-height: 310px;
-      max-height: 480px;
+      flex: 1 1 auto;
+      min-height: 0;
       overflow-y: auto;
       background: var(--bg);
     }
     .ProseMirror {
-      min-height: 310px;
+      min-height: 100%;
       padding: 14px 16px;
       outline: none;
       color: var(--fg);
@@ -687,14 +692,16 @@ const styles = StyleSheet.create({
     borderColor: V.colors.input,
     borderRadius: V.radius.lg,
     borderWidth: 1,
-    minHeight: 388,
+    height: TIPTAP_EDITOR_HEIGHT,
+    minHeight: TIPTAP_EDITOR_HEIGHT,
     overflow: 'hidden',
   },
   webViewContainer: {
     backgroundColor: V.colors.bg,
   },
   webViewHost: {
-    minHeight: 386,
+    height: TIPTAP_EDITOR_HEIGHT - 2,
+    minHeight: TIPTAP_EDITOR_HEIGHT - 2,
     overflow: 'hidden',
     backgroundColor: V.colors.bg,
   },
@@ -703,10 +710,11 @@ const styles = StyleSheet.create({
     top: -14000,
     left: -14000,
     width: 720,
-    height: 388,
+    height: TIPTAP_EDITOR_HEIGHT,
   },
   webView: {
-    minHeight: 386,
+    height: TIPTAP_EDITOR_HEIGHT - 2,
+    minHeight: TIPTAP_EDITOR_HEIGHT - 2,
     backgroundColor: V.colors.bg,
   },
   loadingCover: {
