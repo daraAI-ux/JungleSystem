@@ -5483,36 +5483,21 @@ function ProductExternalLinkUrlField({
   onChangeText: (value: string) => void;
   value: string;
 }) {
-  const scrollRef = React.useRef<ScrollView>(null);
   const [boxWidth, setBoxWidth] = React.useState(0);
-  const innerWidth = React.useMemo(() => {
-    const estimated = Math.ceil(Math.max(value.length, 16) * 8) + 28;
-    return Math.max(boxWidth, estimated);
-  }, [boxWidth, value]);
-
-  const revealCaret = React.useCallback(
-    (caretIndex: number) => {
-      if (!boxWidth) {
-        return;
-      }
-      const safeLength = Math.max(value.length, 1);
-      const caretX =
-        (Math.min(Math.max(caretIndex, 0), value.length) / safeLength) *
-        innerWidth;
-      const maxX = Math.max(innerWidth - boxWidth, 0);
-      const nextX = Math.min(Math.max(caretX - boxWidth + 36, 0), maxX);
-      scrollRef.current?.scrollTo({animated: false, x: nextX});
-    },
-    [boxWidth, innerWidth, value.length],
+  const innerWidth = Math.max(
+    boxWidth,
+    Math.ceil(Math.max(value.length, 16) * 8) + 28,
   );
 
   return (
     <View
-      onLayout={event => setBoxWidth(event.nativeEvent.layout.width)}
+      onLayout={event => {
+        const nextWidth = Math.round(event.nativeEvent.layout.width);
+        setBoxWidth(current => (current === nextWidth ? current : nextWidth));
+      }}
       style={styles.externalLinkInputShell}
     >
       <ScrollView
-        ref={scrollRef}
         horizontal
         keyboardShouldPersistTaps="handled"
         nestedScrollEnabled
@@ -5522,16 +5507,12 @@ function ProductExternalLinkUrlField({
         <KolamFormTextField
           editable={!disabled}
           mode="url"
-          nestedScrollEnabled
           onChangeText={onChangeText}
-          onSelectionChange={event => {
-            revealCaret(event.nativeEvent.selection.end);
-          }}
           placeholder="https://contoh.com"
           style={[
             settingsWebFormStyles.settingsWebFormFieldValue,
             styles.externalLinkInput,
-            boxWidth ? {width: innerWidth} : null,
+            {width: innerWidth},
           ]}
           value={value}
         />
