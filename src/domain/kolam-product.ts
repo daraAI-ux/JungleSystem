@@ -969,11 +969,11 @@ function createKolamProductVariantPayload(
 function createKolamProductVariantConfigPayload(form: KolamProductFormState) {
   return {
     tier1Name: form.variantConfigTier1Name.trim() || 'Varian',
-    tier1Options: uniqueStrings(
+    tier1Values: uniqueStrings(
       form.variants.map(variant => variant.tier1Value.trim()).filter(Boolean),
     ),
     tier2Name: form.variantConfigTier2Name.trim(),
-    tier2Options: uniqueStrings(
+    tier2Values: uniqueStrings(
       form.variants.map(variant => variant.tier2Value.trim()).filter(Boolean),
     ),
   };
@@ -2576,7 +2576,6 @@ function createStableHash(value: unknown) {
 
   return String(hash);
 }
-
 
 
 
