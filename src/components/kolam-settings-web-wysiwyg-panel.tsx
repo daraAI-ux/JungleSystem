@@ -116,61 +116,77 @@ export function KolamSettingsWebWysiwygPanel({
         />
       </View>
 
-      <KolamToggleRow
-        active={Boolean(form.enabled)}
-        description=""
-        disabled={disabled}
-        label="Aktifkan mesin WYSIWYG"
-        onPress={() => !disabled && patch({enabled: !form.enabled})}
-        variant="settingsForm"
-      />
-      <KolamToggleRow
-        active={form.notifyEnabled !== false}
-        description=""
-        disabled={disabled}
-        label="Notifikasi due"
-        onPress={() =>
-          !disabled && patch({notifyEnabled: form.notifyEnabled === false})
-        }
-        variant="settingsForm"
-      />
+      <View style={styles.toggleGrid}>
+        <View style={styles.toggleCard}>
+          <KolamToggleRow
+            active={Boolean(form.enabled)}
+            description=""
+            disabled={disabled}
+            label="Aktifkan mesin WYSIWYG"
+            onPress={() => !disabled && patch({enabled: !form.enabled})}
+            variant="settingsForm"
+          />
+        </View>
+        <View style={styles.toggleCard}>
+          <KolamToggleRow
+            active={form.notifyEnabled !== false}
+            description=""
+            disabled={disabled}
+            label="Notifikasi due"
+            onPress={() =>
+              !disabled && patch({notifyEnabled: form.notifyEnabled === false})
+            }
+            variant="settingsForm"
+          />
+        </View>
+      </View>
 
       <View style={styles.grid}>
-        <KolamFormTextField
-          editable={!disabled}
-          label="Interval"
-          mode="numeric"
-          onChangeText={text =>
-            patch({intervalValue: Math.max(1, Math.floor(Number(text) || 1))})
-          }
-          value={String(form.intervalValue ?? 1)}
-        />
-        <KolamDropdownSelect<WysiwygIntervalUnit>
-          accessibilityLabel="Satuan"
-          label="Satuan"
-          onChange={intervalUnit => {
-            if (!disabled) {
-              patch({intervalUnit});
+        <View style={[styles.fieldCell, styles.intervalCell]}>
+          <KolamFormTextField
+            editable={!disabled}
+            label="Interval"
+            mode="numeric"
+            onChangeText={text =>
+              patch({intervalValue: Math.max(1, Math.floor(Number(text) || 1))})
             }
-          }}
-          options={INTERVAL_OPTIONS}
-          showLabelInTrigger={false}
-          value={form.intervalUnit || 'month'}
-        />
-        <KolamDropdownSelect<WysiwygPriceMode>
-          accessibilityLabel="Naik harga"
-          label="Naik harga"
-          onChange={priceMode => {
-            if (!disabled) {
-              patch({priceMode});
-            }
-          }}
-          options={PRICE_MODE_OPTIONS}
-          showLabelInTrigger={false}
-          value={form.priceMode || 'percent'}
-        />
+            value={String(form.intervalValue ?? 1)}
+          />
+        </View>
+        <View style={styles.fieldCell}>
+          <KolamDropdownSelect<WysiwygIntervalUnit>
+            accessibilityLabel="Satuan"
+            label="Satuan"
+            onChange={intervalUnit => {
+              if (!disabled) {
+                patch({intervalUnit});
+              }
+            }}
+            options={INTERVAL_OPTIONS}
+            showLabelInTrigger={false}
+            style={styles.dropdown}
+            triggerStyle={styles.dropdownTrigger}
+            value={form.intervalUnit || 'month'}
+          />
+        </View>
+        <View style={styles.fieldCell}>
+          <KolamDropdownSelect<WysiwygPriceMode>
+            accessibilityLabel="Naik harga"
+            label="Naik harga"
+            onChange={priceMode => {
+              if (!disabled) {
+                patch({priceMode});
+              }
+            }}
+            options={PRICE_MODE_OPTIONS}
+            showLabelInTrigger={false}
+            style={styles.dropdown}
+            triggerStyle={styles.dropdownTrigger}
+            value={form.priceMode || 'percent'}
+          />
+        </View>
         {form.priceMode === 'fixed' ? (
-          <View>
+          <View style={styles.amountCell}>
             <Text style={styles.fieldLabel}>Naik (Rp)</Text>
             <KolamRupiahField
               editable={!disabled}
@@ -181,15 +197,17 @@ export function KolamSettingsWebWysiwygPanel({
             />
           </View>
         ) : (
-          <KolamFormTextField
-            editable={!disabled}
-            label="Naik (%)"
-            mode="numeric"
-            onChangeText={text =>
-              patch({priceAmount: Math.max(0, Number(text) || 0)})
-            }
-            value={String(form.priceAmount ?? 0)}
-          />
+          <View style={styles.amountCell}>
+            <KolamFormTextField
+              editable={!disabled}
+              label="Naik (%)"
+              mode="numeric"
+              onChangeText={text =>
+                patch({priceAmount: Math.max(0, Number(text) || 0)})
+              }
+              value={String(form.priceAmount ?? 0)}
+            />
+          </View>
         )}
         <View style={styles.capField}>
           <Text style={styles.fieldLabel}>Plafon (0 = tanpa batas)</Text>
@@ -247,8 +265,45 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
+  toggleGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  toggleCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: '48%',
+    flexGrow: 1,
+    minWidth: 280,
+    overflow: 'hidden',
+  },
+  fieldCell: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 190,
+  },
+  intervalCell: {
+    flexBasis: 96,
+    flexGrow: 0,
+    minWidth: 96,
+  },
+  amountCell: {
+    flexBasis: 120,
+    flexGrow: 0,
+    minWidth: 120,
+  },
   capField: {
+    flexBasis: 240,
+    flexGrow: 1,
     minWidth: 240,
+  },
+  dropdown: {
+    minWidth: 190,
+  },
+  dropdownTrigger: {
+    minHeight: 36,
   },
   fieldLabel: {
     color: V.colors.mutedFg,
