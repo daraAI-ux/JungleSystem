@@ -5474,6 +5474,72 @@ function ProductMultiSelectField({
   );
 }
 
+function ProductExternalLinkUrlField({
+  disabled,
+  onChangeText,
+  value,
+}: {
+  disabled: boolean;
+  onChangeText: (value: string) => void;
+  value: string;
+}) {
+  const scrollRef = React.useRef<ScrollView>(null);
+  const [boxWidth, setBoxWidth] = React.useState(0);
+  const innerWidth = React.useMemo(() => {
+    const estimated = Math.ceil(Math.max(value.length, 16) * 8) + 28;
+    return Math.max(boxWidth, estimated);
+  }, [boxWidth, value]);
+
+  const revealCaret = React.useCallback(
+    (caretIndex: number) => {
+      if (!boxWidth) {
+        return;
+      }
+      const safeLength = Math.max(value.length, 1);
+      const caretX =
+        (Math.min(Math.max(caretIndex, 0), value.length) / safeLength) *
+        innerWidth;
+      const maxX = Math.max(innerWidth - boxWidth, 0);
+      const nextX = Math.min(Math.max(caretX - boxWidth + 36, 0), maxX);
+      scrollRef.current?.scrollTo({animated: false, x: nextX});
+    },
+    [boxWidth, innerWidth, value.length],
+  );
+
+  return (
+    <View
+      onLayout={event => setBoxWidth(event.nativeEvent.layout.width)}
+      style={styles.externalLinkInputShell}
+    >
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled
+        showsHorizontalScrollIndicator
+        style={styles.externalLinkInputScroll}
+      >
+        <KolamFormTextField
+          editable={!disabled}
+          mode="url"
+          nestedScrollEnabled
+          onChangeText={onChangeText}
+          onSelectionChange={event => {
+            revealCaret(event.nativeEvent.selection.end);
+          }}
+          placeholder="https://contoh.com"
+          style={[
+            settingsWebFormStyles.settingsWebFormFieldValue,
+            styles.externalLinkInput,
+            boxWidth ? {width: innerWidth} : null,
+          ]}
+          value={value}
+        />
+      </ScrollView>
+    </View>
+  );
+}
+
 function ProductExternalLinksRowsEditor({
   disabled,
   links,
@@ -5511,21 +5577,11 @@ function ProductExternalLinksRowsEditor({
                 value={link.name}
               />
             </View>
-            <View style={styles.externalLinkInputShell}>
-              <KolamFormTextField
-                editable={!disabled}
-                mode="url"
-                nestedScrollEnabled
-                onChangeText={value => updateRow(index, { value })}
-                placeholder="https://contoh.com"
-                scrollEnabled
-                style={[
-                  settingsWebFormStyles.settingsWebFormFieldValue,
-                  styles.externalLinkInput,
-                ]}
-                value={link.value}
-              />
-            </View>
+            <ProductExternalLinkUrlField
+              disabled={disabled}
+              onChangeText={nextValue => updateRow(index, {value: nextValue})}
+              value={link.value}
+            />
             <KolamInteractionFrame
               accessibilityLabel="Hapus tautan"
               disabled={disabled}
@@ -11176,9 +11232,13 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  externalLinkInput: {
+  externalLinkInputScroll: {
+    maxHeight: V.control.inputHeight + 14,
     minWidth: 0,
     width: '100%',
+  },
+  externalLinkInput: {
+    minWidth: 0,
   },
   externalLinkRemoveButton: {
     flexShrink: 0,
