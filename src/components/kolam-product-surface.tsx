@@ -8710,35 +8710,29 @@ function ProductSidebarLinkColumn({
           {variantButtons.length ? (
             <View style={styles.variantSidebarLinkList}>
               {variantButtons.map(button => (
-                <KolamHoverTooltip
-                  align="center"
+                <KolamInteractionFrame
+                  accessibilityLabel={`${button.label} ${channel.label}`}
                   key={button.id}
-                  label={button.url}
-                  placement="bottom"
+                  onPress={() =>
+                    void Linking.openURL(normalizeProductUrl(button.url))
+                  }
+                  style={styles.variantSidebarLinkChip}
                 >
-                  <KolamInteractionFrame
-                    accessibilityLabel={`${button.label} ${channel.label}`}
-                    onPress={() =>
-                      void Linking.openURL(normalizeProductUrl(button.url))
-                    }
-                    style={styles.variantSidebarLinkChip}
-                  >
-                    {channel.logo ? (
-                      <Image
-                        resizeMode="cover"
-                        source={channel.logo}
-                        style={styles.variantSidebarLinkLogo}
-                      />
-                    ) : (
-                      <Text style={styles.variantSidebarLinkMark}>
-                        {channel.mark}
-                      </Text>
-                    )}
-                    <Text numberOfLines={1} style={styles.variantSidebarLinkName}>
-                      {button.label}
+                  <Text numberOfLines={2} style={styles.variantSidebarLinkName}>
+                    {button.label}
+                  </Text>
+                  {channel.logo ? (
+                    <Image
+                      resizeMode="cover"
+                      source={channel.logo}
+                      style={styles.variantSidebarLinkLogo}
+                    />
+                  ) : (
+                    <Text style={styles.variantSidebarLinkMark}>
+                      {channel.mark}
                     </Text>
-                  </KolamInteractionFrame>
-                </KolamHoverTooltip>
+                  )}
+                </KolamInteractionFrame>
               ))}
             </View>
           ) : (
@@ -12120,9 +12114,12 @@ const styles = StyleSheet.create({
   },
   sidebarMiniContent: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     justifyContent: 'center',
     marginTop: 4,
     minHeight: 22,
+    minWidth: 0,
+    width: '100%',
   },
   miniValue: {
     color: V.colors.fg,
@@ -12213,29 +12210,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: 4,
-    minHeight: 18,
+    justifyContent: 'space-between',
+    minHeight: 22,
     minWidth: 0,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
+    paddingHorizontal: 5,
+    paddingVertical: 3,
+  },
+  variantSidebarLinkName: {
+    color: V.colors.fg,
+    flexGrow: 1,
+    flexShrink: 1,
+    fontSize: 10,
+    fontWeight: '800',
+    lineHeight: 13,
+    minWidth: 0,
+    textAlign: 'left',
   },
   variantSidebarLinkLogo: {
     borderRadius: 2,
+    flexShrink: 0,
     height: 12,
     width: 12,
   },
   variantSidebarLinkMark: {
     color: V.colors.fg,
-    fontSize: 8,
-    fontWeight: '900',
-    lineHeight: 10,
-  },
-  variantSidebarLinkName: {
-    color: V.colors.fg,
-    flex: 1,
+    flexShrink: 0,
     fontSize: 9,
-    fontWeight: '800',
-    lineHeight: 12,
-    minWidth: 0,
+    fontWeight: '900',
+    lineHeight: 11,
   },
   metaBlock: {
     backgroundColor: V.colors.bg,
