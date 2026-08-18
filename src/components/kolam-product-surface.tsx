@@ -391,6 +391,33 @@ export function KolamProductSurface({
     }
     requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
   }, [activeFilterPanel, anchorFilterPanel]);
+  React.useEffect(() => {
+    const routePath = route.split('?')[0];
+    const shouldSyncDetailRoute =
+      routePath.endsWith('/edit') ||
+      routePath === '/products/create' ||
+      routePath === '/products/baru' ||
+      routePath === '/raw-materials/create' ||
+      routePath === '/raw-materials/baru';
+
+    if (
+      controller.mode !== 'detail' ||
+      !controller.selectedProduct ||
+      !shouldSyncDetailRoute
+    ) {
+      return;
+    }
+
+    const detailRoute = getProductDetailRoute(controller.selectedProduct);
+    if (detailRoute === routePath) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      onRouteChange?.(detailRoute);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [controller.mode, controller.selectedProduct, onRouteChange, route]);
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
   if (controller.mode !== 'list') {
@@ -1383,13 +1410,7 @@ function KolamProductDetailView({
   );
 
   if (controller.mode === 'new') {
-    return (
-      <ProductEditFormPage
-        controller={controller}
-        onCancel={onBack}
-        onSaved={product => onRouteChange?.(getProductDetailRoute(product))}
-      />
-    );
+    return <ProductEditFormPage controller={controller} onCancel={onBack} />;
   }
 
   if (!product) {
@@ -1431,9 +1452,6 @@ function KolamProductDetailView({
       <ProductEditFormPage
         controller={controller}
         onCancel={() => onCancelEdit(product)}
-        onSaved={savedProduct =>
-          onRouteChange?.(getProductDetailRoute(savedProduct))
-        }
       />
     );
   }
@@ -1575,11 +1593,9 @@ function KolamProductDetailView({
 function ProductEditFormPage({
   controller,
   onCancel,
-  onSaved,
 }: {
   controller: ReturnType<typeof useKolamProductController>;
   onCancel: () => void;
-  onSaved?: (product: KolamProduct) => void;
 }) {
   const form = controller.form;
   const [deleteMediaTarget, setDeleteMediaTarget] =
@@ -1657,12 +1673,8 @@ function ProductEditFormPage({
     form.availableShippingMethodIds.includes(method.id),
   );
   const handleSave = React.useCallback(() => {
-    void controller.onSave().then(savedProduct => {
-      if (savedProduct) {
-        onSaved?.(savedProduct);
-      }
-    });
-  }, [controller, onSaved]);
+    void controller.onSave();
+  }, [controller]);
 
   if (isRawForm) {
     return (
