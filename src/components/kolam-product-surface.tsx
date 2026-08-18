@@ -5511,17 +5511,21 @@ function ProductExternalLinksRowsEditor({
                 value={link.name}
               />
             </View>
-            <KolamFormTextField
-              editable={!disabled}
-              mode="url"
-              onChangeText={value => updateRow(index, { value })}
-              placeholder="https://contoh.com"
-              style={[
-                settingsWebFormStyles.settingsWebFormFieldValue,
-                styles.externalLinkInput,
-              ]}
-              value={link.value}
-            />
+            <View style={styles.externalLinkInputShell}>
+              <KolamFormTextField
+                editable={!disabled}
+                mode="url"
+                nestedScrollEnabled
+                onChangeText={value => updateRow(index, { value })}
+                placeholder="https://contoh.com"
+                scrollEnabled
+                style={[
+                  settingsWebFormStyles.settingsWebFormFieldValue,
+                  styles.externalLinkInput,
+                ]}
+                value={link.value}
+              />
+            </View>
             <KolamInteractionFrame
               accessibilityLabel="Hapus tautan"
               disabled={disabled}
@@ -11168,9 +11172,13 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     maxWidth: '100%',
   },
-  externalLinkInput: {
+  externalLinkInputShell: {
     flex: 1,
-    minWidth: 80,
+    minWidth: 0,
+  },
+  externalLinkInput: {
+    minWidth: 0,
+    width: '100%',
   },
   externalLinkRemoveButton: {
     flexShrink: 0,
