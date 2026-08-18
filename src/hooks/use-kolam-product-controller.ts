@@ -179,7 +179,7 @@ export interface KolamProductController {
   onPickVideo: () => Promise<boolean>;
   onReorderPhoto: (index: number, direction: 'up' | 'down') => Promise<boolean>;
   onReorderVideo: (index: number, direction: 'up' | 'down') => Promise<boolean>;
-  onSave: () => Promise<void>;
+  onSave: () => Promise<KolamProduct | null>;
   onSearchChange: (search: string) => void;
   onTogglePin: (product: KolamProduct) => Promise<boolean>;
   onSelectProduct: (
@@ -1007,13 +1007,13 @@ export function useKolamProductController(
   const onSave = useCallback(async () => {
     if (!form) {
       setError('Form produk belum siap.');
-      return;
+      return null;
     }
 
     const validationError = validateKolamProductFormForSave(form);
     if (validationError) {
       setError(validationError);
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -1054,8 +1054,10 @@ export function useKolamProductController(
       setVariantPhotoLocalUris({});
       setMode('detail');
       setDataSource('live');
+      return syncedProduct;
     } catch (saveError) {
       setError(getErrorMessage(saveError));
+      return null;
     } finally {
       setSaving(false);
     }
@@ -1524,7 +1526,6 @@ function getErrorMessage(error: unknown) {
 
   return 'Terjadi kendala saat membaca data produk.';
 }
-
 
 
 

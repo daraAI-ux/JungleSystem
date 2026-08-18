@@ -1383,7 +1383,13 @@ function KolamProductDetailView({
   );
 
   if (controller.mode === 'new') {
-    return <ProductEditFormPage controller={controller} onCancel={onBack} />;
+    return (
+      <ProductEditFormPage
+        controller={controller}
+        onCancel={onBack}
+        onSaved={product => onRouteChange?.(getProductDetailRoute(product))}
+      />
+    );
   }
 
   if (!product) {
@@ -1425,6 +1431,9 @@ function KolamProductDetailView({
       <ProductEditFormPage
         controller={controller}
         onCancel={() => onCancelEdit(product)}
+        onSaved={savedProduct =>
+          onRouteChange?.(getProductDetailRoute(savedProduct))
+        }
       />
     );
   }
@@ -1566,9 +1575,11 @@ function KolamProductDetailView({
 function ProductEditFormPage({
   controller,
   onCancel,
+  onSaved,
 }: {
   controller: ReturnType<typeof useKolamProductController>;
   onCancel: () => void;
+  onSaved?: (product: KolamProduct) => void;
 }) {
   const form = controller.form;
   const [deleteMediaTarget, setDeleteMediaTarget] =
@@ -1645,6 +1656,13 @@ function ProductEditFormPage({
   const selectedRawShippingMethods = rawShippingMethods.filter(method =>
     form.availableShippingMethodIds.includes(method.id),
   );
+  const handleSave = React.useCallback(() => {
+    void controller.onSave().then(savedProduct => {
+      if (savedProduct) {
+        onSaved?.(savedProduct);
+      }
+    });
+  }, [controller, onSaved]);
 
   if (isRawForm) {
     return (
@@ -1658,9 +1676,7 @@ function ProductEditFormPage({
                 disabled={disabled}
                 intent="primary"
                 label={disabled ? 'Menyimpan...' : saveLabel}
-                onPress={() => {
-                  void controller.onSave();
-                }}
+                onPress={handleSave}
               />
             </View>
           </View>
@@ -2143,9 +2159,7 @@ function ProductEditFormPage({
             <KolamSaveButton
               disabled={disabled}
               label={disabled ? 'Menyimpan...' : 'Simpan'}
-              onPress={() => {
-                void controller.onSave();
-              }}
+              onPress={handleSave}
             />
           </View>
         </View>
