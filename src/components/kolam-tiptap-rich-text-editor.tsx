@@ -12,7 +12,7 @@ type EditorMessage =
   | {type: 'pick-image'};
 
 const KolamWebView = WebView as unknown as React.ComponentType<any>;
-const TIPTAP_EDITOR_HEIGHT = 560;
+const TIPTAP_EDITOR_HEIGHT = 620;
 
 export function KolamTipTapRichTextEditor({
   editable = true,
@@ -311,9 +311,13 @@ function createEditorHtml({
     }
     .kolam-toolbar {
       display: flex;
+      flex: 0 0 auto;
       flex-direction: column;
       border-bottom: 1px solid var(--border);
       background: var(--secondary);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
     .toolbar-row {
       display: flex;
@@ -371,6 +375,7 @@ function createEditorHtml({
       flex: 1 1 auto;
       min-height: 0;
       overflow-y: auto;
+      overscroll-behavior: contain;
       background: var(--bg);
     }
     .ProseMirror {
