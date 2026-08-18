@@ -1603,6 +1603,9 @@ function ProductEditFormPage({
   const shellLabels = getProductDetailShellLabels(
     form?.productType === 'raw' || controller.selectedProduct?.type === 'raw',
   );
+  const handleSave = React.useCallback(() => {
+    void controller.onSave();
+  }, [controller]);
 
   if (!form) {
     return (
@@ -1672,9 +1675,6 @@ function ProductEditFormPage({
   const selectedRawShippingMethods = rawShippingMethods.filter(method =>
     form.availableShippingMethodIds.includes(method.id),
   );
-  const handleSave = React.useCallback(() => {
-    void controller.onSave();
-  }, [controller]);
 
   if (isRawForm) {
     return (
